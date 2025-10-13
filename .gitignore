@@ -1,16 +1,14 @@
-# Compiled class file
+# ==========================================
+# 🧱 COMPILAÇÃO / BUILD
+# ==========================================
+/target/
+!/src/main/resources/
+!/src/test/resources/
+
+# ==========================================
+# ☕ ARQUIVOS JAVA COMPILADOS
+# ==========================================
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
 *.nar
@@ -19,6 +17,69 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# ==========================================
+# 🧩 LOGS E ERROS DE JVM
+# ==========================================
+*.log
 hs_err_pid*
 replay_pid*
+
+# ==========================================
+# 💻 IDEs / FERRAMENTAS DE DESENVOLVIMENTO
+# ==========================================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# ==========================================
+# 🧪 AMBIENTES VIRTUAIS E CONFIGS TEMPORÁRIAS
+# ==========================================
+.mtj.tmp/
+*.ctxt
+*.DS_Store
+Thumbs.db
+
+# ==========================================
+# ⚙️ CONFIGURAÇÕES DE SISTEMAS OPERACIONAIS
+# ==========================================
+# macOS
+.DS_Store
+
+# Windows
+ehthumbs.db
+Desktop.ini
+
+# ==========================================
+# 🗂️ BACKUPS E TEMPORÁRIOS
+# ==========================================
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# ==========================================
+# 🚫 EXCLUSÕES ESPECÍFICAS DO PROJETO
+# ==========================================
+# Ignora propriedades compiladas (somente usar o da pasta src/main/resources)
+target/classes/application.properties
+
+# ==========================================
+# ✅ EXCEÇÕES (Arquivos que DEVEM ir para o Git)
+# ==========================================
+!.gitignore
+!/pom.xml
+!/src/
+!/entregáveis/
+!/README.md
+

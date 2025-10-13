@@ -1,0 +1,173 @@
+ContextMap CinemaContextMap {
+  contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
+  contains PagamentoContext, UsuarioContext
+
+  // Relações principais
+  CompraContext -> SessaoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = SessaoContext }
+  CompraContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
+  SessaoContext -> FilmeContext { type = "Shared Kernel" }
+  SessaoContext -> ProgramacaoContext { type = "Conformist" }
+  BomboniereContext -> PagamentoContext { type = "Upstream-Downstream", upstream = PagamentoContext }
+  RelatorioContext -> CompraContext { type = "Customer-Supplier", upstream = CompraContext }
+  RelatorioContext -> BomboniereContext { type = "Customer-Supplier", upstream = BomboniereContext }
+  UsuarioContext -> CompraContext { type = "Conformist" }
+}
+
+BoundedContext CompraContext {
+  type = CORE_DOMAIN
+  domainVisionStatement = "Gerencia o processo de compra de ingressos, desde a seleção até a confirmação e geração do ingresso."
+  
+  Aggregate Compra {
+    Entity Ingresso {
+      String id
+      String tipo // meia, inteira, promoção
+      String qrCode
+      Assento assento
+      Sessao sessao
+      String status // válido, cancelado, utilizado
+    }
+
+    Entity Compra {
+      String id
+      Cliente cliente
+      List<Ingresso> ingressos
+      Pagamento pagamento
+      String status // confirmada, cancelada
+    }
+  }
+}
+
+BoundedContext SessaoContext {
+  type = SUPPORTING_DOMAIN
+  domainVisionStatement = "Controla a exibição de filmes, as salas e o mapa de assentos disponíveis para reserva e compra."
+
+  Aggregate Sessao {
+    Entity Sessao {
+      String id
+      Filme filme
+      Sala sala
+      Date horario
+      String status // disponível, esgotada, cancelada
+      Map<Assento, Boolean> mapaAssentos
+    }
+  }
+}
+
+BoundedContext FilmeContext {
+  type = SUPPORTING_DOMAIN
+  domainVisionStatement = "Gerencia o catálogo de filmes, com dados de sinopse, duração e classificação etária."
+
+  Aggregate Filme {
+    Entity Filme {
+      String id
+      String titulo
+      String sinopse
+      String classificacaoEtaria
+      int duracao
+      String status // em cartaz, em breve
+    }
+  }
+}
+
+BoundedContext ProgramacaoContext {
+  type = SUPPORTING_DOMAIN
+  domainVisionStatement = "Define e ajusta a grade de sessões do cinema, alocando filmes às salas disponíveis."
+
+  Aggregate Programacao {
+    Entity Programacao {
+      String id
+      Periodo periodo
+      List<Sessao> sessoes
+    }
+  }
+}
+
+BoundedContext PagamentoContext {
+  type = GENERIC_SUBDOMAIN
+  domainVisionStatement = "Executa e valida transações financeiras para compras e vendas no cinema."
+
+BoundedContext PagamentoContext {
+  type = GENERIC_SUBDOMAIN
+  domainVisionStatement = "Executa e valida transações financeiras para compras e vendas no cinema, suportando múltiplos métodos de pagamento."
+
+  Aggregate Pagamento {
+    Entity Pagamento {
+      String id
+      double valor
+      MetodoPagamento metodo
+      String status // pendente, sucesso, falha, cancelado
+      Date dataPagamento
+    }
+
+    Entity MetodoPagamento {
+      String id
+      String nome // Cartão de Crédito, Débito, Pix, Voucher, etc.
+      String tipo // digital, físico
+      boolean ativo
+      Map<String, String> configuracoes // ex: taxa, limite, provedor
+    }
+
+    ValueObject Transacao {
+      String codigoTransacao
+      Date data
+      String gateway // Stripe, MercadoPago, etc.
+      String respostaGateway
+    }
+  }
+}
+
+BoundedContext BomboniereContext {
+  type = SUPPORTING_DOMAIN
+  domainVisionStatement = "Gerencia o ponto de venda de produtos e combos alimentícios do cinema."
+
+  Aggregate Bomboniere {
+    Entity Produto {
+      String id
+      String nome
+      double preco
+      int estoque
+    }
+
+    Entity Venda {
+      String id
+      List<Produto> produtos
+      Pagamento pagamento
+      String status // confirmada, cancelada
+    }
+  }
+}
+
+BoundedContext RelatorioContext {
+  type = GENERIC_SUBDOMAIN
+  domainVisionStatement = "Gera relatórios de vendas, ocupação e desempenho do cinema."
+
+  Aggregate Relatorio {
+    Entity Relatorio {
+      String id
+      Date periodoInicio
+      Date periodoFim
+      double faturamento
+      int ingressosVendidos
+      double ocupacaoMedia
+    }
+  }
+}
+
+BoundedContext UsuarioContext {
+  type = GENERIC_SUBDOMAIN
+  domainVisionStatement = "Gerencia autenticação e dados de clientes e funcionários do cinema."
+
+  Aggregate Usuario {
+    Entity Cliente {
+      String id
+      String nome
+      String email
+    }
+
+    Entity Funcionario {
+      String id
+      String nome
+      String cargo // atendente, gerente
+    }
+  }
+}
