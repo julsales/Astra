@@ -1,173 +1,299 @@
+Domain Cinema {
+    Subdomain CoreCinema {
+        type = CORE_DOMAIN
+    }
+}
+
 ContextMap CinemaContextMap {
-  contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
-  contains PagamentoContext, UsuarioContext
+    contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
+    contains PagamentoContext, UsuarioContext
 
-  // Relações principais
-  CompraContext -> SessaoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = SessaoContext }
-  CompraContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
-  SessaoContext -> FilmeContext { type = "Shared Kernel" }
-  SessaoContext -> ProgramacaoContext { type = "Conformist" }
-  BomboniereContext -> PagamentoContext { type = "Upstream-Downstream", upstream = PagamentoContext }
-  RelatorioContext -> CompraContext { type = "Customer-Supplier", upstream = CompraContext }
-  RelatorioContext -> BomboniereContext { type = "Customer-Supplier", upstream = BomboniereContext }
-  UsuarioContext -> CompraContext { type = "Conformist" }
+    // Relações principais (sempre por ID)
+    CompraContext -> SessaoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = SessaoContext }
+    CompraContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
+    CompraContext -> UsuarioContext { type = "Conformist", upstream = UsuarioContext }
+
+    SessaoContext -> FilmeContext { type = "Shared Kernel" }
+    SessaoContext -> ProgramacaoContext { type = "Conformist" }
+
+    BomboniereContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
+
+    RelatorioContext -> CompraContext { type = "Customer-Supplier", upstream = CompraContext }
+    RelatorioContext -> BomboniereContext { type = "Customer-Supplier", upstream = BomboniereContext }
+    RelatorioContext -> PagamentoContext { type = "Customer-Supplier", upstream = PagamentoContext }
 }
 
-BoundedContext CompraContext {
-  type = CORE_DOMAIN
-  domainVisionStatement = "Gerencia o processo de compra de ingressos, desde a seleção até a confirmação e geração do ingresso."
-  
-  Aggregate Compra {
-    Entity Ingresso {
-      String id
-      String tipo // meia, inteira, promoção
-      String qrCode
-      Assento assento
-      Sessao sessao
-      String status // válido, cancelado, utilizado
-    }
+BoundedContext CompraContext implements CoreCinema {
 
-    Entity Compra {
-      String id
-      Cliente cliente
-      List<Ingresso> ingressos
-      Pagamento pagamento
-      String status // confirmada, cancelada
+    Aggregate Compra {
+        Entity Compra {
+            aggregateRoot
+
+            -CompraId compraId
+            -ClienteId clienteId
+            List<Ingresso> ingressos
+            -PagamentoId pagamentoId
+            StatusCompra status
+
+            Repository CompraRepository {
+                void salvar(@Compra compra);
+                @Compra obterPorId(@CompraId compraId);
+                List<@Compra> buscarPorCliente(@ClienteId clienteId);
+            }
+        }
+
+        Entity Ingresso {
+            -IngressoId ingressoId
+            -SessaoId sessaoId
+            -AssentoId assentoId
+            TipoIngresso tipo
+            StatusIngresso status
+            String qrCode
+        }
+
+        Service CompraService {
+            @Compra iniciarCompra(@ClienteId clienteId, List<@Ingresso> ingressos);
+            void confirmarCompra(@CompraId compraId, @PagamentoId pagamentoId);
+            void cancelarCompra(@CompraId compraId);
+        }
+
+        ValueObject CompraId { int id }
+        ValueObject ClienteId { int id }
+        ValueObject SessaoId { int id }
+        ValueObject PagamentoId { int id }
+        ValueObject IngressoId { int id }
+        ValueObject AssentoId { String valor }
+
+        enum TipoIngresso { INTEIRA, MEIA, PROMOCAO }
+        enum StatusIngresso { VALIDO, CANCELADO, UTILIZADO }
+        enum StatusCompra { PENDENTE, CONFIRMADA, CANCELADA }
     }
-  }
 }
 
-BoundedContext SessaoContext {
-  type = SUPPORTING_DOMAIN
-  domainVisionStatement = "Controla a exibição de filmes, as salas e o mapa de assentos disponíveis para reserva e compra."
+BoundedContext SessaoContext implements CoreCinema {
 
-  Aggregate Sessao {
-    Entity Sessao {
-      String id
-      Filme filme
-      Sala sala
-      Date horario
-      String status // disponível, esgotada, cancelada
-      Map<Assento, Boolean> mapaAssentos
+    Aggregate Sessao {
+        Entity Sessao {
+            aggregateRoot
+
+            -SessaoId sessaoId
+            -FilmeId filmeId
+            -SalaId salaId
+            Date horario
+            StatusSessao status
+            Map<@AssentoId, Boolean> mapaAssentosDisponiveis
+
+            Repository SessaoRepository {
+                void salvar(@Sessao sessao);
+                @Sessao obterPorId(@SessaoId sessaoId);
+                List<@Sessao> buscarPorFilme(@FilmeId filmeId);
+            }
+        }
+
+        ValueObject SessaoId { int id }
+        ValueObject FilmeId { int id }
+        ValueObject SalaId { int id }
+        ValueObject AssentoId { String valor }
+
+        enum StatusSessao { DISPONIVEL, ESGOTADA, CANCELADA }
     }
-  }
 }
 
-BoundedContext FilmeContext {
-  type = SUPPORTING_DOMAIN
-  domainVisionStatement = "Gerencia o catálogo de filmes, com dados de sinopse, duração e classificação etária."
+BoundedContext FilmeContext implements CoreCinema {
 
-  Aggregate Filme {
-    Entity Filme {
-      String id
-      String titulo
-      String sinopse
-      String classificacaoEtaria
-      int duracao
-      String status // em cartaz, em breve
+    Aggregate Filme {
+        Entity Filme {
+            aggregateRoot
+
+            -FilmeId filmeId
+            String titulo
+            String sinopse
+            String classificacaoEtaria
+            int duracao
+            StatusFilme status
+
+            Repository FilmeRepository {
+                void salvar(@Filme filme);
+                @Filme obterPorId(@FilmeId filmeId);
+                List<@Filme> listarFilmesEmCartaz();
+            }
+        }
+
+        ValueObject FilmeId { int id }
+        enum StatusFilme { EM_CARTAZ, EM_BREVE, RETIRADO }
     }
-  }
 }
 
-BoundedContext ProgramacaoContext {
-  type = SUPPORTING_DOMAIN
-  domainVisionStatement = "Define e ajusta a grade de sessões do cinema, alocando filmes às salas disponíveis."
+BoundedContext ProgramacaoContext implements CoreCinema {
 
-  Aggregate Programacao {
-    Entity Programacao {
-      String id
-      Periodo periodo
-      List<Sessao> sessoes
+    Aggregate Programacao {
+        Entity Programacao {
+            aggregateRoot
+
+            -ProgramacaoId programacaoId
+            Periodo periodo
+            List<@SessaoId> sessoes
+
+            Repository ProgramacaoRepository {
+                void salvar(@Programacao programacao);
+                @Programacao obterPorId(@ProgramacaoId programacaoId);
+                List<@Programacao> listarProgramacoes();
+            }
+        }
+
+        ValueObject ProgramacaoId { int id }
+        ValueObject SessaoId { int id }
+
+        ValueObject Periodo {
+            Date inicio
+            Date fim
+        }
     }
-  }
 }
 
-BoundedContext PagamentoContext {
-  type = GENERIC_SUBDOMAIN
-  domainVisionStatement = "Executa e valida transações financeiras para compras e vendas no cinema."
+BoundedContext PagamentoContext implements CoreCinema {
 
-BoundedContext PagamentoContext {
-  type = GENERIC_SUBDOMAIN
-  domainVisionStatement = "Executa e valida transações financeiras para compras e vendas no cinema, suportando múltiplos métodos de pagamento."
+    Aggregate Pagamento {
+        Entity Pagamento {
+            aggregateRoot
 
-  Aggregate Pagamento {
-    Entity Pagamento {
-      String id
-      double valor
-      MetodoPagamento metodo
-      String status // pendente, sucesso, falha, cancelado
-      Date dataPagamento
+            -PagamentoId pagamentoId
+            double valor
+            -MetodoPagamentoId metodoPagamentoId
+            Transacao transacao
+            StatusPagamento status
+            Date dataPagamento
+
+            Repository PagamentoRepository {
+                void salvar(@Pagamento pagamento);
+                @Pagamento obterPorId(@PagamentoId pagamentoId);
+                List<@Pagamento> buscarPorStatus(@StatusPagamento status);
+            }
+        }
+
+        Entity MetodoPagamento {
+            -MetodoPagamentoId metodoPagamentoId
+            String nome
+            TipoMetodo tipo
+            boolean ativo
+            Map<String, String> configuracoes
+        }
+
+        Service PagamentoService {
+            List<@MetodoPagamento> listarMetodosDisponiveis();
+            @Pagamento autorizarPagamento(@Pagamento pagamento);
+            void confirmarPagamento(@PagamentoId pagamentoId);
+            void cancelarPagamento(@PagamentoId pagamentoId);
+        }
+
+        ValueObject PagamentoId { int id }
+        ValueObject MetodoPagamentoId { int id }
+
+        ValueObject Transacao {
+            String codigoTransacao
+            Date data
+            String gateway
+            String respostaGateway
+        }
+
+        enum TipoMetodo { DIGITAL, FISICO }
+        enum StatusPagamento { PENDENTE, SUCESSO, FALHA, CANCELADO }
     }
-
-    Entity MetodoPagamento {
-      String id
-      String nome // Cartão de Crédito, Débito, Pix, Voucher, etc.
-      String tipo // digital, físico
-      boolean ativo
-      Map<String, String> configuracoes // ex: taxa, limite, provedor
-    }
-
-    ValueObject Transacao {
-      String codigoTransacao
-      Date data
-      String gateway // Stripe, MercadoPago, etc.
-      String respostaGateway
-    }
-  }
 }
 
-BoundedContext BomboniereContext {
-  type = SUPPORTING_DOMAIN
-  domainVisionStatement = "Gerencia o ponto de venda de produtos e combos alimentícios do cinema."
+BoundedContext BomboniereContext implements CoreCinema {
 
-  Aggregate Bomboniere {
-    Entity Produto {
-      String id
-      String nome
-      double preco
-      int estoque
-    }
+    Aggregate Bomboniere {
+        Entity Venda {
+            aggregateRoot
 
-    Entity Venda {
-      String id
-      List<Produto> produtos
-      Pagamento pagamento
-      String status // confirmada, cancelada
+            -VendaId vendaId
+            List<Produto> produtos
+            -PagamentoId pagamentoId
+            StatusVenda status
+
+            Repository VendaRepository {
+                void salvar(@Venda venda);
+                @Venda obterPorId(@VendaId vendaId);
+                List<@Venda> listarVendasPorStatus(@StatusVenda status);
+            }
+        }
+
+        Entity Produto {
+            -ProdutoId produtoId
+            String nome
+            double preco
+            int estoque
+        }
+
+        Service VendaService {
+            @Venda registrarVenda(@Venda venda);
+            void processarPagamento(@VendaId vendaId, @PagamentoId pagamentoId);
+            void cancelarVenda(@VendaId vendaId);
+        }
+
+        ValueObject VendaId { int id }
+        ValueObject ProdutoId { int id }
+        ValueObject PagamentoId { int id }
+
+        enum StatusVenda { PENDENTE, CONFIRMADA, CANCELADA }
     }
-  }
 }
 
-BoundedContext RelatorioContext {
-  type = GENERIC_SUBDOMAIN
-  domainVisionStatement = "Gera relatórios de vendas, ocupação e desempenho do cinema."
+BoundedContext RelatorioContext implements CoreCinema {
 
-  Aggregate Relatorio {
-    Entity Relatorio {
-      String id
-      Date periodoInicio
-      Date periodoFim
-      double faturamento
-      int ingressosVendidos
-      double ocupacaoMedia
+    Aggregate Relatorio {
+        Entity Relatorio {
+            aggregateRoot
+
+            -RelatorioId relatorioId
+            Date periodoInicio
+            Date periodoFim
+            double faturamento
+            int ingressosVendidos
+            double ocupacaoMedia
+
+            Repository RelatorioRepository {
+                void salvar(@Relatorio relatorio);
+                @Relatorio obterPorId(@RelatorioId relatorioId);
+            }
+        }
+
+        Service RelatorioService {
+            @Relatorio gerarRelatorioFinanceiro(Date inicio, Date fim);
+            @Relatorio gerarRelatorioDeOcupacao(Date inicio, Date fim);
+        }
+
+        ValueObject RelatorioId { int id }
     }
-  }
 }
 
-BoundedContext UsuarioContext {
-  type = GENERIC_SUBDOMAIN
-  domainVisionStatement = "Gerencia autenticação e dados de clientes e funcionários do cinema."
+BoundedContext UsuarioContext implements CoreCinema {
 
-  Aggregate Usuario {
-    Entity Cliente {
-      String id
-      String nome
-      String email
-    }
+    Aggregate Usuario {
+        Entity Cliente {
+            aggregateRoot
 
-    Entity Funcionario {
-      String id
-      String nome
-      String cargo // atendente, gerente
+            -ClienteId clienteId
+            String nome
+            String email
+
+            Repository ClienteRepository {
+                void salvar(@Cliente cliente);
+                @Cliente obterPorId(@ClienteId clienteId);
+            }
+        }
+
+        Entity Funcionario {
+            -FuncionarioId funcionarioId
+            String nome
+            Cargo cargo
+        }
+
+        enum Cargo { ATENDENTE, GERENTE }
+
+        ValueObject ClienteId { int id }
+        ValueObject FuncionarioId { int id }
     }
-  }
 }
+
