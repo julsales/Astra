@@ -1,0 +1,299 @@
+Domain Cinema {
+    Subdomain CoreCinema {
+        type = CORE_DOMAIN
+    }
+}
+
+ContextMap CinemaContextMap {
+    contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
+    contains PagamentoContext, UsuarioContext
+
+    // Relações principais (sempre por ID)
+    CompraContext -> SessaoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = SessaoContext }
+    CompraContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
+    CompraContext -> UsuarioContext { type = "Conformist", upstream = UsuarioContext }
+
+    SessaoContext -> FilmeContext { type = "Shared Kernel" }
+    SessaoContext -> ProgramacaoContext { type = "Conformist" }
+
+    BomboniereContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
+
+    RelatorioContext -> CompraContext { type = "Customer-Supplier", upstream = CompraContext }
+    RelatorioContext -> BomboniereContext { type = "Customer-Supplier", upstream = BomboniereContext }
+    RelatorioContext -> PagamentoContext { type = "Customer-Supplier", upstream = PagamentoContext }
+}
+
+BoundedContext CompraContext implements CoreCinema {
+
+    Aggregate Compra {
+        Entity Compra {
+            aggregateRoot
+
+            -CompraId compraId
+            -ClienteId clienteId
+            List<Ingresso> ingressos
+            -PagamentoId pagamentoId
+            StatusCompra status
+
+            Repository CompraRepository {
+                void salvar(@Compra compra);
+                @Compra obterPorId(@CompraId compraId);
+                List<@Compra> buscarPorCliente(@ClienteId clienteId);
+            }
+        }
+
+        Entity Ingresso {
+            -IngressoId ingressoId
+            -SessaoId sessaoId
+            -AssentoId assentoId
+            TipoIngresso tipo
+            StatusIngresso status
+            String qrCode
+        }
+
+        Service CompraService {
+            @Compra iniciarCompra(@ClienteId clienteId, List<@Ingresso> ingressos);
+            void confirmarCompra(@CompraId compraId, @PagamentoId pagamentoId);
+            void cancelarCompra(@CompraId compraId);
+        }
+
+        ValueObject CompraId { int id }
+        ValueObject ClienteId { int id }
+        ValueObject SessaoId { int id }
+        ValueObject PagamentoId { int id }
+        ValueObject IngressoId { int id }
+        ValueObject AssentoId { String valor }
+
+        enum TipoIngresso { INTEIRA, MEIA, PROMOCAO }
+        enum StatusIngresso { VALIDO, CANCELADO, UTILIZADO }
+        enum StatusCompra { PENDENTE, CONFIRMADA, CANCELADA }
+    }
+}
+
+BoundedContext SessaoContext implements CoreCinema {
+
+    Aggregate Sessao {
+        Entity Sessao {
+            aggregateRoot
+
+            -SessaoId sessaoId
+            -FilmeId filmeId
+            -SalaId salaId
+            Date horario
+            StatusSessao status
+            Map<@AssentoId, Boolean> mapaAssentosDisponiveis
+
+            Repository SessaoRepository {
+                void salvar(@Sessao sessao);
+                @Sessao obterPorId(@SessaoId sessaoId);
+                List<@Sessao> buscarPorFilme(@FilmeId filmeId);
+            }
+        }
+
+        ValueObject SessaoId { int id }
+        ValueObject FilmeId { int id }
+        ValueObject SalaId { int id }
+        ValueObject AssentoId { String valor }
+
+        enum StatusSessao { DISPONIVEL, ESGOTADA, CANCELADA }
+    }
+}
+
+BoundedContext FilmeContext implements CoreCinema {
+
+    Aggregate Filme {
+        Entity Filme {
+            aggregateRoot
+
+            -FilmeId filmeId
+            String titulo
+            String sinopse
+            String classificacaoEtaria
+            int duracao
+            StatusFilme status
+
+            Repository FilmeRepository {
+                void salvar(@Filme filme);
+                @Filme obterPorId(@FilmeId filmeId);
+                List<@Filme> listarFilmesEmCartaz();
+            }
+        }
+
+        ValueObject FilmeId { int id }
+        enum StatusFilme { EM_CARTAZ, EM_BREVE, RETIRADO }
+    }
+}
+
+BoundedContext ProgramacaoContext implements CoreCinema {
+
+    Aggregate Programacao {
+        Entity Programacao {
+            aggregateRoot
+
+            -ProgramacaoId programacaoId
+            Periodo periodo
+            List<@SessaoId> sessoes
+
+            Repository ProgramacaoRepository {
+                void salvar(@Programacao programacao);
+                @Programacao obterPorId(@ProgramacaoId programacaoId);
+                List<@Programacao> listarProgramacoes();
+            }
+        }
+
+        ValueObject ProgramacaoId { int id }
+        ValueObject SessaoId { int id }
+
+        ValueObject Periodo {
+            Date inicio
+            Date fim
+        }
+    }
+}
+
+BoundedContext PagamentoContext implements CoreCinema {
+
+    Aggregate Pagamento {
+        Entity Pagamento {
+            aggregateRoot
+
+            -PagamentoId pagamentoId
+            double valor
+            -MetodoPagamentoId metodoPagamentoId
+            Transacao transacao
+            StatusPagamento status
+            Date dataPagamento
+
+            Repository PagamentoRepository {
+                void salvar(@Pagamento pagamento);
+                @Pagamento obterPorId(@PagamentoId pagamentoId);
+                List<@Pagamento> buscarPorStatus(@StatusPagamento status);
+            }
+        }
+
+        Entity MetodoPagamento {
+            -MetodoPagamentoId metodoPagamentoId
+            String nome
+            TipoMetodo tipo
+            boolean ativo
+            Map<String, String> configuracoes
+        }
+
+        Service PagamentoService {
+            List<@MetodoPagamento> listarMetodosDisponiveis();
+            @Pagamento autorizarPagamento(@Pagamento pagamento);
+            void confirmarPagamento(@PagamentoId pagamentoId);
+            void cancelarPagamento(@PagamentoId pagamentoId);
+        }
+
+        ValueObject PagamentoId { int id }
+        ValueObject MetodoPagamentoId { int id }
+
+        ValueObject Transacao {
+            String codigoTransacao
+            Date data
+            String gateway
+            String respostaGateway
+        }
+
+        enum TipoMetodo { DIGITAL, FISICO }
+        enum StatusPagamento { PENDENTE, SUCESSO, FALHA, CANCELADO }
+    }
+}
+
+BoundedContext BomboniereContext implements CoreCinema {
+
+    Aggregate Bomboniere {
+        Entity Venda {
+            aggregateRoot
+
+            -VendaId vendaId
+            List<Produto> produtos
+            -PagamentoId pagamentoId
+            StatusVenda status
+
+            Repository VendaRepository {
+                void salvar(@Venda venda);
+                @Venda obterPorId(@VendaId vendaId);
+                List<@Venda> listarVendasPorStatus(@StatusVenda status);
+            }
+        }
+
+        Entity Produto {
+            -ProdutoId produtoId
+            String nome
+            double preco
+            int estoque
+        }
+
+        Service VendaService {
+            @Venda registrarVenda(@Venda venda);
+            void processarPagamento(@VendaId vendaId, @PagamentoId pagamentoId);
+            void cancelarVenda(@VendaId vendaId);
+        }
+
+        ValueObject VendaId { int id }
+        ValueObject ProdutoId { int id }
+        ValueObject PagamentoId { int id }
+
+        enum StatusVenda { PENDENTE, CONFIRMADA, CANCELADA }
+    }
+}
+
+BoundedContext RelatorioContext implements CoreCinema {
+
+    Aggregate Relatorio {
+        Entity Relatorio {
+            aggregateRoot
+
+            -RelatorioId relatorioId
+            Date periodoInicio
+            Date periodoFim
+            double faturamento
+            int ingressosVendidos
+            double ocupacaoMedia
+
+            Repository RelatorioRepository {
+                void salvar(@Relatorio relatorio);
+                @Relatorio obterPorId(@RelatorioId relatorioId);
+            }
+        }
+
+        Service RelatorioService {
+            @Relatorio gerarRelatorioFinanceiro(Date inicio, Date fim);
+            @Relatorio gerarRelatorioDeOcupacao(Date inicio, Date fim);
+        }
+
+        ValueObject RelatorioId { int id }
+    }
+}
+
+BoundedContext UsuarioContext implements CoreCinema {
+
+    Aggregate Usuario {
+        Entity Cliente {
+            aggregateRoot
+
+            -ClienteId clienteId
+            String nome
+            String email
+
+            Repository ClienteRepository {
+                void salvar(@Cliente cliente);
+                @Cliente obterPorId(@ClienteId clienteId);
+            }
+        }
+
+        Entity Funcionario {
+            -FuncionarioId funcionarioId
+            String nome
+            Cargo cargo
+        }
+
+        enum Cargo { ATENDENTE, GERENTE }
+
+        ValueObject ClienteId { int id }
+        ValueObject FuncionarioId { int id }
+    }
+}
+
