@@ -1,0 +1,195 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.register-box {
+  background: rgba(30, 20, 60, 0.6);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.register-box .logo-container {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.register-box .logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 8px;
+}
+
+.register-box .star-icon {
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.6));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.register-box .logo-text {
+  font-size: 38px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.register-box .logo-subtitle {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.register-box .welcome-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.register-box .welcome-text {
+  font-size: 26px;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.register-box .subtitle-text {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.register-box .form-group {
+  margin-bottom: 20px;
+}
+
+.register-box .form-group label {
+  display: block;
+  color: #FFFFFF;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.register-box .form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  color: #FFFFFF;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.register-box .form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.register-box .form-group input:focus {
+  outline: none;
+  border-color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.register-box .form-group input.error {
+  border-color: #ef4444;
+}
+
+.register-box .error-message {
+  display: block;
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.register-box .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.register-button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  letter-spacing: 0.5px;
+}
+
+.register-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #9D6FFF 0%, #8B5CF6 100%);
+}
+
+.register-button:active {
+  transform: translateY(0);
+}
+
+.back-button {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  letter-spacing: 0.5px;
+}
+
+.back-button:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.6);
+  color: #FFFFFF;
+}
+
+.register-box .demo-note {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  margin-top: 20px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .register-box .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .register-box {
+    padding: 30px 25px;
+  }
+
+  .register-box .logo-text {
+    font-size: 32px;
+  }
+
+  .register-box .welcome-text {
+    font-size: 22px;
+  }
+}
