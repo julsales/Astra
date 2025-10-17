@@ -3,6 +3,7 @@ package com.astra.service;
 import com.astra.model.Cliente;
 import com.astra.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +14,9 @@ public class ClienteService {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<Cliente> listarTodos() {
         return clienteRepository.findAll();
@@ -27,6 +31,10 @@ public class ClienteService {
     }
 
     public Cliente salvar(Cliente cliente) {
+        // Criptografa a senha antes de salvar usando BCrypt
+        if (cliente.getSenha() != null && !cliente.getSenha().startsWith("$2a$")) {
+            cliente.setSenha(passwordEncoder.encode(cliente.getSenha()));
+        }
         return clienteRepository.save(cliente);
     }
 

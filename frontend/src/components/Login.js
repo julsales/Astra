@@ -122,7 +122,7 @@ const Login = ({ onRegisterClick }) => {
         </div>
 
         <div className="footer-note">
-          Dados simulados para demonstração - Sem backend real
+          🚀 Backend: Spring Boot + JPA/Hibernate + Spring Security
         </div>
       </div>
     </div>
