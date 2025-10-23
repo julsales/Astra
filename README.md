@@ -15,7 +15,7 @@ O Astra é um sistema de gestão completo para cinemas, integrando a compra de i
 
 ## 🔗 Links Importantes
 
-* [Descrição e requisitos](https://docs.google.com/document/d/1IgGX6xtonhrJDd9mZ8fi-whMaT7nEp344ukXF1sbGFo/edit?tab=t.0)
+* [Descrição do Domínio](https://docs.google.com/document/d/1_o6GAWY7OvhhR_YJnx4K9i8jbMJ_n436_AnnscwNL5o/edit?tab=t.0)
 * [Mapa de histórias](https://docs.google.com/spreadsheets/d/1WRr6s1s3xA9KvXNEO1kmZ--eTIqEMnCFXpGGjTszHWc/edit?gid=1767904539#gid=1767904539)
 * [Apresentação no canvas](https://www.canva.com/design/DAG2SMUE2Xo/xg1hjPB_XHOw6zBcu73L3Q/edit)
 * [Cenários de testes BDD](https://docs.google.com/document/d/18jGI9RaSSxZy_uKOETACXw2tJWp0BffRo4_Bta-eQLE/edit?tab=t.0#heading=h.35kthn3hhsl8)
