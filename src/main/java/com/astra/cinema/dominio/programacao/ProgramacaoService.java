@@ -2,13 +2,17 @@ package com.astra.cinema.dominio.programacao;
 
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
-import com.astra.cinema.dominio.sessao.StatusSessao;
+import com.astra.cinema.aplicacao.programacao.CriarProgramacaoUseCase;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Service de Programação - Fachada para manter compatibilidade com testes
+ * Delega para os Use Cases da camada de aplicação
+ */
 public class ProgramacaoService {
     private final ProgramacaoRepositorio programacaoRepositorio;
-    private final SessaoRepositorio sessaoRepositorio;
+    private final CriarProgramacaoUseCase criarProgramacaoUseCase;
 
     public ProgramacaoService(ProgramacaoRepositorio programacaoRepositorio, 
                              SessaoRepositorio sessaoRepositorio) {
@@ -20,30 +24,11 @@ public class ProgramacaoService {
         }
         
         this.programacaoRepositorio = programacaoRepositorio;
-        this.sessaoRepositorio = sessaoRepositorio;
+        this.criarProgramacaoUseCase = new CriarProgramacaoUseCase(programacaoRepositorio, sessaoRepositorio);
     }
 
     public Programacao criarProgramacao(Date periodoInicio, Date periodoFim, List<SessaoId> sessoes) {
-        if (periodoInicio == null || periodoFim == null) {
-            throw new IllegalArgumentException("O período não pode ser nulo");
-        }
-        if (sessoes == null || sessoes.isEmpty()) {
-            throw new IllegalArgumentException("A programação deve ter pelo menos uma sessão");
-        }
-        
-        // Valida se todas as sessões estão disponíveis
-        for (SessaoId sessaoId : sessoes) {
-            var sessao = sessaoRepositorio.obterPorId(sessaoId);
-            if (sessao.getStatus() != StatusSessao.DISPONIVEL) {
-                throw new IllegalStateException("Apenas sessões disponíveis podem ser adicionadas à programação");
-            }
-        }
-        
-        var programacaoId = new ProgramacaoId(System.identityHashCode(sessoes)); // Simplificado
-        var programacao = new Programacao(programacaoId, periodoInicio, periodoFim, sessoes);
-        programacaoRepositorio.salvar(programacao);
-        
-        return programacao;
+        return criarProgramacaoUseCase.executar(periodoInicio, periodoFim, sessoes);
     }
 
     public void salvar(Programacao programacao) {

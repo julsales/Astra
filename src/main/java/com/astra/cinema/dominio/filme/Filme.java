@@ -61,6 +61,10 @@ public class Filme implements Cloneable {
         this.status = StatusFilme.RETIRADO;
     }
 
+    public void retirarDeCartaz() {
+        this.remover();
+    }
+
     @Override
     public Filme clone() {
         try {

@@ -2,13 +2,17 @@ package com.astra.cinema.dominio.sessao;
 
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
-import com.astra.cinema.dominio.filme.StatusFilme;
+import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import java.util.Date;
 import java.util.Map;
 
+/**
+ * Service de Sessão - Fachada para manter compatibilidade com testes
+ * Delega para os Use Cases da camada de aplicação
+ */
 public class SessaoService {
     private final SessaoRepositorio sessaoRepositorio;
-    private final FilmeRepositorio filmeRepositorio;
+    private final CriarSessaoUseCase criarSessaoUseCase;
 
     public SessaoService(SessaoRepositorio sessaoRepositorio, FilmeRepositorio filmeRepositorio) {
         if (sessaoRepositorio == null) {
@@ -19,24 +23,11 @@ public class SessaoService {
         }
         
         this.sessaoRepositorio = sessaoRepositorio;
-        this.filmeRepositorio = filmeRepositorio;
+        this.criarSessaoUseCase = new CriarSessaoUseCase(sessaoRepositorio, filmeRepositorio);
     }
 
     public Sessao criarSessao(FilmeId filmeId, Date horario, Map<AssentoId, Boolean> assentos) {
-        if (filmeId == null) {
-            throw new IllegalArgumentException("O id do filme não pode ser nulo");
-        }
-        
-        var filme = filmeRepositorio.obterPorId(filmeId);
-        if (filme.getStatus() != StatusFilme.EM_CARTAZ) {
-            throw new IllegalStateException("O filme não está em cartaz");
-        }
-        
-        var sessaoId = new SessaoId(System.identityHashCode(filmeId)); // Simplificado
-        var sessao = new Sessao(sessaoId, filmeId, horario, StatusSessao.DISPONIVEL, assentos);
-        sessaoRepositorio.salvar(sessao);
-        
-        return sessao;
+        return criarSessaoUseCase.executar(filmeId, horario, assentos);
     }
 
     public void salvar(Sessao sessao) {

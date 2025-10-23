@@ -2,11 +2,15 @@ package com.astra.cinema.dominio.filme;
 
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
-import java.util.List;
+import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
 
+/**
+ * Service de Filme - Fachada para manter compatibilidade com testes
+ * Delega para os Use Cases da camada de aplicação
+ */
 public class FilmeService {
     private final FilmeRepositorio filmeRepositorio;
-    private final SessaoRepositorio sessaoRepositorio;
+    private final RemoverFilmeUseCase removerFilmeUseCase;
 
     public FilmeService(FilmeRepositorio filmeRepositorio, SessaoRepositorio sessaoRepositorio) {
         if (filmeRepositorio == null) {
@@ -17,22 +21,11 @@ public class FilmeService {
         }
         
         this.filmeRepositorio = filmeRepositorio;
-        this.sessaoRepositorio = sessaoRepositorio;
+        this.removerFilmeUseCase = new RemoverFilmeUseCase(filmeRepositorio, sessaoRepositorio);
     }
 
     public void removerFilme(FilmeId filmeId) {
-        if (filmeId == null) {
-            throw new IllegalArgumentException("O id do filme não pode ser nulo");
-        }
-        
-        var sessoes = sessaoRepositorio.buscarPorFilme(filmeId);
-        if (!sessoes.isEmpty()) {
-            throw new IllegalStateException("Não é possível remover o filme pois há sessões ativas");
-        }
-        
-        var filme = filmeRepositorio.obterPorId(filmeId);
-        filme.remover();
-        filmeRepositorio.salvar(filme);
+        removerFilmeUseCase.executar(filmeId);
     }
 
     public void salvar(Filme filme) {

@@ -2,6 +2,9 @@ package com.astra.cinema.dominio.pagamento;
 
 import com.astra.cinema.dominio.comum.PagamentoId;
 
+/**
+ * Service de Pagamento - Mantém métodos essenciais para testes
+ */
 public class PagamentoService {
     private final PagamentoRepositorio pagamentoRepositorio;
 
