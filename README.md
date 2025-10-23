@@ -8,9 +8,10 @@ O Astra é um sistema de gestão completo para cinemas, integrando a compra de i
 
 ## ✨ Features
 
-* [Funcionalidade 1]
-* [Funcionalidade 2]
-* [Funcionalidade 3]
+* Gerenciar filmes, sessões, funcionários e bomboniere
+* Ver sessão, comprar ingresso, comprar na bomboniere, verificar ingresso
+* Operar a bomboniere, validar ingresso
+* Ver relatórios
 
 ## 🔗 Links Importantes
 
