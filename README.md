@@ -8,7 +8,7 @@ O Astra é um sistema de gestão completo para cinemas, integrando a compra de i
 
 ## 🗺️ Mapa de histórias
 
-![Screenshot do astra](entreg%C3%A1veis/cml/Astra.cml)
+![Screenshot do Astra](entreg%C3%A1veis/mapa%20de%20hist%C3%B3rias/Astra%20-%20Mapa%20de%20hist%C3%B3rias.jpeg)
 
 ## ✨ Features
 
