@@ -4,25 +4,6 @@ Domain Cinema {
     }
 }
 
-ContextMap CinemaContextMap {
-    contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
-    contains PagamentoContext, UsuarioContext
-
-    // Relações principais (sempre por ID)
-    CompraContext -> SessaoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = SessaoContext }
-    CompraContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
-    CompraContext -> UsuarioContext { type = "Conformist", upstream = UsuarioContext }
-
-    SessaoContext -> FilmeContext { type = "Shared Kernel" }
-    SessaoContext -> ProgramacaoContext { type = "Conformist" }
-
-    BomboniereContext -> PagamentoContext { implementationTechnology = "REST API", type = "Upstream-Downstream", upstream = PagamentoContext }
-
-    RelatorioContext -> CompraContext { type = "Customer-Supplier", upstream = CompraContext }
-    RelatorioContext -> BomboniereContext { type = "Customer-Supplier", upstream = BomboniereContext }
-    RelatorioContext -> PagamentoContext { type = "Customer-Supplier", upstream = PagamentoContext }
-}
-
 BoundedContext CompraContext implements CoreCinema {
 
     Aggregate Compra {
@@ -31,9 +12,9 @@ BoundedContext CompraContext implements CoreCinema {
 
             -CompraId compraId
             -ClienteId clienteId
-            List<Ingresso> ingressos
+            - List<Ingresso> ingressos
             -PagamentoId pagamentoId
-            StatusCompra status
+            - StatusCompra status
 
             Repository CompraRepository {
                 void salvar(@Compra compra);
@@ -46,8 +27,8 @@ BoundedContext CompraContext implements CoreCinema {
             -IngressoId ingressoId
             -SessaoId sessaoId
             -AssentoId assentoId
-            TipoIngresso tipo
-            StatusIngresso status
+            - TipoIngresso tipo
+            - StatusIngresso status
             String qrCode
         }
 
@@ -58,9 +39,6 @@ BoundedContext CompraContext implements CoreCinema {
         }
 
         ValueObject CompraId { int id }
-        ValueObject ClienteId { int id }
-        ValueObject SessaoId { int id }
-        ValueObject PagamentoId { int id }
         ValueObject IngressoId { int id }
         ValueObject AssentoId { String valor }
 
@@ -80,8 +58,7 @@ BoundedContext SessaoContext implements CoreCinema {
             -FilmeId filmeId
             -SalaId salaId
             Date horario
-            StatusSessao status
-            Map<@AssentoId, Boolean> mapaAssentosDisponiveis
+            - StatusSessao status
 
             Repository SessaoRepository {
                 void salvar(@Sessao sessao);
@@ -91,9 +68,7 @@ BoundedContext SessaoContext implements CoreCinema {
         }
 
         ValueObject SessaoId { int id }
-        ValueObject FilmeId { int id }
         ValueObject SalaId { int id }
-        ValueObject AssentoId { String valor }
 
         enum StatusSessao { DISPONIVEL, ESGOTADA, CANCELADA }
     }
@@ -110,7 +85,7 @@ BoundedContext FilmeContext implements CoreCinema {
             String sinopse
             String classificacaoEtaria
             int duracao
-            StatusFilme status
+            - StatusFilme status
 
             Repository FilmeRepository {
                 void salvar(@Filme filme);
@@ -131,8 +106,8 @@ BoundedContext ProgramacaoContext implements CoreCinema {
             aggregateRoot
 
             -ProgramacaoId programacaoId
-            Periodo periodo
-            List<@SessaoId> sessoes
+            - Periodo periodo
+            - List<SessaoId> sessoes
 
             Repository ProgramacaoRepository {
                 void salvar(@Programacao programacao);
@@ -142,7 +117,6 @@ BoundedContext ProgramacaoContext implements CoreCinema {
         }
 
         ValueObject ProgramacaoId { int id }
-        ValueObject SessaoId { int id }
 
         ValueObject Periodo {
             Date inicio
@@ -154,38 +128,7 @@ BoundedContext ProgramacaoContext implements CoreCinema {
 BoundedContext PagamentoContext implements CoreCinema {
 
     Aggregate Pagamento {
-        Entity Pagamento {
-            aggregateRoot
-
-            -PagamentoId pagamentoId
-            double valor
-            -MetodoPagamentoId metodoPagamentoId
-            Transacao transacao
-            StatusPagamento status
-            Date dataPagamento
-
-            Repository PagamentoRepository {
-                void salvar(@Pagamento pagamento);
-                @Pagamento obterPorId(@PagamentoId pagamentoId);
-                List<@Pagamento> buscarPorStatus(@StatusPagamento status);
-            }
-        }
-
-        Entity MetodoPagamento {
-            -MetodoPagamentoId metodoPagamentoId
-            String nome
-            TipoMetodo tipo
-            boolean ativo
-            Map<String, String> configuracoes
-        }
-
-        Service PagamentoService {
-            List<@MetodoPagamento> listarMetodosDisponiveis();
-            @Pagamento autorizarPagamento(@Pagamento pagamento);
-            void confirmarPagamento(@PagamentoId pagamentoId);
-            void cancelarPagamento(@PagamentoId pagamentoId);
-        }
-
+        
         ValueObject PagamentoId { int id }
         ValueObject MetodoPagamentoId { int id }
 
@@ -198,6 +141,37 @@ BoundedContext PagamentoContext implements CoreCinema {
 
         enum TipoMetodo { DIGITAL, FISICO }
         enum StatusPagamento { PENDENTE, SUCESSO, FALHA, CANCELADO }
+        
+        Entity Pagamento {
+            aggregateRoot
+
+            -PagamentoId pagamentoId
+            double valor
+            -MetodoPagamentoId metodoPagamentoId
+            - Transacao transacao
+            - StatusPagamento status
+            Date dataPagamento
+
+            Repository PagamentoRepository {
+                void salvar(@Pagamento pagamento);
+                @Pagamento obterPorId(@PagamentoId pagamentoId);
+                List<@Pagamento> buscarPorStatus(@StatusPagamento status);
+            }
+        }
+
+        Entity MetodoPagamento {
+            -MetodoPagamentoId metodoPagamentoId
+            String nome
+            - TipoMetodo tipo
+            boolean ativo
+        }
+
+        Service PagamentoService {
+            List<@MetodoPagamento> listarMetodosDisponiveis();
+            @Pagamento autorizarPagamento(@Pagamento pagamento);
+            void confirmarPagamento(@PagamentoId pagamentoId);
+            void cancelarPagamento(@PagamentoId pagamentoId);
+        }
     }
 }
 
@@ -208,9 +182,9 @@ BoundedContext BomboniereContext implements CoreCinema {
             aggregateRoot
 
             -VendaId vendaId
-            List<Produto> produtos
+            - List<Produto> produtos
             -PagamentoId pagamentoId
-            StatusVenda status
+            - StatusVenda status
 
             Repository VendaRepository {
                 void salvar(@Venda venda);
@@ -234,7 +208,6 @@ BoundedContext BomboniereContext implements CoreCinema {
 
         ValueObject VendaId { int id }
         ValueObject ProdutoId { int id }
-        ValueObject PagamentoId { int id }
 
         enum StatusVenda { PENDENTE, CONFIRMADA, CANCELADA }
     }
@@ -276,7 +249,7 @@ BoundedContext UsuarioContext implements CoreCinema {
 
             -ClienteId clienteId
             String nome
-            String email
+            String ^email
 
             Repository ClienteRepository {
                 void salvar(@Cliente cliente);
@@ -287,7 +260,7 @@ BoundedContext UsuarioContext implements CoreCinema {
         Entity Funcionario {
             -FuncionarioId funcionarioId
             String nome
-            Cargo cargo
+            - Cargo cargo
         }
 
         enum Cargo { ATENDENTE, GERENTE }
@@ -297,3 +270,30 @@ BoundedContext UsuarioContext implements CoreCinema {
     }
 }
 
+ContextMap CinemaContextMap {
+    contains CompraContext, SessaoContext, FilmeContext, BomboniereContext, RelatorioContext, ProgramacaoContext
+    contains PagamentoContext, UsuarioContext
+
+    // Relações principais (sempre por ID)
+    SessaoContext [U,OHS,PL]->[D,CF] CompraContext {
+        implementationTechnology = "REST API"
+    }
+    
+    PagamentoContext [U,OHS,PL]->[D,CF] CompraContext {
+        implementationTechnology = "REST API"
+    }
+    
+    UsuarioContext [U,OHS,PL]->[D,CF] CompraContext
+
+    SessaoContext [SK]<->[SK] FilmeContext
+    
+    ProgramacaoContext [D,CF]<-[U,OHS,PL] SessaoContext
+
+    PagamentoContext [U,OHS,PL]->[D,CF] BomboniereContext {
+        implementationTechnology = "REST API"
+    }
+
+    CompraContext [U,S]->[D,C] RelatorioContext
+    BomboniereContext [U,S]->[D,C] RelatorioContext
+    PagamentoContext [U,S]->[D,C] RelatorioContext
+}
