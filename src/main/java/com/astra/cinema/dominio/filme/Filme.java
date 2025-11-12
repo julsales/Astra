@@ -12,9 +12,10 @@ public class Filme implements Cloneable {
 
     public Filme(FilmeId filmeId, String titulo, String sinopse, String classificacaoEtaria,
                 int duracao, StatusFilme status) {
-        if (filmeId == null) {
-            throw new IllegalArgumentException("O id do filme não pode ser nulo");
-        }
+        // NOTA: filmeId pode ser null durante a criação de um novo filme
+        // O ID será gerado automaticamente pelo banco de dados (IDENTITY)
+        // e preenchido após a persistência
+        
         if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("O título não pode ser nulo ou vazio");
         }

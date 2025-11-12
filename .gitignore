@@ -79,3 +79,9 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 node/
+
+### H2 Database Files ###
+data/
+*.db
+*.mv.db
+*.trace.db

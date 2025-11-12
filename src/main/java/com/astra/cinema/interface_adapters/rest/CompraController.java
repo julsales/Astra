@@ -9,14 +9,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/*
+ * Controller desabilitado temporariamente - funcionalidade não implementada nesta entrega
+ * Para habilitar, remova este comentário e o comentário da anotação @RestController abaixo
+ */
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Controller REST para operações de Compra
  */
-@RestController
-@RequestMapping("/api/compras")
+// @RestController -- DESABILITADO TEMPORARIAMENTE
+// @RequestMapping("/api/compras")
 public class CompraController {
 
     private final IniciarCompraUseCase iniciarCompraUseCase;

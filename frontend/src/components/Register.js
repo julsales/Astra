@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import './Register.css';
 
 const Register = ({ onBackToLogin }) => {
@@ -86,15 +86,15 @@ const Register = ({ onBackToLogin }) => {
       });
 
       if (response.ok) {
-        alert('✅ Cadastro realizado com sucesso!\nFaça login para continuar.');
+        alert(' Cadastro realizado com sucesso!\nFaça login para continuar.');
         onBackToLogin();
       } else {
         const data = await response.json();
-        alert(`❌ Erro: ${data.message || 'Não foi possível realizar o cadastro'}`);
+        alert(` Erro: ${data.message || 'Não foi possível realizar o cadastro'}`);
       }
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
-      alert('❌ Erro ao conectar com o servidor.');
+      alert(' Erro ao conectar com o servidor.');
     }
   };
 
@@ -233,7 +233,7 @@ const Register = ({ onBackToLogin }) => {
         </form>
 
         <div className="demo-note">
-          💡 Seus dados serão armazenados com segurança
+          Seus dados serão armazenados com segurança
         </div>
       </div>
     </div>

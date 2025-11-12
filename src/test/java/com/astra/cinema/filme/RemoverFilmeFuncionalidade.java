@@ -42,12 +42,17 @@ public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
         var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "12", 150, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
-        // Cria uma sessão futura para o filme
+        // Cria uma sessão FUTURA para o filme (amanhã)
         var sessaoId = new SessaoId(1);
         Map<AssentoId, Boolean> assentos = new HashMap<>();
         assentos.put(new AssentoId("A1"), true);
         
-        var sessao = new Sessao(sessaoId, filmeId, new Date(), StatusSessao.DISPONIVEL, assentos);
+        // Data futura: 1 dia à frente
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Date dataFutura = calendar.getTime();
+        
+        var sessao = new Sessao(sessaoId, filmeId, dataFutura, StatusSessao.DISPONIVEL, assentos);
         repositorio.salvar(sessao);
     }
 

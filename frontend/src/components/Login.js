@@ -1,38 +1,43 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import './Login.css';
 
-const Login = ({ onRegisterClick }) => {
+const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErro('');
+    setCarregando(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
+      // AUTENTICAÇÃO REAL COM BACKEND - SEM MOCK!
+      const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
-          password,
-          userType: 'cliente',
-        }),
+          email: email,
+          senha: password
+        })
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        alert(`✅ ${data.message}\nBem-vindo como ${data.userType}!`);
-        console.log('Login bem-sucedido:', data);
-      } else {
-        alert('❌ Falha no login. Tente novamente.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        setErro(errorData.mensagem || 'Credenciais inválidas');
+        setCarregando(false);
+        return;
       }
+
+      const usuario = await response.json();
+      onLogin(usuario);
     } catch (error) {
       console.error('Erro ao fazer login:', error);
-      alert('❌ Erro ao conectar com o servidor.');
+      setErro('Erro ao conectar com o servidor. Verifique se o backend está rodando.');
+      setCarregando(false);
     }
   };
 
@@ -41,19 +46,8 @@ const Login = ({ onRegisterClick }) => {
       <div className="login-box">
         <div className="logo-container">
           <div className="logo">
-            <svg className="star-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="starGradient">
-                  <stop offset="0%" stopColor="#FFA500" />
-                  <stop offset="100%" stopColor="#FF8C00" />
-                </radialGradient>
-              </defs>
-              <polygon points="50,15 61,38 85,41 67,58 72,82 50,70 28,82 33,58 15,41 39,38" fill="url(#starGradient)" />
-              <circle cx="50" cy="50" r="12" fill="#FFD700" />
-            </svg>
-            <span className="logo-text">ASTRA</span>
+            <img src="/logo.png" alt="Astra Cinemas" className="logo-image" />
           </div>
-          <div className="logo-subtitle">CINEMAS</div>
         </div>
 
         <div className="welcome-section">
@@ -95,34 +89,29 @@ const Login = ({ onRegisterClick }) => {
             />
           </div>
 
-          <div className="remember-me">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <label htmlFor="rememberMe">Lembrar-me</label>
+          {erro && (
+            <div className="error-message">
+              {erro}
+            </div>
+          )}
+
+          <div className="demo-credentials">
+            <p><strong>Credenciais Demo:</strong></p>
+            <p>Email: admin@astra.com</p>
+            <p>Senha: demo123</p>
           </div>
 
-          <button type="submit" className="login-button">
-            Entrar
+          <button type="submit" className="login-button" disabled={carregando}>
+            {carregando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-        <div className="register-link">
-          Não tem uma conta?{' '}
-          <button onClick={onRegisterClick} className="link-button">
-            Cadastre-se
-          </button>
-        </div>
-
         <div className="demo-note">
-          💡 Protótipo de demonstração - Astra Cinemas
+          Protótipo de demonstração - Astra Cinemas
         </div>
 
         <div className="footer-note">
-          🚀 Backend: Spring Boot + JPA/Hibernate + Spring Security
+          Backend: Spring Boot + JPA/Hibernate + Spring Security
         </div>
       </div>
     </div>

@@ -1,20 +1,39 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import './App.css';
 import Login from './components/Login';
-import Register from './components/Register';
+import AdminPanel from './components/admin/AdminPanel';
 import Stars from './components/Stars';
+import CosmicNebula from './components/CosmicNebula';
 
 function App() {
-  const [showRegister, setShowRegister] = useState(false);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
 
+  const handleLogin = (usuario) => {
+    setUsuarioLogado(usuario);
+  };
+
+  const handleLogout = () => {
+    setUsuarioLogado(null);
+  };
+
+  // Se usuário está logado, mostra o Painel Administrativo
+  if (usuarioLogado) {
+    return (
+      <div className="App">
+        <CosmicNebula />
+        <div className="diamond-star"></div>
+        <AdminPanel usuario={usuarioLogado} onLogout={handleLogout} />
+      </div>
+    );
+  }
+
+  // Se não está logado, mostra Login
   return (
     <div className="App">
       <Stars />
-      {showRegister ? (
-        <Register onBackToLogin={() => setShowRegister(false)} />
-      ) : (
-        <Login onRegisterClick={() => setShowRegister(true)} />
-      )}
+      <CosmicNebula />
+      <div className="diamond-star"></div>
+      <Login onLogin={handleLogin} />
     </div>
   );
 }

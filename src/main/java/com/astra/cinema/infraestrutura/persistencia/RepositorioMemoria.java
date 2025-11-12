@@ -50,9 +50,27 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
 
     // SessaoRepositorio
     @Override
-    public void salvar(Sessao sessao) {
+    public Sessao salvar(Sessao sessao) {
         if (sessao == null) throw new IllegalArgumentException("A sessão não pode ser nula");
-        sessoes.put(sessao.getSessaoId(), sessao);
+        
+        // Se a sessão não tem ID, gera um novo (simulando auto-increment)
+        Sessao sessaoSalvar = sessao;
+        if (sessao.getSessaoId() == null) {
+            int novoId = sessoes.keySet().stream()
+                    .mapToInt(SessaoId::getId)
+                    .max()
+                    .orElse(0) + 1;
+            sessaoSalvar = new Sessao(
+                new SessaoId(novoId),
+                sessao.getFilmeId(),
+                sessao.getHorario(),
+                sessao.getStatus(),
+                sessao.getMapaAssentosDisponiveis()
+            );
+        }
+        
+        sessoes.put(sessaoSalvar.getSessaoId(), sessaoSalvar);
+        return sessaoSalvar;
     }
 
     @Override
@@ -73,9 +91,28 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
 
     // FilmeRepositorio
     @Override
-    public void salvar(Filme filme) {
+    public Filme salvar(Filme filme) {
         if (filme == null) throw new IllegalArgumentException("O filme não pode ser nulo");
-        filmes.put(filme.getFilmeId(), filme);
+        
+        // Se o filme não tem ID, gera um novo (simulando auto-increment)
+        Filme filmeSalvar = filme;
+        if (filme.getFilmeId() == null) {
+            int novoId = filmes.keySet().stream()
+                    .mapToInt(FilmeId::getId)
+                    .max()
+                    .orElse(0) + 1;
+            filmeSalvar = new Filme(
+                new FilmeId(novoId),
+                filme.getTitulo(),
+                filme.getSinopse(),
+                filme.getClassificacaoEtaria(),
+                filme.getDuracao(),
+                filme.getStatus()
+            );
+        }
+        
+        filmes.put(filmeSalvar.getFilmeId(), filmeSalvar);
+        return filmeSalvar;
     }
 
     @Override
@@ -153,6 +190,13 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
         return Optional.ofNullable(produtos.get(produtoId))
                 .map(Produto::clone)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado"));
+    }
+
+    @Override
+    public List<Produto> listarTodos() {
+        return produtos.values().stream()
+                .map(Produto::clone)
+                .collect(Collectors.toList());
     }
 
     // ClienteRepositorio

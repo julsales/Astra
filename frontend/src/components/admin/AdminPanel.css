@@ -1,0 +1,307 @@
+/* ===== ADMIN PANEL - LAYOUT PRINCIPAL ===== */
+
+.admin-panel {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #1a0b2e 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Partículas de fundo animadas */
+.admin-panel::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, rgba(139, 92, 246, 0.3), transparent),
+    radial-gradient(2px 2px at 60% 70%, rgba(255, 165, 0, 0.2), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200px 200px, 300px 300px, 150px 150px;
+  animation: particleFloat 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes particleFloat {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 200px 200px, -300px 300px, 150px -150px; }
+}
+
+/* ===== HEADER ===== */
+.admin-header {
+  position: relative;
+  z-index: 10;
+  background: rgba(30, 20, 60, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo-admin {
+  display: flex;
+  align-items: center;
+}
+
+.logo-header-image {
+  height: 140px;
+  width: auto;
+  filter: drop-shadow(0 0 15px rgba(123, 159, 255, 0.7)) 
+          drop-shadow(0 0 30px rgba(155, 143, 255, 0.5));
+  transition: all 0.3s ease;
+}
+
+.logo-header-image:hover {
+  filter: drop-shadow(0 0 25px rgba(123, 159, 255, 1)) 
+          drop-shadow(0 0 50px rgba(155, 143, 255, 0.8));
+  transform: scale(1.05);
+}
+
+.admin-badge {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #5B5A8C 0%, #7B9FFF 100%);
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(123, 159, 255, 0.4);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 20px;
+}
+
+.user-icon {
+  font-size: 18px;
+}
+
+.user-name {
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.logout-btn-header {
+  padding: 8px 16px;
+  background: rgba(255, 59, 48, 0.15);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  border-radius: 20px;
+  color: #FF6B6B;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-btn-header:hover {
+  background: rgba(255, 59, 48, 0.25);
+  border-color: #FF6B6B;
+  transform: translateY(-2px);
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar-container {
+  position: relative;
+  z-index: 9;
+  height: 3px;
+  background: rgba(139, 92, 246, 0.2);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, 
+    #8B5CF6 0%, 
+    #FFA500 50%, 
+    #8B5CF6 100%
+  );
+  background-size: 200% 100%;
+  animation: progressSlide 3s linear infinite;
+}
+
+@keyframes progressSlide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== CONTENT WRAPPER ===== */
+.admin-content-wrapper {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  padding: 0;
+  min-height: 0;
+}
+
+/* ===== NAVIGATION MENU ===== */
+.admin-nav {
+  width: 200px;
+  background: rgba(30, 20, 60, 0.5);
+  backdrop-filter: blur(15px);
+  border-right: 1px solid rgba(139, 92, 246, 0.2);
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: white;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  border-color: #8B5CF6;
+  color: white;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 20px;
+}
+
+.nav-label {
+  flex: 1;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.admin-main-content {
+  flex: 1;
+  padding: 30px 40px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.admin-main-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.admin-main-content::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.admin-main-content::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 5px;
+}
+
+.admin-main-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* ===== FOOTER ===== */
+.admin-footer {
+  position: relative;
+  z-index: 10;
+  background: rgba(30, 20, 60, 0.7);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(139, 92, 246, 0.2);
+  padding: 15px 40px;
+  text-align: center;
+}
+
+.admin-footer p {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .admin-header {
+    padding: 12px 20px;
+  }
+
+  .admin-nav {
+    width: 70px;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+  }
+
+  .admin-main-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-left {
+    gap: 10px;
+  }
+
+  .logo-text-header {
+    font-size: 18px;
+  }
+
+  .admin-badge {
+    display: none;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .admin-nav {
+    width: 60px;
+    padding: 15px 5px;
+  }
+
+  .admin-main-content {
+    padding: 15px;
+  }
+}

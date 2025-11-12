@@ -14,9 +14,10 @@ public class Sessao implements Cloneable {
 
     public Sessao(SessaoId sessaoId, FilmeId filmeId, Date horario, StatusSessao status,
                   Map<AssentoId, Boolean> mapaAssentosDisponiveis) {
-        if (sessaoId == null) {
-            throw new IllegalArgumentException("O id da sessão não pode ser nulo");
-        }
+        // NOTA: sessaoId pode ser null durante a criação de uma nova sessão
+        // O ID será gerado automaticamente pelo banco de dados (IDENTITY)
+        // e preenchido após a persistência
+        
         if (filmeId == null) {
             throw new IllegalArgumentException("O id do filme não pode ser nulo");
         }
