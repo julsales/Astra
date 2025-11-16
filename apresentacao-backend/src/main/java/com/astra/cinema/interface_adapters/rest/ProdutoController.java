@@ -50,7 +50,7 @@ public class ProdutoController {
     @GetMapping
     public ResponseEntity<List<ProdutoDTO>> listarTodos() {
         try {
-            List<Produto> produtos = produtoRepositorio.listarTodos();
+            List<Produto> produtos = produtoRepositorio.listarProdutos();
             List<ProdutoDTO> produtosDTO = produtos.stream()
                     .map(this::converterParaDTO)
                     .toList();

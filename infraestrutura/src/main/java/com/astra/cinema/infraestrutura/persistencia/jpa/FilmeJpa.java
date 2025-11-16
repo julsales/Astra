@@ -138,4 +138,11 @@ class FilmeRepositorioJpaImpl implements FilmeRepositorio {
                 .map(mapeador::mapearParaFilme)
                 .toList();
     }
+
+    @Override
+    public List<Filme> listarTodos() {
+        return repository.findAll().stream()
+                .map(mapeador::mapearParaFilme)
+                .toList();
+    }
 }

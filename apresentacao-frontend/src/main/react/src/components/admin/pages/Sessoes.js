@@ -1,40 +1,96 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
 
+const statusOptions = [
+  { label: 'Todos os status', value: 'TODOS' },
+  { label: 'Disponíveis', value: 'DISPONIVEL' },
+  { label: 'Esgotadas', value: 'ESGOTADA' },
+  { label: 'Canceladas', value: 'CANCELADA' }
+];
+
+const estrategiasRemarcacao = [
+  { label: 'Remarcar todos os ingressos', value: 'MASSA' },
+  { label: 'Selecionar assentos', value: 'INDIVIDUAL' }
+];
+
 const Sessoes = ({ usuario }) => {
+  const cargoUsuario = useMemo(() => (
+    usuario?.cargo ||
+    (usuario?.tipo === 'ADMIN' ? 'GERENTE' : 'ATENDENTE') ||
+    'GERENTE'
+  ).toUpperCase(), [usuario]);
+
+  const getFuncionarioPayload = () => ({
+    nome: usuario?.nome || 'Administrador',
+    cargo: cargoUsuario
+  });
+
   const [sessoes, setSessoes] = useState([]);
   const [filmes, setFilmes] = useState([]);
+  const [indicadores, setIndicadores] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showRemarcarModal, setShowRemarcarModal] = useState(false);
+  const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
   const [editando, setEditando] = useState(null);
   const [formData, setFormData] = useState({
     filmeId: '',
     horario: '',
-    sala: '1'
+    sala: 'Sala 1',
+    capacidadeSala: 100
+  });
+  const [remarcacaoForm, setRemarcacaoForm] = useState({
+    novoHorario: '',
+    estrategia: 'MASSA',
+    assentos: ''
+  });
+  const [filtros, setFiltros] = useState({
+    filmeId: 'TODOS',
+    status: 'TODOS',
+    apenasAtivas: true
   });
 
   useEffect(() => {
-    carregarDados();
+    carregarDados({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const carregarDados = async () => {
+  const carregarDados = async (overrideFiltros = {}) => {
     try {
       setLoading(true);
-      // Carregar filmes
-      const resFilmes = await fetch('/api/filmes/em-cartaz');
-      const dadosFilmes = await resFilmes.json();
-      setFilmes(dadosFilmes);
-
-      // Carregar sessões de todos os filmes
-      const todasSessoes = [];
-      for (const filme of dadosFilmes) {
-        const resSessoes = await fetch(`/api/sessoes/filme/${filme.id}`);
-        const sessoesFilme = await resSessoes.json();
-        todasSessoes.push(...sessoesFilme.map(s => ({ ...s, filme })));
+      const filtrosAplicados = { ...filtros, ...overrideFiltros };
+      const params = new URLSearchParams();
+      if (filtrosAplicados.filmeId && filtrosAplicados.filmeId !== 'TODOS') {
+        params.append('filmeId', filtrosAplicados.filmeId);
       }
-      setSessoes(todasSessoes);
+      if (filtrosAplicados.status && filtrosAplicados.status !== 'TODOS') {
+        params.append('status', filtrosAplicados.status);
+      }
+      if (filtrosAplicados.apenasAtivas) {
+        params.append('apenasAtivas', 'true');
+      }
+
+      const [resFilmes, resSessoes, resIndicadores] = await Promise.all([
+        fetch('/api/filmes/em-cartaz'),
+        fetch(params.toString() ? `/api/sessoes?${params}` : '/api/sessoes'),
+        fetch('/api/sessoes/indicadores')
+      ]);
+
+      if (!resFilmes.ok || !resSessoes.ok || !resIndicadores.ok) {
+        throw new Error('Falha ao buscar dados de sessões');
+      }
+
+      const dadosFilmes = await resFilmes.json();
+      const dadosSessoes = await resSessoes.json();
+      const dadosIndicadores = await resIndicadores.json();
+
+      setFilmes(dadosFilmes);
+      setSessoes(dadosSessoes);
+      setIndicadores(dadosIndicadores);
+      setFiltros(filtrosAplicados);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
+      alert('Erro ao carregar dados de sessões.');
     } finally {
       setLoading(false);
     }
@@ -56,25 +112,37 @@ const Sessoes = ({ usuario }) => {
       setEditando(sessao);
       const dataFormatada = new Date(sessao.horario).toISOString().slice(0, 16);
       setFormData({
-        filmeId: sessao.filme?.id || '',
+        filmeId: sessao.filmeId,
         horario: dataFormatada,
-        sala: sessao.sala || '1'
+        sala: sessao.sala,
+        capacidadeSala: sessao.capacidade
       });
     } else {
       setEditando(null);
       setFormData({
         filmeId: '',
         horario: '',
-        sala: '1'
+        sala: 'Sala 1',
+        capacidadeSala: 100
       });
     }
     setShowModal(true);
   };
 
+  const abrirRemarcacaoModal = (sessao) => {
+    setSessaoSelecionada(sessao);
+    setRemarcacaoForm({
+      novoHorario: new Date(sessao.horario).toISOString().slice(0, 16),
+      estrategia: 'MASSA',
+      assentos: ''
+    });
+    setShowRemarcarModal(true);
+  };
+
   const fecharModal = () => {
     setShowModal(false);
     setEditando(null);
-    setFormData({ filmeId: '', horario: '', sala: '1' });
+    setFormData({ filmeId: '', horario: '', sala: 'Sala 1', capacidadeSala: 100 });
   };
 
   const handleSubmit = async (e) => {
@@ -92,30 +160,25 @@ const Sessoes = ({ usuario }) => {
         ? new Date(formData.horario).toISOString()
         : new Date(formData.horario + ':00').toISOString();
 
-      const payload = {
-        filmeId: parseInt(formData.filmeId),
-        horario: horarioISO,
-        sala: formData.sala
-      };
+      const payload = editando
+        ? {
+            novoHorario: horarioISO,
+            novaSala: formData.sala,
+            funcionario: getFuncionarioPayload()
+          }
+        : {
+            filmeId: parseInt(formData.filmeId),
+            horario: horarioISO,
+            sala: formData.sala,
+            capacidadeSala: parseInt(formData.capacidadeSala, 10) || 100,
+            funcionario: getFuncionarioPayload()
+          };
 
-      let response;
-      if (editando) {
-        // Modificar sessão existente
-        response = await fetch(`/api/sessoes/${editando.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            novoHorario: horarioISO
-          })
-        });
-      } else {
-        // Criar nova sessão
-        response = await fetch('/api/sessoes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
+      const response = await fetch(editando ? `/api/sessoes/${editando.id}` : '/api/sessoes', {
+        method: editando ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
       if (response.ok) {
         alert(editando ? 'Sessão modificada com sucesso!' : 'Sessão criada com sucesso!');
@@ -141,8 +204,9 @@ const Sessoes = ({ usuario }) => {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nome: usuario.nome,
-          cargo: usuario.cargo
+          funcionario: getFuncionarioPayload(),
+          nomeFuncionario: usuario?.nome,
+          cargoFuncionario: cargoUsuario
         })
       });
 
@@ -157,6 +221,56 @@ const Sessoes = ({ usuario }) => {
       console.error('Erro:', error);
       alert('Erro ao cancelar sessão');
     }
+  };
+
+  const handleRemarcacaoSubmit = async (e) => {
+    e.preventDefault();
+    if (!sessaoSelecionada) return;
+
+    try {
+      if (!remarcacaoForm.novoHorario) {
+        alert('Informe o novo horário');
+        return;
+      }
+
+      const payload = {
+        novoHorario: new Date(remarcacaoForm.novoHorario).toISOString(),
+        estrategia: remarcacaoForm.estrategia,
+        assentos: remarcacaoForm.assentos
+          ? remarcacaoForm.assentos.split(',').map(a => a.trim()).filter(Boolean)
+          : [],
+        funcionario: getFuncionarioPayload()
+      };
+
+      const response = await fetch(`/api/sessoes/${sessaoSelecionada.id}/remarcar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert('Ingressos remarcados com sucesso!');
+        setShowRemarcarModal(false);
+        setSessaoSelecionada(null);
+        carregarDados({});
+      } else {
+        const error = await response.json();
+        alert(error.mensagem || 'Erro ao remarcar ingressos');
+      }
+    } catch (error) {
+      console.error('Erro ao remarcar ingressos:', error);
+      alert('Erro ao remarcar ingressos');
+    }
+  };
+
+  const handleFiltroChange = (campo, valor) => {
+    const novosFiltros = { ...filtros, [campo]: valor };
+    carregarDados(novosFiltros);
+  };
+
+  const resetFiltros = () => {
+    const defaultFiltros = { filmeId: 'TODOS', status: 'TODOS', apenasAtivas: true };
+    carregarDados(defaultFiltros);
   };
 
   if (loading) {
@@ -179,7 +293,7 @@ const Sessoes = ({ usuario }) => {
             Gerenciar Sessões
           </h1>
           <p className="page-subtitle">
-            Programação de sessões de cinema • {sessoes.length} sessões ativas
+            Programação completa do cinema • {sessoes.length} sessões listadas
           </p>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
@@ -187,49 +301,77 @@ const Sessoes = ({ usuario }) => {
         </button>
       </div>
 
-      {/* Estatísticas Rápidas */}
-      <div className="stats-grid-main">
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Total de Sessões</span>
-            <div className="stat-icon-circle purple"></div>
+      {indicadores && (
+        <div className="stats-grid-main">
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-label">Total de Sessões</span>
+              <div className="stat-icon-circle purple"></div>
+            </div>
+            <div className="stat-value">{indicadores.total}</div>
+            <div className="stat-footer neutro">
+              <span>{indicadores.ativas} ativas • {indicadores.canceladas} canceladas</span>
+            </div>
           </div>
-          <div className="stat-value">{sessoes.length}</div>
-          <div className="stat-footer neutro">
-            <span>programadas</span>
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-label">Sessões Hoje</span>
+              <div className="stat-icon-circle green"></div>
+            </div>
+            <div className="stat-value">{indicadores.sessoesHoje}</div>
+            <div className="stat-footer neutro">
+              <span>{indicadores.sessoesSemana} esta semana</span>
+            </div>
           </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Filmes Ativos</span>
-            <div className="stat-icon-circle blue"></div>
-          </div>
-          <div className="stat-value">{filmes.length}</div>
-          <div className="stat-footer neutro">
-            <span>em cartaz</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Sessões Hoje</span>
-            <div className="stat-icon-circle green"></div>
-          </div>
-          <div className="stat-value">
-            {sessoes.filter(s => {
-              const hoje = new Date().toDateString();
-              const sessaoData = new Date(s.horario).toDateString();
-              return hoje === sessaoData;
-            }).length}
-          </div>
-          <div className="stat-footer neutro">
-            <span>em andamento</span>
+          <div className="stat-card">
+            <div className="stat-header">
+              <span className="stat-label">Ocupação Média</span>
+              <div className="stat-icon-circle orange"></div>
+            </div>
+            <div className="stat-value">{(indicadores.ocupacaoMedia * 100).toFixed(0)}%</div>
+            <div className="stat-footer neutro">
+              <span>{indicadores.ingressosReservados} reservas / {indicadores.ingressosDisponiveis} livres</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Tabela de Sessões */}
+      <form className="filter-bar" onSubmit={(e) => e.preventDefault()}>
+        <select
+          className="filter-select"
+          value={filtros.filmeId}
+          onChange={(e) => handleFiltroChange('filmeId', e.target.value)}
+        >
+          <option value="TODOS">Todos os filmes</option>
+          {filmes.map(filme => (
+            <option key={filme.id} value={filme.id}>{filme.titulo}</option>
+          ))}
+        </select>
+
+        <select
+          className="filter-select"
+          value={filtros.status}
+          onChange={(e) => handleFiltroChange('status', e.target.value)}
+        >
+          {statusOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+
+        <label className="filter-toggle">
+          <input
+            type="checkbox"
+            checked={filtros.apenasAtivas}
+            onChange={(e) => handleFiltroChange('apenasAtivas', e.target.checked)}
+          />
+          <span>Mostrar apenas sessões ativas</span>
+        </label>
+
+        <button type="button" className="btn-tertiary" onClick={resetFiltros}>
+          Limpar filtros
+        </button>
+      </form>
+
       <div className="section-container">
         <h2 className="section-title">Lista de Sessões Programadas</h2>
 
@@ -252,8 +394,10 @@ const Sessoes = ({ usuario }) => {
                 <tr>
                   <th>ID</th>
                   <th>Filme</th>
+                  <th>Sala</th>
                   <th>Data/Hora</th>
-                  <th>Assentos</th>
+                  <th>Capacidade</th>
+                  <th>Ocupação</th>
                   <th>Status</th>
                   <th>Ações</th>
                 </tr>
@@ -264,36 +408,49 @@ const Sessoes = ({ usuario }) => {
                     <td>#{sessao.id}</td>
                     <td>
                       <strong style={{ color: 'white' }}>
-                        {sessao.filme?.titulo || 'Filme não encontrado'}
+                        {sessao.filmeTitulo || 'Filme não encontrado'}
                       </strong>
                     </td>
+                    <td>{sessao.sala}</td>
                     <td>{formatarDataHora(sessao.horario)}</td>
+                    <td>{sessao.capacidade} lugares</td>
                     <td>
-                      {sessao.assentosDisponiveis || 0} livres / {sessao.totalAssentos || 0} total
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <strong>{(sessao.ocupacao * 100).toFixed(0)}%</strong>
+                        <small style={{ color: 'rgba(255,255,255,0.6)' }}>
+                          {sessao.assentosReservados} vend • {sessao.assentosDisponiveis} disp
+                        </small>
+                      </div>
                     </td>
                     <td>
                       <span className={`badge ${
                         sessao.status === 'DISPONIVEL' ? 'ativa' : 
-                        sessao.status === 'ESGOTADA' ? 'inativa' : 'pendente'
+                        sessao.status === 'ESGOTADA' ? 'inativa' : 'cancelada'
                       }`}>
                         {sessao.status}
                       </span>
                     </td>
                     <td>
-                      <button 
-                        className="btn-secondary" 
-                        onClick={() => abrirModal(sessao)}
-                        style={{ padding: '6px 12px', fontSize: '12px', marginRight: '8px' }}
-                      >
-                         Modificar
-                      </button>
-                      <button 
-                        className="btn-danger" 
-                        onClick={() => removerSessao(sessao.id)}
-                        style={{ padding: '6px 12px', fontSize: '12px' }}
-                      >
-                         Cancelar
-                      </button>
+                      <div className="table-actions">
+                        <button 
+                          className="btn-secondary" 
+                          onClick={() => abrirModal(sessao)}
+                        >
+                           Modificar
+                        </button>
+                        <button 
+                          className="btn-tertiary"
+                          onClick={() => abrirRemarcacaoModal(sessao)}
+                        >
+                           Remarcar
+                        </button>
+                        <button 
+                          className="btn-danger" 
+                          onClick={() => removerSessao(sessao.id)}
+                        >
+                           Cancelar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -314,21 +471,34 @@ const Sessoes = ({ usuario }) => {
             
             <form onSubmit={handleSubmit}>
               {!editando && (
-                <div className="form-group">
-                  <label>Filme *</label>
-                  <select
-                    value={formData.filmeId}
-                    onChange={(e) => setFormData({...formData, filmeId: e.target.value})}
-                    required
-                  >
-                    <option value="">Selecione um filme</option>
-                    {filmes.map(filme => (
-                      <option key={filme.id} value={filme.id}>
-                        {filme.titulo} ({filme.duracao} min)
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  <div className="form-group">
+                    <label>Filme *</label>
+                    <select
+                      value={formData.filmeId}
+                      onChange={(e) => setFormData({...formData, filmeId: e.target.value})}
+                      required
+                    >
+                      <option value="">Selecione um filme</option>
+                      {filmes.map(filme => (
+                        <option key={filme.id} value={filme.id}>
+                          {filme.titulo} ({filme.duracao} min)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Capacidade da Sala *</label>
+                    <input
+                      type="number"
+                      min="10"
+                      value={formData.capacidadeSala}
+                      onChange={(e) => setFormData({...formData, capacidadeSala: e.target.value})}
+                      required
+                    />
+                  </div>
+                </>
               )}
 
               <div className="form-group">
@@ -341,21 +511,19 @@ const Sessoes = ({ usuario }) => {
                 />
               </div>
 
-              {!editando && (
-                <div className="form-group">
-                  <label>Sala *</label>
-                  <select
-                    value={formData.sala}
-                    onChange={(e) => setFormData({...formData, sala: e.target.value})}
-                    required
-                  >
-                    <option value="1">Sala 1</option>
-                    <option value="2">Sala 2</option>
-                    <option value="3">Sala 3</option>
-                    <option value="4">Sala 4</option>
-                  </select>
-                </div>
-              )}
+              <div className="form-group">
+                <label>Sala *</label>
+                <select
+                  value={formData.sala}
+                  onChange={(e) => setFormData({...formData, sala: e.target.value})}
+                  required
+                >
+                  <option value="Sala 1">Sala 1</option>
+                  <option value="Sala 2">Sala 2</option>
+                  <option value="Sala 3">Sala 3</option>
+                  <option value="Sala 4">Sala 4</option>
+                </select>
+              </div>
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={fecharModal}>
@@ -363,6 +531,62 @@ const Sessoes = ({ usuario }) => {
                 </button>
                 <button type="submit" className="btn-primary">
                   {editando ? 'Salvar Alterações' : 'Criar Sessão'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Remarcar Sessão */}
+      {showRemarcarModal && sessaoSelecionada && (
+        <div className="modal-overlay" onClick={() => setShowRemarcarModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Remarcar Ingressos da Sessão #{sessaoSelecionada.id}</h2>
+              <button className="modal-close" onClick={() => setShowRemarcarModal(false)}></button>
+            </div>
+
+            <form onSubmit={handleRemarcacaoSubmit}>
+              <div className="form-group">
+                <label>Novo Horário *</label>
+                <input
+                  type="datetime-local"
+                  value={remarcacaoForm.novoHorario}
+                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, novoHorario: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Estrategia de Remarcação *</label>
+                <select
+                  value={remarcacaoForm.estrategia}
+                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, estrategia: e.target.value })}
+                >
+                  {estrategiasRemarcacao.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {remarcacaoForm.estrategia === 'INDIVIDUAL' && (
+                <div className="form-group">
+                  <label>Assentos (separados por vírgula)</label>
+                  <textarea
+                    placeholder="A1, A2, B3"
+                    value={remarcacaoForm.assentos}
+                    onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, assentos: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setShowRemarcarModal(false)}>
+                  Fechar
+                </button>
+                <button type="submit" className="btn-primary">
+                  Confirmar Remarcação
                 </button>
               </div>
             </form>

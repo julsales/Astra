@@ -13,4 +13,5 @@ public interface FilmeRepositorio {
     
     Filme obterPorId(FilmeId filmeId);
     List<Filme> listarFilmesEmCartaz();
+    List<Filme> listarTodos();
 }

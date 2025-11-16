@@ -8,7 +8,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "FUNCIONARIO")
-class FuncionarioJpa {
+public class FuncionarioJpa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

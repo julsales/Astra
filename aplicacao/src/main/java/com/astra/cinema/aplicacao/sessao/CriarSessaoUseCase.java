@@ -53,7 +53,8 @@ public class CriarSessaoUseCase {
         validarStatusFilme(filme);
         
         // ID será gerado automaticamente pelo banco via IDENTITY
-        var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, assentos);
+        var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, assentos,
+            "Sala 1", assentos != null ? assentos.size() : 0);
         
         // Persiste a sessão e retorna com o ID gerado pelo banco
         return sessaoRepositorio.salvar(sessao);
@@ -70,6 +71,10 @@ public class CriarSessaoUseCase {
      * @throws IllegalArgumentException se os parâmetros forem inválidos
      */
     public Sessao executar(FilmeId filmeId, Date horario, int capacidadeSala) {
+        return executar(filmeId, horario, capacidadeSala, "Sala 1");
+    }
+
+    public Sessao executar(FilmeId filmeId, Date horario, int capacidadeSala, String sala) {
         // Validação de parâmetros
         validarParametros(filmeId, horario, capacidadeSala);
 
@@ -86,7 +91,8 @@ public class CriarSessaoUseCase {
         Map<AssentoId, Boolean> mapaAssentos = criarMapaAssentosDisponiveis(capacidadeSala);
 
         // Cria a sessão (ID será gerado automaticamente pelo banco via IDENTITY)
-        Sessao sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos);
+        Sessao sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos,
+            sala != null && !sala.isBlank() ? sala : "Sala 1", capacidadeSala);
 
         // Persiste a sessão e retorna com o ID gerado pelo banco
         return sessaoRepositorio.salvar(sessao);

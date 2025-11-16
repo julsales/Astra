@@ -40,6 +40,12 @@ class SessaoJpa {
     @Column(nullable = false)
     private StatusSessao status;
 
+    @Column(nullable = false)
+    private Integer capacidade;
+
+    @Column(length = 30)
+    private String sala;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "SESSAO_ASSENTO", joinColumns = @JoinColumn(name = "sessao_id"))
     @MapKeyColumn(name = "assento_id")
@@ -77,6 +83,22 @@ class SessaoJpa {
 
     public void setStatus(StatusSessao status) {
         this.status = status;
+    }
+
+    public Integer getCapacidade() {
+        return capacidade;
+    }
+
+    public void setCapacidade(Integer capacidade) {
+        this.capacidade = capacidade;
+    }
+
+    public String getSala() {
+        return sala;
+    }
+
+    public void setSala(String sala) {
+        this.sala = sala;
     }
 
     public Map<String, Boolean> getAssentosDisponiveis() {
@@ -156,6 +178,13 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
         
         Date agora = new Date();
         return repository.findSessoesFuturasPorFilme(filmeId.getId(), agora).stream()
+                .map(mapeador::mapearParaSessao)
+                .toList();
+    }
+
+    @Override
+    public List<Sessao> listarTodas() {
+        return repository.findAll().stream()
                 .map(mapeador::mapearParaSessao)
                 .toList();
     }

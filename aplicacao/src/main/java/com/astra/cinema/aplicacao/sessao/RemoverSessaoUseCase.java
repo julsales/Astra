@@ -57,7 +57,9 @@ public class RemoverSessaoUseCase {
             sessao.getFilmeId(),
             sessao.getHorario(),
             StatusSessao.CANCELADA,
-            sessao.getMapaAssentosDisponiveis()
+            sessao.getMapaAssentosDisponiveis(),
+            sessao.getSala(),
+            sessao.getCapacidade()
         );
 
         // Persiste

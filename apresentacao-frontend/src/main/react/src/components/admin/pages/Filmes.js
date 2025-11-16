@@ -1,6 +1,13 @@
 ﻿import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
 
+const statusOpcoes = [
+  { label: 'Todos os status', value: 'TODOS' },
+  { label: 'Em cartaz', value: 'EM_CARTAZ' },
+  { label: 'Em breve', value: 'EM_BREVE' },
+  { label: 'Retirados', value: 'RETIRADO' }
+];
+
 const Filmes = ({ usuario }) => {
   const [filmes, setFilmes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,17 +19,48 @@ const Filmes = ({ usuario }) => {
     classificacaoEtaria: '',
     duracao: ''
   });
+  const [filtros, setFiltros] = useState({ status: 'TODOS', busca: '' });
+
+  const cargoUsuario = (
+    usuario?.cargo ||
+    (usuario?.tipo === 'ADMIN' ? 'GERENTE' : 'ATENDENTE') ||
+    'GERENTE'
+  ).toUpperCase();
 
   useEffect(() => {
-    carregarFilmes();
+    carregarFilmes({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const carregarFilmes = async () => {
+  const getFuncionarioPayload = () => ({
+    nome: usuario?.nome || 'Administrador',
+    cargo: cargoUsuario
+  });
+
+  const carregarFilmes = async (override = {}) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/filmes/em-cartaz');
+      const nextFiltros = {
+        status: override.status ?? filtros.status,
+        busca: override.busca ?? filtros.busca
+      };
+
+      const params = new URLSearchParams();
+      if (nextFiltros.status && nextFiltros.status !== 'TODOS') {
+        params.append('status', nextFiltros.status);
+      }
+      if (nextFiltros.busca) {
+        params.append('busca', nextFiltros.busca.trim());
+      }
+
+      const url = params.toString() ? `/api/filmes?${params.toString()}` : '/api/filmes';
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Erro ao carregar filmes');
+      }
       const data = await response.json();
       setFilmes(data);
+      setFiltros(nextFiltros);
     } catch (error) {
       console.error('Erro ao carregar filmes:', error);
       alert('Erro ao carregar filmes');
@@ -69,7 +107,8 @@ const Filmes = ({ usuario }) => {
     try {
       const payload = {
         ...formData,
-        duracao: parseInt(formData.duracao)
+        duracao: parseInt(formData.duracao),
+        funcionario: getFuncionarioPayload()
       };
 
       let response;
@@ -92,7 +131,7 @@ const Filmes = ({ usuario }) => {
       if (response.ok) {
         alert(editando ? 'Filme alterado com sucesso!' : 'Filme adicionado com sucesso!');
         fecharModal();
-        carregarFilmes();
+        carregarFilmes({});
       } else {
         const error = await response.json();
         alert(error.mensagem || 'Erro ao salvar filme');
@@ -111,12 +150,13 @@ const Filmes = ({ usuario }) => {
     try {
       const response = await fetch(`/api/filmes/${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(getFuncionarioPayload())
       });
 
       if (response.ok) {
         alert('Filme removido com sucesso!');
-        carregarFilmes();
+        carregarFilmes({});
       } else {
         const error = await response.json();
         alert(error.mensagem || 'Erro ao remover filme');
@@ -138,6 +178,23 @@ const Filmes = ({ usuario }) => {
     );
   }
 
+  const estatisticas = {
+    total: filmes.length,
+    emCartaz: filmes.filter(f => f.status === 'EM_CARTAZ').length,
+    emBreve: filmes.filter(f => f.status === 'EM_BREVE').length,
+    retirados: filmes.filter(f => f.status === 'RETIRADO').length
+  };
+
+  const handleFiltroSubmit = (e) => {
+    e.preventDefault();
+    carregarFilmes({});
+  };
+
+  const limparFiltros = () => {
+    setFiltros({ status: 'TODOS', busca: '' });
+    carregarFilmes({ status: 'TODOS', busca: '' });
+  };
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -146,13 +203,39 @@ const Filmes = ({ usuario }) => {
             Catálogo de Filmes
           </h1>
           <p className="page-subtitle">
-            Gerencie o catálogo de filmes do cinema • {filmes.length} filmes
+            Gerencie o catálogo de filmes do cinema • {filmes.length} resultados
           </p>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
           + Adicionar Filme
         </button>
       </div>
+
+      {/* Filtros */}
+      <form className="filter-bar" onSubmit={handleFiltroSubmit}>
+        <input
+          type="text"
+          placeholder="Buscar por título..."
+          value={filtros.busca}
+          onChange={(e) => setFiltros({ ...filtros, busca: e.target.value })}
+          className="filter-input"
+        />
+        <select
+          value={filtros.status}
+          onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
+          className="filter-select"
+        >
+          {statusOpcoes.map(opcao => (
+            <option key={opcao.value} value={opcao.value}>{opcao.label}</option>
+          ))}
+        </select>
+        <button type="submit" className="btn-secondary">
+          Aplicar
+        </button>
+        <button type="button" className="btn-tertiary" onClick={limparFiltros}>
+          Limpar
+        </button>
+      </form>
 
       {/* Estatísticas */}
       <div className="stats-grid-main">
@@ -161,7 +244,7 @@ const Filmes = ({ usuario }) => {
             <span className="stat-label">Total de Filmes</span>
             <div className="stat-icon-circle purple"></div>
           </div>
-          <div className="stat-value">{filmes.length}</div>
+          <div className="stat-value">{estatisticas.total}</div>
           <div className="stat-footer neutro">
             <span>em cartaz</span>
           </div>
@@ -173,10 +256,32 @@ const Filmes = ({ usuario }) => {
             <div className="stat-icon-circle green"></div>
           </div>
           <div className="stat-value">
-            {filmes.filter(f => f.status === 'EM_CARTAZ').length}
+            {estatisticas.emCartaz}
           </div>
           <div className="stat-footer neutro">
             <span>ativos</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+            <span className="stat-label">Em breve</span>
+            <div className="stat-icon-circle blue"></div>
+          </div>
+          <div className="stat-value">{estatisticas.emBreve}</div>
+          <div className="stat-footer neutro">
+            <span>planejados</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+            <span className="stat-label">Retirados</span>
+            <div className="stat-icon-circle orange"></div>
+          </div>
+          <div className="stat-value">{estatisticas.retirados}</div>
+          <div className="stat-footer neutro">
+            <span>fora de cartaz</span>
           </div>
         </div>
       </div>
@@ -222,7 +327,7 @@ const Filmes = ({ usuario }) => {
                     <td>{filme.classificacaoEtaria}</td>
                     <td>{filme.duracao} min</td>
                     <td>
-                      <span className={`badge ${filme.status === 'EM_CARTAZ' ? 'ativa' : 'inativa'}`}>
+                      <span className={`badge ${filme.status === 'EM_CARTAZ' ? 'ativa' : filme.status === 'EM_BREVE' ? 'pendente' : 'inativa'}`}>
                         {filme.status}
                       </span>
                     </td>

@@ -31,7 +31,7 @@ public class ModificarSessaoUseCase {
      * @return Sessão modificada
      * @throws IllegalStateException se a sessão já passou ou está cancelada
      */
-    public Sessao executar(SessaoId sessaoId, Date novoHorario) {
+    public Sessao executar(SessaoId sessaoId, Date novoHorario, String novaSala) {
         if (sessaoId == null) {
             throw new IllegalArgumentException("O ID da sessão não pode ser nulo");
         }
@@ -57,12 +57,16 @@ public class ModificarSessaoUseCase {
         }
 
         // Cria sessão modificada
+        String salaAtualizada = (novaSala != null && !novaSala.isBlank()) ? novaSala : sessao.getSala();
+
         Sessao sessaoModificada = new Sessao(
             sessao.getSessaoId(),
             sessao.getFilmeId(),
             novoHorario,
             sessao.getStatus(),
-            sessao.getMapaAssentosDisponiveis()
+            sessao.getMapaAssentosDisponiveis(),
+            salaAtualizada,
+            sessao.getCapacidade()
         );
 
         // Persiste

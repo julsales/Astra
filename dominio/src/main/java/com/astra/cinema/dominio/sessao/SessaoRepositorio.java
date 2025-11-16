@@ -13,4 +13,5 @@ public interface SessaoRepositorio {
     
     Sessao obterPorId(SessaoId sessaoId);
     List<Sessao> buscarPorFilme(FilmeId filmeId);
+    List<Sessao> listarTodas();
 }

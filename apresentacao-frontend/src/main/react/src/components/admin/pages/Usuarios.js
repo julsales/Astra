@@ -1,59 +1,148 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
 
 const Usuarios = ({ usuario }) => {
-  const [usuarios, setUsuarios] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [funcionarios, setFuncionarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tipoFiltro, setTipoFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
+  const [formulario, setFormulario] = useState({ nome: '', cargo: 'ATENDENTE' });
+  const [alvoEdicao, setAlvoEdicao] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [processando, setProcessando] = useState(false);
 
   useEffect(() => {
-    carregarUsuarios();
+    carregarDados();
   }, []);
 
-  const carregarUsuarios = async () => {
+  const carregarDados = async () => {
     try {
       setLoading(true);
-      
-      // Buscar clientes
-      const resClientes = await fetch('/api/clientes');
-      const clientes = await resClientes.json();
-      
-      // Buscar funcionários
-      const resFuncionarios = await fetch('/api/funcionarios');
-      const funcionariosData = await resFuncionarios.json();
-      
-      setUsuarios(clientes);
-      setFuncionarios(funcionariosData);
+      const [resClientes, resFuncionarios] = await Promise.all([
+        fetch('/api/clientes'),
+        fetch('/api/funcionarios')
+      ]);
+
+      const listaClientes = await resClientes.json();
+      const listaFuncionarios = await resFuncionarios.json();
+
+      setClientes(listaClientes || []);
+      setFuncionarios(listaFuncionarios || []);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
-      alert('Erro ao carregar usuários');
+      setFeedback({ tipo: 'erro', mensagem: 'Não foi possível carregar os dados. Tente novamente.' });
     } finally {
       setLoading(false);
     }
   };
 
-  const todosUsuarios = [
-    ...usuarios.map(u => ({ ...u, tipo: 'Cliente', status: 'Ativo' })),
-    ...funcionarios.map(f => ({ ...f, tipo: f.funcao || 'Funcionário', status: 'Ativo' }))
-  ];
-
-  const usuariosFiltrados = todosUsuarios.filter(u => {
-    const passaBusca = !busca || 
-      u.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      u.email.toLowerCase().includes(busca.toLowerCase());
-    
-    const passaTipo = tipoFiltro === 'todos' || u.tipo === tipoFiltro;
-    
-    return passaBusca && passaTipo;
+  const payloadAutorizacao = () => ({
+    nome: usuario?.nome || 'Administrador',
+    cargo: usuario?.funcao || 'GERENTE'
   });
+
+  const abrirModalNovo = () => {
+    setAlvoEdicao(null);
+    setFormulario({ nome: '', cargo: 'ATENDENTE' });
+    setModalAberto(true);
+  };
+
+  const abrirModalEdicao = (func) => {
+    setAlvoEdicao(func);
+    setFormulario({ nome: func.nome, cargo: func.cargo });
+    setModalAberto(true);
+  };
+
+  const fecharModal = () => {
+    setModalAberto(false);
+    setFormulario({ nome: '', cargo: 'ATENDENTE' });
+    setAlvoEdicao(null);
+  };
+
+  const salvarFuncionario = async () => {
+    if (!formulario.nome.trim()) {
+      setFeedback({ tipo: 'erro', mensagem: 'Informe o nome do funcionário.' });
+      return;
+    }
+
+    try {
+      setProcessando(true);
+      const metodo = alvoEdicao ? 'PUT' : 'POST';
+      const url = alvoEdicao ? `/api/funcionarios/${alvoEdicao.id}` : '/api/funcionarios';
+      const resposta = await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: formulario.nome,
+          cargo: formulario.cargo,
+          autorizacao: payloadAutorizacao()
+        })
+      });
+
+      if (!resposta.ok) {
+        const erro = await resposta.json().catch(() => ({}));
+        throw new Error(erro?.mensagem || 'Falha ao comunicar com o servidor.');
+      }
+
+      setFeedback({ tipo: 'sucesso', mensagem: 'Funcionário salvo com sucesso!' });
+      fecharModal();
+      carregarDados();
+    } catch (error) {
+      console.error(error);
+      setFeedback({ tipo: 'erro', mensagem: error.message });
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const removerFuncionario = async (func) => {
+    if (!window.confirm(`Confirma remover ${func.nome}?`)) {
+      return;
+    }
+    try {
+      setProcessando(true);
+      const resposta = await fetch(`/api/funcionarios/${func.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadAutorizacao())
+      });
+
+      if (!resposta.ok) {
+        const erro = await resposta.json().catch(() => ({}));
+        throw new Error(erro?.mensagem || 'Não foi possível remover.');
+      }
+
+      setFeedback({ tipo: 'sucesso', mensagem: 'Funcionário removido.' });
+      carregarDados();
+    } catch (error) {
+      console.error(error);
+      setFeedback({ tipo: 'erro', mensagem: error.message });
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const todosUsuarios = useMemo(() => ([
+    ...clientes.map(c => ({ id: c.id, nome: c.nome, email: c.email, tipo: 'Cliente', status: 'Ativo' })),
+    ...funcionarios.map(f => ({ id: f.id, nome: f.nome, email: '-', tipo: f.cargo, cargo: f.cargo, status: 'Ativo' }))
+  ]), [clientes, funcionarios]);
+
+  const usuariosFiltrados = useMemo(() => todosUsuarios.filter(u => {
+    const termo = busca.toLowerCase();
+    const passaBusca = !busca ||
+      u.nome.toLowerCase().includes(termo) ||
+      (u.email && u.email.toLowerCase().includes(termo));
+    const passaTipo = tipoFiltro === 'todos' || u.tipo === tipoFiltro;
+    return passaBusca && passaTipo;
+  }), [todosUsuarios, busca, tipoFiltro]);
 
   const contadores = {
     total: todosUsuarios.length,
-    clientes: usuarios.length,
-    funcionarios: funcionarios.filter(f => f.funcao === 'ATENDENTE').length,
-    admins: funcionarios.filter(f => f.funcao === 'GERENTE').length,
+    clientes: clientes.length,
+    funcionarios: funcionarios.filter(f => f.cargo === 'ATENDENTE').length,
+    admins: funcionarios.filter(f => f.cargo === 'GERENTE').length,
     ativos: todosUsuarios.length,
     bloqueados: 0
   };
@@ -73,230 +162,144 @@ const Usuarios = ({ usuario }) => {
     <div className="page-container">
       <div className="page-header">
         <div className="page-title-section">
-          <h1 className="page-title">
-            <span className="page-icon"></span>
-            Gerenciar Usuários
-          </h1>
-          <p className="page-subtitle">
-            Controle usuários, permissões e atividades
-          </p>
+          <h1 className="page-title">Gerenciar Usuários</h1>
+          <p className="page-subtitle">Controle de clientes e funcionários</p>
         </div>
-        <button className="btn-primary" onClick={carregarUsuarios}>
-          Atualizar
-        </button>
-      </div>
-
-      {/* Estatísticas */}
-      <div className="stats-grid-main" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-        <div className="stat-card">
-          <div className="stat-label">Total</div>
-          <div className="stat-value" style={{ fontSize: '28px' }}>{contadores.total}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Clientes</div>
-          <div className="stat-value" style={{ fontSize: '28px', color: '#3B82F6' }}>{contadores.clientes}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Funcionários</div>
-          <div className="stat-value" style={{ fontSize: '28px', color: '#8B5CF6' }}>{contadores.funcionarios}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Admins</div>
-          <div className="stat-value" style={{ fontSize: '28px', color: '#FFA500' }}>{contadores.admins}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Ativos</div>
-          <div className="stat-value" style={{ fontSize: '28px', color: '#34D399' }}>{contadores.ativos}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Bloqueados</div>
-          <div className="stat-value" style={{ fontSize: '28px', color: '#FF6B6B' }}>{contadores.bloqueados}</div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn-secondary" onClick={carregarDados}>Atualizar</button>
+          <button className="btn-primary" onClick={abrirModalNovo}>Novo Funcionário</button>
         </div>
       </div>
 
-      {/* Abas */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '20px',
-        borderBottom: '1px solid rgba(139,92,246,0.2)'
-      }}>
-        <button style={{
-          padding: '12px 24px',
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-          border: 'none',
-          borderRadius: '8px 8px 0 0',
-          color: 'white',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}>
-          Usuários
-        </button>
-        <button style={{
-          padding: '12px 24px',
-          background: 'transparent',
-          border: 'none',
-          borderRadius: '8px 8px 0 0',
-          color: 'rgba(255,255,255,0.6)',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}>
-          Log de Atividades
-        </button>
+      {feedback && (
+        <div className={`alert ${feedback.tipo === 'erro' ? 'alert-error' : 'alert-success'}`}>
+          {feedback.mensagem}
+        </div>
+      )}
+
+      <div className="stats-grid-main" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        {[
+          { label: 'Total', value: contadores.total, color: 'white' },
+          { label: 'Clientes', value: contadores.clientes, color: '#3B82F6' },
+          { label: 'Funcionários', value: contadores.funcionarios, color: '#8B5CF6' },
+          { label: 'Gerentes', value: contadores.admins, color: '#FBBF24' },
+          { label: 'Ativos', value: contadores.ativos, color: '#34D399' }
+        ].map(item => (
+          <div className="stat-card" key={item.label}>
+            <div className="stat-label">{item.label}</div>
+            <div className="stat-value" style={{ fontSize: '28px', color: item.color }}>{item.value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Filtros */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginBottom: '20px',
-        padding: '16px',
-        background: 'rgba(30,20,60,0.4)',
-        borderRadius: '12px',
-        border: '1px solid rgba(139,92,246,0.2)'
-      }}>
-        <input 
-          type="text" 
-          placeholder="Buscar por nome ou email..." 
+      <div className="filters-row">
+        <input
+          type="text"
+          placeholder="Buscar por nome ou email..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          style={{
-            flex: 1,
-            padding: '10px 16px',
-            background: 'rgba(139,92,246,0.1)',
-            border: '1px solid rgba(139,92,246,0.3)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '14px'
-          }}
+          className="input-control"
         />
-        <select 
+        <select
           value={tipoFiltro}
           onChange={(e) => setTipoFiltro(e.target.value)}
-          style={{
-            padding: '10px 16px',
-            background: 'rgba(139,92,246,0.1)',
-            border: '1px solid rgba(139,92,246,0.3)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '14px',
-            cursor: 'pointer'
-          }}
+          className="input-control"
+          style={{ maxWidth: '220px' }}
         >
           <option value="todos">Todos os tipos</option>
           <option value="Cliente">Cliente</option>
           <option value="ATENDENTE">Funcionário</option>
-          <option value="GERENTE">Administrador</option>
+          <option value="GERENTE">Gerente</option>
         </select>
       </div>
 
-      {/* Tabela */}
       <div className="section-container">
-        <h2 className="section-title">Lista de Usuários</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '20px' }}>
-          Gerencie todos os usuários do sistema
-        </p>
-
+        <h2 className="section-title">Usuários cadastrados</h2>
         <div className="table-container">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Usuário</th>
+                <th>Nome</th>
                 <th>Tipo</th>
+                <th>Email</th>
                 <th>Status</th>
-                <th>Último Login</th>
-                <th>Ingressos</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {usuariosFiltrados.length === 0 ? (
+              {usuariosFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.5)' }}>
-                    Nenhum usuário encontrado
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.6)' }}>
+                    Nenhum registro encontrado
                   </td>
                 </tr>
-              ) : (
-                usuariosFiltrados.map((user, index) => (
-                  <tr key={`${user.tipo}-${user.id || index}`}>
-                    <td>
-                      <div>
-                        <strong style={{ color: 'white', display: 'block' }}>{user.nome}</strong>
-                        <small style={{ color: 'rgba(255,255,255,0.5)' }}>{user.email}</small>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="badge" style={{
-                        background: user.tipo === 'Cliente' ? 'rgba(59,130,246,0.2)' :
-                                   user.tipo === 'ATENDENTE' ? 'rgba(139,92,246,0.2)' :
-                                   'rgba(255,165,0,0.2)',
-                        color: user.tipo === 'Cliente' ? '#3B82F6' :
-                               user.tipo === 'ATENDENTE' ? '#8B5CF6' :
-                               '#FFA500',
-                        border: `1px solid ${user.tipo === 'Cliente' ? '#3B82F6' :
-                                            user.tipo === 'ATENDENTE' ? '#8B5CF6' :
-                                            '#FFA500'}`
-                      }}>
-                        {user.tipo}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${user.status === 'Ativo' ? 'ativa' : 'inativa'}`}>
-                        {user.status}
-                      </span>
-                    </td>
-                    <td>
-                      <small style={{ color: 'rgba(255,255,255,0.7)' }}>
-                        -
-                      </small>
-                    </td>
-                    <td>
-                      <strong style={{ color: 'white' }}>-</strong>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button style={{
-                          padding: '6px 10px',
-                          background: 'rgba(139,92,246,0.15)',
-                          border: '1px solid rgba(139,92,246,0.3)',
-                          borderRadius: '6px',
-                          color: 'white',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }} title="Editar">
-                          ✏️
-                        </button>
-                        <button style={{
-                          padding: '6px 10px',
-                          background: 'rgba(59,130,246,0.15)',
-                          border: '1px solid rgba(59,130,246,0.3)',
-                          borderRadius: '6px',
-                          color: '#3B82F6',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }} title="Bloquear">
-                          
-                        </button>
-                        <button style={{
-                          padding: '6px 10px',
-                          background: 'rgba(255,59,48,0.15)',
-                          border: '1px solid rgba(255,59,48,0.3)',
-                          borderRadius: '6px',
-                          color: '#FF6B6B',
-                          cursor: 'pointer',
-                          fontSize: '16px'
-                        }} title="Excluir">
-                          
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
               )}
+              {usuariosFiltrados.map((item) => (
+                <tr key={`${item.tipo}-${item.id}`}>
+                  <td>
+                    <strong style={{ color: 'white' }}>{item.nome}</strong>
+                  </td>
+                  <td>
+                    <span className="badge" style={{
+                      background: item.tipo === 'Cliente' ? 'rgba(59,130,246,0.2)' : item.tipo === 'GERENTE' ? 'rgba(251,191,36,0.2)' : 'rgba(139,92,246,0.2)',
+                      borderColor: item.tipo === 'Cliente' ? '#3B82F6' : item.tipo === 'GERENTE' ? '#FBBF24' : '#8B5CF6',
+                      color: item.tipo === 'Cliente' ? '#3B82F6' : item.tipo === 'GERENTE' ? '#FBBF24' : '#C4B5FD'
+                    }}>
+                      {item.tipo === 'Cliente' ? 'Cliente' : item.tipo}
+                    </span>
+                  </td>
+                  <td style={{ color: 'rgba(255,255,255,0.8)' }}>{item.email || '-'}</td>
+                  <td>
+                    <span className={`badge ${item.status === 'Ativo' ? 'ativa' : 'inativa'}`}>{item.status}</span>
+                  </td>
+                  <td>
+                    {item.tipo !== 'Cliente' ? (
+                      <div className="actions-inline">
+                        <button className="btn-icon" title="Editar" onClick={() => abrirModalEdicao(item)}>✏️</button>
+                        <button className="btn-icon danger" title="Remover" onClick={() => removerFuncionario(item)}>🗑️</button>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>somente leitura</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {modalAberto && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>{alvoEdicao ? 'Editar funcionário' : 'Novo funcionário'}</h3>
+            <div className="modal-body">
+              <label>Nome completo</label>
+              <input
+                className="input-control"
+                value={formulario.nome}
+                onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
+                placeholder="Ex.: Ana Souza"
+              />
+              <label>Cargo</label>
+              <select
+                className="input-control"
+                value={formulario.cargo}
+                onChange={(e) => setFormulario({ ...formulario, cargo: e.target.value })}
+              >
+                <option value="ATENDENTE">Atendente</option>
+                <option value="GERENTE">Gerente</option>
+              </select>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={fecharModal}>Cancelar</button>
+              <button className="btn-primary" disabled={processando} onClick={salvarFuncionario}>
+                {processando ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

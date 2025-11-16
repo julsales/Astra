@@ -50,7 +50,7 @@ public class ProdutoRepositorioJpa implements ProdutoRepositorio {
     }
 
     @Override
-    public List<Produto> listarTodos() {
+    public List<Produto> listarProdutos() {
         return produtoJpaRepository.findAll()
                 .stream()
                 .map(mapeador::paraDominio)

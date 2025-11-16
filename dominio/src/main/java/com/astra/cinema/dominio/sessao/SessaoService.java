@@ -30,7 +30,7 @@ public class SessaoService {
     var filme = exigirNaoNulo(filmeRepositorio.obterPorId(filmeId), "Filme não encontrado");
     exigirEstado(filme.getStatus() == StatusFilme.EM_CARTAZ, "Filme não está em cartaz");
 
-    var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos);
+    var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos, "Sala 1", mapaAssentos.size());
         sessaoRepositorio.salvar(sessao);
         return sessao;
     }

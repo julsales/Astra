@@ -8,11 +8,14 @@ import com.astra.cinema.aplicacao.filme.AlterarFilmeUseCase;
 import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
+import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemoverSessaoUseCase;
 import com.astra.cinema.aplicacao.usuario.GerenciarCinemaUseCase;
+import com.astra.cinema.aplicacao.usuario.funcionario.GerenciarFuncionariosUseCase;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
+import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -54,6 +57,14 @@ public class AplicacaoConfig {
         return new GerenciarCinemaUseCase();
     }
 
+    /**
+     * Bean para o Use Case de gerenciamento de funcionários
+     */
+    @Bean
+    public GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase(FuncionarioRepositorio funcionarioRepositorio) {
+        return new GerenciarFuncionariosUseCase(funcionarioRepositorio);
+    }
+
     // ==================== FILMES ====================
 
     /**
@@ -88,6 +99,14 @@ public class AplicacaoConfig {
     @Bean
     public RemoverSessaoUseCase removerSessaoUseCase(SessaoRepositorio sessaoRepositorio) {
         return new RemoverSessaoUseCase(sessaoRepositorio);
+    }
+
+    /**
+     * Bean para o Use Case de Remarcar ingressos de uma sessão
+     */
+    @Bean
+    public RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase(SessaoRepositorio sessaoRepositorio) {
+        return new RemarcarIngressosSessaoUseCase(sessaoRepositorio);
     }
 
     // ==================== PRODUTOS (BOMBONIERE) ====================

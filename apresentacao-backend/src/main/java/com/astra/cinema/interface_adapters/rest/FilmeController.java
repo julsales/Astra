@@ -3,9 +3,13 @@ package com.astra.cinema.interface_adapters.rest;
 import com.astra.cinema.aplicacao.filme.AdicionarFilmeUseCase;
 import com.astra.cinema.aplicacao.filme.AlterarFilmeUseCase;
 import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
+import com.astra.cinema.aplicacao.usuario.GerenciarCinemaUseCase;
 import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
+import com.astra.cinema.dominio.filme.StatusFilme;
+import com.astra.cinema.dominio.usuario.Cargo;
+import com.astra.cinema.dominio.usuario.Funcionario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +41,33 @@ public class FilmeController {
 
     @Autowired
     private RemoverFilmeUseCase removerFilmeUseCase;
+
+    @Autowired
+    private GerenciarCinemaUseCase gerenciarCinemaUseCase;
+
+    /**
+     * Lista todos os filmes com filtros opcionais (status e busca por título)
+     */
+    @GetMapping
+    public ResponseEntity<List<FilmeDTO>> listarTodos(
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(name = "busca", required = false) String busca) {
+        try {
+            List<Filme> filmes = filmeRepositorio.listarTodos();
+
+            return ResponseEntity.ok(
+                filmes.stream()
+                        .filter(filme -> filtrarPorStatus(filme, status))
+                        .filter(filme -> filtrarPorBusca(filme, busca))
+                        .map(this::converterParaDTO)
+                        .toList()
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     /**
      * Lista todos os filmes em cartaz
@@ -80,11 +111,15 @@ public class FilmeController {
      * @param requestBody Corpo da requisição com dados do funcionário
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> removerFilme(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> removerFilme(
+            @PathVariable Integer id,
+            @RequestBody(required = false) FuncionarioRequestDTO funcionarioRequest) {
         
         Map<String, String> response = new HashMap<>();
         
         try {
+            Funcionario funcionario = criarFuncionario(funcionarioRequest);
+            gerenciarCinemaUseCase.validarPermissaoGerencial(funcionario, "remover filmes");
             // Executa remoção
             FilmeId filmeId = new FilmeId(id);
             removerFilmeUseCase.executar(filmeId);
@@ -141,6 +176,8 @@ public class FilmeController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            Funcionario funcionario = criarFuncionario(request.funcionario());
+            gerenciarCinemaUseCase.validarPermissaoGerencial(funcionario, "adicionar filmes");
             // Adiciona filme
             Filme filme = adicionarFilmeUseCase.executar(
                 request.titulo(),
@@ -182,6 +219,8 @@ public class FilmeController {
         Map<String, Object> response = new HashMap<>();
         
         try {
+            Funcionario funcionario = criarFuncionario(request.funcionario());
+            gerenciarCinemaUseCase.validarPermissaoGerencial(funcionario, "alterar filmes");
             // Altera filme
             Filme filme = alterarFilmeUseCase.executar(
                 new FilmeId(id),
@@ -242,7 +281,8 @@ public class FilmeController {
         String titulo,
         String sinopse,
         String classificacaoEtaria,
-        Integer duracao
+        Integer duracao,
+        FuncionarioRequestDTO funcionario
     ) {}
 
     /**
@@ -252,7 +292,8 @@ public class FilmeController {
         String titulo,
         String sinopse,
         String classificacaoEtaria,
-        Integer duracao
+        Integer duracao,
+        FuncionarioRequestDTO funcionario
     ) {}
 
     // ==================== Conversões ====================
@@ -266,5 +307,41 @@ public class FilmeController {
             filme.getDuracao(),
             filme.getStatus().toString()
         );
+    }
+
+    private boolean filtrarPorStatus(Filme filme, String status) {
+        if (status == null || status.isBlank() || "TODOS".equalsIgnoreCase(status)) {
+            return true;
+        }
+
+        try {
+            StatusFilme statusFilme = StatusFilme.valueOf(status.toUpperCase());
+            return filme.getStatus() == statusFilme;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Status inválido: " + status, e);
+        }
+    }
+
+    private boolean filtrarPorBusca(Filme filme, String busca) {
+        if (busca == null || busca.isBlank()) {
+            return true;
+        }
+        return filme.getTitulo().toLowerCase().contains(busca.toLowerCase());
+    }
+
+    private Funcionario criarFuncionario(FuncionarioRequestDTO funcionarioRequestDTO) {
+        if (funcionarioRequestDTO == null) {
+            throw new SecurityException("Funcionário não informado para operação");
+        }
+
+        try {
+            if (funcionarioRequestDTO.cargo() == null || funcionarioRequestDTO.cargo().isBlank()) {
+                throw new IllegalArgumentException("Cargo do funcionário não pode ser vazio");
+            }
+            Cargo cargo = Cargo.valueOf(funcionarioRequestDTO.cargo().toUpperCase());
+            return new Funcionario(funcionarioRequestDTO.nome(), cargo);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Cargo de funcionário inválido", e);
+        }
     }
 }

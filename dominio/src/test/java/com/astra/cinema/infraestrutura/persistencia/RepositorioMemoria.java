@@ -65,7 +65,9 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 sessao.getFilmeId(),
                 sessao.getHorario(),
                 sessao.getStatus(),
-                sessao.getMapaAssentosDisponiveis()
+                sessao.getMapaAssentosDisponiveis(),
+                sessao.getSala(),
+                sessao.getCapacidade()
             );
         }
         
@@ -85,6 +87,13 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     public List<Sessao> buscarPorFilme(FilmeId filmeId) {
         return sessoes.values().stream()
                 .filter(s -> s.getFilmeId().equals(filmeId))
+                .map(Sessao::clone)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Sessao> listarTodas() {
+        return sessoes.values().stream()
                 .map(Sessao::clone)
                 .collect(Collectors.toList());
     }
@@ -127,6 +136,13 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     public List<Filme> listarFilmesEmCartaz() {
         return filmes.values().stream()
                 .filter(f -> f.getStatus() == StatusFilme.EM_CARTAZ)
+                .map(Filme::clone)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Filme> listarTodos() {
+        return filmes.values().stream()
                 .map(Filme::clone)
                 .collect(Collectors.toList());
     }
@@ -193,7 +209,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     }
 
     @Override
-    public List<Produto> listarTodos() {
+    public List<Produto> listarProdutos() {
         return produtos.values().stream()
                 .map(Produto::clone)
                 .collect(Collectors.toList());

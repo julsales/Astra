@@ -43,16 +43,36 @@ public class GerenciarCinemaUseCase {
      * @throws SecurityException se o funcionário não tiver permissão
      */
     public void executarOperacaoGerencial(Funcionario funcionario, OperacaoGerencial operacao) {
+        validarPermissaoGerencial(funcionario, "executar esta operação");
+
+        // Executa a operação protegida
+        operacao.executar();
+    }
+
+    /**
+     * Valida se um funcionário possui perfil de gerente.
+     *
+     * @param funcionario Funcionário autenticado
+     * @param contexto Texto opcional para personalizar a mensagem
+     */
+    public void validarPermissaoGerencial(Funcionario funcionario, String contexto) {
         if (funcionario == null) {
             throw new SecurityException("Acesso negado: usuário não autenticado");
         }
 
         if (!possuiPermissaoGerencial(funcionario)) {
-            throw new SecurityException("Acesso negado: apenas gerentes podem executar esta operação");
+            String mensagemContexto = contexto != null && !contexto.isBlank()
+                    ? contexto
+                    : "executar esta operação";
+            throw new SecurityException("Acesso negado: apenas gerentes podem " + mensagemContexto);
         }
+    }
 
-        // Executa a operação protegida
-        operacao.executar();
+    /**
+     * Sobrecarga simples para validar permissão sem contexto customizado.
+     */
+    public void validarPermissaoGerencial(Funcionario funcionario) {
+        validarPermissaoGerencial(funcionario, null);
     }
 
     /**
@@ -62,13 +82,7 @@ public class GerenciarCinemaUseCase {
      * @throws SecurityException se não tiver permissão
      */
     public void validarPermissaoCriarSessao(Funcionario funcionario) {
-        if (funcionario == null) {
-            throw new SecurityException("Acesso negado: usuário não autenticado");
-        }
-
-        if (!possuiPermissaoGerencial(funcionario)) {
-            throw new SecurityException("Acesso negado: apenas gerentes podem criar sessões");
-        }
+        validarPermissaoGerencial(funcionario, "criar sessões");
     }
 
     /**
@@ -78,13 +92,7 @@ public class GerenciarCinemaUseCase {
      * @throws SecurityException se não tiver permissão
      */
     public void validarPermissaoRemoverFilme(Funcionario funcionario) {
-        if (funcionario == null) {
-            throw new SecurityException("Acesso negado: usuário não autenticado");
-        }
-
-        if (!possuiPermissaoGerencial(funcionario)) {
-            throw new SecurityException("Acesso negado: apenas gerentes podem remover filmes");
-        }
+        validarPermissaoGerencial(funcionario, "remover filmes");
     }
 
     /**
@@ -94,12 +102,6 @@ public class GerenciarCinemaUseCase {
      * @throws SecurityException se não tiver permissão
      */
     public void validarPermissaoGerenciarProdutos(Funcionario funcionario) {
-        if (funcionario == null) {
-            throw new SecurityException("Acesso negado: usuário não autenticado");
-        }
-
-        if (!possuiPermissaoGerencial(funcionario)) {
-            throw new SecurityException("Acesso negado: apenas gerentes podem gerenciar produtos");
-        }
+        validarPermissaoGerencial(funcionario, "gerenciar produtos");
     }
 }

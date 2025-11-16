@@ -3,6 +3,7 @@ package com.astra.cinema.infraestrutura.persistencia.jpa;
 import com.astra.cinema.dominio.bomboniere.Produto;
 import com.astra.cinema.dominio.comum.AssentoId;
 import com.astra.cinema.dominio.comum.FilmeId;
+import com.astra.cinema.dominio.comum.FuncionarioId;
 import com.astra.cinema.dominio.comum.ProdutoId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.filme.Filme;
@@ -94,6 +95,8 @@ public class CinemaMapeador {
         sessaoJpa.setFilmeId(sessao.getFilmeId().getId());
         sessaoJpa.setHorario(sessao.getHorario());
         sessaoJpa.setStatus(sessao.getStatus());
+    sessaoJpa.setSala(sessao.getSala());
+    sessaoJpa.setCapacidade(sessao.getCapacidade());
         
         // Mapeia o mapa de assentos (AssentoId -> Boolean) para (String -> Boolean)
         Map<String, Boolean> assentosJpa = sessao.getMapaAssentosDisponiveis().entrySet().stream()
@@ -130,7 +133,9 @@ public class CinemaMapeador {
             filmeId,
             sessaoJpa.getHorario(),
             sessaoJpa.getStatus(),
-            assentosDominio
+            assentosDominio,
+            sessaoJpa.getSala() != null ? sessaoJpa.getSala() : "Sala 1",
+            sessaoJpa.getCapacidade() != null ? sessaoJpa.getCapacidade() : assentosDominio.size()
         );
     }
 
@@ -145,6 +150,9 @@ public class CinemaMapeador {
         }
 
         FuncionarioJpa funcionarioJpa = new FuncionarioJpa();
+        if (funcionario.getFuncionarioId() != null) {
+            funcionarioJpa.setId(funcionario.getFuncionarioId().getValor());
+        }
         funcionarioJpa.setNome(funcionario.getNome());
         funcionarioJpa.setCargo(funcionario.getCargo());
         
@@ -159,7 +167,10 @@ public class CinemaMapeador {
             return null;
         }
 
+        FuncionarioId funcionarioId = funcionarioJpa.getId() != null ? new FuncionarioId(funcionarioJpa.getId()) : null;
+
         return new Funcionario(
+            funcionarioId,
             funcionarioJpa.getNome(),
             funcionarioJpa.getCargo()
         );

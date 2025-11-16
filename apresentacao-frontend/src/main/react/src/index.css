@@ -1,18 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Astra Cinemas - Paleta da Imagem */
-  --deep-navy: #1A1B3E;
-  --space-blue: #252747;
-  --nebula-blue: #4A5080;
-  --nebula-purple: #5B5A8C;
-  --glow-blue: #7B9FFF;
-  --glow-purple: #9B8FFF;
-  --pure-white: #FFFFFF;
-  --star-white: #E8EEFF;
-  --gray: #B8B8C8;
-  --success: #00D563;
-  --error: #FF3B30;
+  /* Cores exatas do design de referência */
+  --bg-primary: #1e1533;
+  --bg-secondary: #2a1f47;
+  --bg-card: rgba(42, 31, 71, 0.6);
+  --bg-card-hover: rgba(42, 31, 71, 0.8);
+  --purple-primary: #8b5cf6;
+  --purple-hover: #7c3aed;
+  --purple-light: #a78bfa;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --border: rgba(139, 92, 246, 0.2);
+  --border-focus: rgba(139, 92, 246, 0.5);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
 }
 
 * {
@@ -23,16 +28,17 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--deep-navy);
-  color: var(--pure-white);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow-x: hidden;
   position: relative;
+  min-height: 100vh;
 }
 
-/* FUNDO ESPACIAL - EXATAMENTE COMO NA IMAGEM */
+/* Fundo com estrelas sutis */
 body::before {
   content: '';
   position: fixed;
@@ -41,57 +47,14 @@ body::before {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(ellipse 800px 400px at 30% 40%, rgba(75, 80, 128, 0.3) 0%, transparent 50%),
-    radial-gradient(ellipse 600px 300px at 70% 60%, rgba(91, 90, 140, 0.25) 0%, transparent 50%),
-    radial-gradient(ellipse 500px 500px at 50% 20%, rgba(74, 80, 128, 0.2) 0%, transparent 60%),
-    linear-gradient(180deg, #1A1B3E 0%, #252747 50%, #1A1B3E 100%);
-  z-index: -2;
-  pointer-events: none;
-}
-
-/* ESTRELAS PEQUENAS - COMO NA IMAGEM */
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(1px 1px at 15% 10%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 25% 25%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 45% 15%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 65% 30%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 75% 45%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 85% 20%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 90% 60%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 20% 70%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 35% 85%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 55% 75%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 70% 90%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 10% 50%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 40% 40%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 60% 55%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1px 1px at 80% 70%, rgba(255, 255, 255, 0.6), transparent),
-    radial-gradient(1px 1px at 95% 35%, rgba(255, 255, 255, 0.9), transparent),
-    radial-gradient(1px 1px at 5% 80%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 50% 5%, rgba(255, 255, 255, 0.8), transparent);
-  background-size: 100% 100%;
-  background-position: 0% 0%;
-  opacity: 1;
+    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
   z-index: -1;
   pointer-events: none;
-  animation: gentle-twinkle 4s ease-in-out infinite;
 }
 
-@keyframes gentle-twinkle {
-  0%, 100% { 
-    opacity: 1;
-  }
-  50% { 
-    opacity: 0.7;
-  }
-}
+/* Importar estilos do cliente */
+@import './styles/cliente.css';
 
 /* NEBULOSA - EXATAMENTE COMO NA IMAGEM */
 @keyframes nebula-flow {

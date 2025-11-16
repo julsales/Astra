@@ -2,6 +2,8 @@ package com.astra.cinema.dominio.sessao;
 
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirEstado;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
+import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirPositivo;
+import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirTexto;
 
 import com.astra.cinema.dominio.comum.*;
 import java.util.Date;
@@ -14,9 +16,11 @@ public class Sessao implements Cloneable {
     private Date horario;
     private StatusSessao status;
     private Map<AssentoId, Boolean> mapaAssentosDisponiveis;
+    private final String sala;
+    private final int capacidade;
 
     public Sessao(SessaoId sessaoId, FilmeId filmeId, Date horario, StatusSessao status,
-                  Map<AssentoId, Boolean> mapaAssentosDisponiveis) {
+                  Map<AssentoId, Boolean> mapaAssentosDisponiveis, String sala, int capacidade) {
         // NOTA: sessaoId pode ser null durante a criação de uma nova sessão
         // O ID será gerado automaticamente pelo banco de dados (IDENTITY)
         // e preenchido após a persistência
@@ -26,6 +30,26 @@ public class Sessao implements Cloneable {
         this.horario = horario;
         this.status = exigirNaoNulo(status, "O status não pode ser nulo");
         this.mapaAssentosDisponiveis = new HashMap<>(mapaAssentosDisponiveis != null ? mapaAssentosDisponiveis : new HashMap<>());
+        this.sala = exigirTexto(sala != null ? sala : "Sala 1", "A sala não pode ser vazia");
+        int capacidadeDerivada = this.mapaAssentosDisponiveis.size();
+        int capacidadeCalculada = capacidade > 0 ? capacidade : capacidadeDerivada;
+        this.capacidade = exigirPositivo(capacidadeCalculada > 0 ? capacidadeCalculada : capacidadeDerivada,
+            "A capacidade deve ser positiva");
+    }
+
+    public Sessao(SessaoId sessaoId, FilmeId filmeId, Date horario, StatusSessao status,
+                  Map<AssentoId, Boolean> mapaAssentosDisponiveis) {
+        this(
+            sessaoId,
+            filmeId,
+            horario,
+            status,
+            mapaAssentosDisponiveis,
+            "Sala 1",
+            mapaAssentosDisponiveis != null && !mapaAssentosDisponiveis.isEmpty()
+                    ? mapaAssentosDisponiveis.size()
+                    : 100
+        );
     }
 
     public SessaoId getSessaoId() {
@@ -46,6 +70,14 @@ public class Sessao implements Cloneable {
 
     public Map<AssentoId, Boolean> getMapaAssentosDisponiveis() {
         return new HashMap<>(mapaAssentosDisponiveis);
+    }
+
+    public String getSala() {
+        return sala;
+    }
+
+    public int getCapacidade() {
+        return capacidade;
     }
 
     public boolean assentoDisponivel(AssentoId assentoId) {
