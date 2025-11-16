@@ -27,7 +27,29 @@ O Astra é um sistema de gestão completo para cinemas, integrando a compra de i
 * Operar a bomboniere, validar ingresso
 * Ver relatórios
 
-## 🔗 Links dos artefatos/entregáveis
+## �️ Como rodar localmente
+
+1. Compile todos os módulos Maven (frontend incluso):
+  ```bash
+  mvn -q -DskipTests package
+  ```
+2. Suba Postgres + backend com Docker Compose (usa as variáveis `DATABASE_*` já configuradas):
+  ```bash
+  docker-compose up --build
+  ```
+3. A aplicação backend sobe em `http://localhost:8080` servindo também os assets do módulo `apresentacao-frontend`.
+
+## ✅ Testes BDD
+
+Os cenários Cucumber foram movidos para o módulo `astra-dominio` para espelhar o SGB. Execute-os com:
+
+```bash
+mvn -q -pl dominio test
+```
+
+Isso roda `RunCucumberTest`, cobrindo fluxos de compra, sessão, bomboniere, pagamento, programação e gerenciamento de usuários.
+
+## �🔗 Links dos artefatos/entregáveis
 
 * [Descrição do Domínio](https://docs.google.com/document/d/1_o6GAWY7OvhhR_YJnx4K9i8jbMJ_n436_AnnscwNL5o/edit?tab=t.0)
 * [Mapa de histórias](https://docs.google.com/spreadsheets/d/1WRr6s1s3xA9KvXNEO1kmZ--eTIqEMnCFXpGGjTszHWc/edit?gid=1767904539#gid=1767904539)
