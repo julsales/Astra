@@ -1,0 +1,178 @@
+package com.astra.cinema.apresentacao.rest;
+
+import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
+import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
+import com.astra.cinema.dominio.comum.AssentoId;
+import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.compra.StatusIngresso;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/funcionario/ingressos")
+@CrossOrigin(origins = "*")
+public class IngressoController {
+
+    private final ValidarIngressoUseCase validarIngressoUseCase;
+    private final RemarcarIngressoUseCase remarcarIngressoUseCase;
+    private final CompraRepositorio compraRepositorio;
+
+    public IngressoController(ValidarIngressoUseCase validarIngressoUseCase,
+                             RemarcarIngressoUseCase remarcarIngressoUseCase,
+                             CompraRepositorio compraRepositorio) {
+        this.validarIngressoUseCase = validarIngressoUseCase;
+        this.remarcarIngressoUseCase = remarcarIngressoUseCase;
+        this.compraRepositorio = compraRepositorio;
+    }
+
+    @PostMapping("/validar")
+    public ResponseEntity<?> validarIngresso(@RequestBody ValidarRequest request) {
+        try {
+            var resultado = validarIngressoUseCase.executar(request.getQrCode());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("valido", resultado.isValido());
+            response.put("mensagem", resultado.getMensagem());
+            
+            if (resultado.getIngresso() != null) {
+                response.put("ingresso", Map.of(
+                    "id", resultado.getIngresso().getIngressoId().getId(),
+                    "qrCode", resultado.getIngresso().getQrCode(),
+                    "tipo", resultado.getIngresso().getTipo().name(),
+                    "status", resultado.getIngresso().getStatus().name(),
+                    "assento", resultado.getIngresso().getAssentoId().getValor()
+                ));
+            }
+            
+            if (resultado.getSessao() != null) {
+                response.put("sessao", Map.of(
+                    "id", resultado.getSessao().getSessaoId().getId(),
+                    "horario", resultado.getSessao().getHorario().toString(),
+                    "sala", resultado.getSessao().getSala()
+                ));
+            }
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/remarcar")
+    public ResponseEntity<?> remarcarIngresso(@RequestBody RemarcarRequest request) {
+        try {
+            remarcarIngressoUseCase.executar(
+                request.getQrCode(),
+                new SessaoId(request.getNovaSessaoId()),
+                new AssentoId(request.getNovoAssentoId())
+            );
+            
+            return ResponseEntity.ok(Map.of(
+                "sucesso", true,
+                "mensagem", "Ingresso remarcado com sucesso"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/ativos")
+    public ResponseEntity<?> buscarIngressosAtivos() {
+        try {
+            List<Ingresso> ingressos = compraRepositorio.buscarIngressosAtivos();
+            
+            List<Map<String, Object>> response = ingressos.stream()
+                .map(i -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", i.getIngressoId().getId());
+                    map.put("qrCode", i.getQrCode());
+                    map.put("sessaoId", i.getSessaoId().getId());
+                    map.put("assento", i.getAssentoId().getValor());
+                    map.put("tipo", i.getTipo().name());
+                    map.put("status", i.getStatus().name());
+                    return map;
+                })
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/historico")
+    public ResponseEntity<?> buscarHistorico() {
+        try {
+            // Buscar todos os ingressos (não apenas ativos)
+            List<Map<String, Object>> historico = compraRepositorio.buscarIngressosAtivos().stream()
+                .map(i -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", i.getIngressoId().getId());
+                    map.put("qrCode", i.getQrCode());
+                    map.put("status", i.getStatus().name());
+                    map.put("sessaoId", i.getSessaoId().getId());
+                    map.put("assento", i.getAssentoId().getValor());
+                    return map;
+                })
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(historico);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    // Classes de Request
+    public static class ValidarRequest {
+        private String qrCode;
+
+        public String getQrCode() {
+            return qrCode;
+        }
+
+        public void setQrCode(String qrCode) {
+            this.qrCode = qrCode;
+        }
+    }
+
+    public static class RemarcarRequest {
+        private String qrCode;
+        private int novaSessaoId;
+        private String novoAssentoId;
+
+        public String getQrCode() {
+            return qrCode;
+        }
+
+        public void setQrCode(String qrCode) {
+            this.qrCode = qrCode;
+        }
+
+        public int getNovaSessaoId() {
+            return novaSessaoId;
+        }
+
+        public void setNovaSessaoId(int novaSessaoId) {
+            this.novaSessaoId = novaSessaoId;
+        }
+
+        public String getNovoAssentoId() {
+            return novoAssentoId;
+        }
+
+        public void setNovoAssentoId(String novoAssentoId) {
+            this.novoAssentoId = novoAssentoId;
+        }
+    }
+}

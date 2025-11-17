@@ -3,6 +3,7 @@ import './App.css';
 import Login from './components/Login';
 import AdminPanel from './components/admin/AdminPanel';
 import ClientePainel from './components/cliente/ClientePainel';
+import FuncionarioPanel from './components/funcionario/FuncionarioPanel';
 import Stars from './components/Stars';
 import CosmicNebula from './components/CosmicNebula';
 
@@ -17,18 +18,19 @@ function App() {
     setUsuarioLogado(null);
   };
 
-  // Se usuário está logado, decide entre painel administrativo (ADMIN/FUNCIONARIO)
-  // ou painel de cliente
+  // Se usuário está logado, decide qual painel mostrar
   if (usuarioLogado) {
-    const isPainelAdmin = ['ADMIN', 'FUNCIONARIO'].includes(usuarioLogado.tipo);
-
     return (
       <div className="App">
         <CosmicNebula />
         <div className="diamond-star"></div>
-        {isPainelAdmin ? (
+        {usuarioLogado.tipo === 'ADMIN' && (
           <AdminPanel usuario={usuarioLogado} onLogout={handleLogout} />
-        ) : (
+        )}
+        {usuarioLogado.tipo === 'FUNCIONARIO' && (
+          <FuncionarioPanel usuario={usuarioLogado} onLogout={handleLogout} />
+        )}
+        {usuarioLogado.tipo === 'CLIENTE' && (
           <ClientePainel usuario={usuarioLogado} onLogout={handleLogout} />
         )}
       </div>

@@ -48,6 +48,42 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Ingresso buscarIngressoPorQrCode(String qrCode) {
+        if (qrCode == null) throw new IllegalArgumentException("O QR Code não pode ser nulo");
+        return compras.values().stream()
+                .flatMap(c -> c.getIngressos().stream())
+                .filter(i -> qrCode.equals(i.getQrCode()))
+                .findFirst()
+                .map(Ingresso::clone)
+                .orElse(null);
+    }
+
+    @Override
+    public void atualizarIngresso(Ingresso ingresso) {
+        if (ingresso == null) throw new IllegalArgumentException("O ingresso não pode ser nulo");
+        // Em memória, basta atualizar a referência - já que trabalhamos com clones
+        // Em uma implementação real com JPA, seria um merge/update
+        for (Compra compra : compras.values()) {
+            for (int i = 0; i < compra.getIngressos().size(); i++) {
+                if (compra.getIngressos().get(i).getIngressoId().equals(ingresso.getIngressoId())) {
+                    // Atualiza o ingresso na compra
+                    compra.getIngressos().set(i, ingresso);
+                    return;
+                }
+            }
+        }
+    }
+
+    @Override
+    public List<Ingresso> buscarIngressosAtivos() {
+        return compras.values().stream()
+                .flatMap(c -> c.getIngressos().stream())
+                .filter(i -> i.getStatus() == StatusIngresso.VALIDO)
+                .map(Ingresso::clone)
+                .collect(Collectors.toList());
+    }
+
     // SessaoRepositorio
     @Override
     public Sessao salvar(Sessao sessao) {

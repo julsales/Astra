@@ -63,6 +63,16 @@ public class Ingresso implements Cloneable {
         this.status = StatusIngresso.CANCELADO;
     }
 
+    public void remarcarSessao(SessaoId novaSessaoId, AssentoId novoAssentoId) {
+        exigirNaoNulo(novaSessaoId, "A nova sessão não pode ser nula");
+        exigirNaoNulo(novoAssentoId, "O novo assento não pode ser nulo");
+        exigirEstado(status != StatusIngresso.UTILIZADO, "Não é possível remarcar um ingresso já utilizado");
+        exigirEstado(status != StatusIngresso.CANCELADO, "Não é possível remarcar um ingresso cancelado");
+        
+        this.sessaoId = novaSessaoId;
+        this.assentoId = novoAssentoId;
+    }
+
     @Override
     public Ingresso clone() {
         try {
