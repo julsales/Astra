@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS FILME (
     sinopse VARCHAR(1000),
     classificacao_etaria VARCHAR(50),
     duracao INTEGER NOT NULL,
+    imagem_url VARCHAR(1000),
     status VARCHAR(20) NOT NULL
 );
 

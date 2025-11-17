@@ -18,7 +18,8 @@ const Filmes = ({ usuario }) => {
     titulo: '',
     sinopse: '',
     classificacaoEtaria: '',
-    duracao: ''
+    duracao: '',
+    imagemUrl: ''
   });
   const [filtros, setFiltros] = useState({ status: 'TODOS', busca: '' });
 
@@ -77,7 +78,8 @@ const Filmes = ({ usuario }) => {
         titulo: filme.titulo,
         sinopse: filme.sinopse,
         classificacaoEtaria: filme.classificacaoEtaria,
-        duracao: filme.duracao
+        duracao: filme.duracao,
+        imagemUrl: filme.imagemUrl || ''
       });
     } else {
       setEditando(null);
@@ -85,7 +87,8 @@ const Filmes = ({ usuario }) => {
         titulo: '',
         sinopse: '',
         classificacaoEtaria: '',
-        duracao: ''
+        duracao: '',
+        imagemUrl: ''
       });
     }
     setShowModal(true);
@@ -98,7 +101,8 @@ const Filmes = ({ usuario }) => {
       titulo: '',
       sinopse: '',
       classificacaoEtaria: '',
-      duracao: ''
+      duracao: '',
+      imagemUrl: ''
     });
   };
 
@@ -109,6 +113,7 @@ const Filmes = ({ usuario }) => {
       const payload = {
         ...formData,
         duracao: parseInt(formData.duracao),
+        imagemUrl: formData.imagemUrl?.trim() || null,
         funcionario: getFuncionarioPayload()
       };
 
@@ -206,6 +211,7 @@ const Filmes = ({ usuario }) => {
           <p className="page-subtitle">
             Gerencie o catálogo de filmes do cinema • {filmes.length} resultados
           </p>
+                  <th>Poster</th>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
           <AddIcon size={18} /> Adicionar Filme
@@ -315,9 +321,19 @@ const Filmes = ({ usuario }) => {
                   <th>Ações</th>
                 </tr>
               </thead>
+                  <th>ID</th>
               <tbody>
                 {filmes.map((filme) => (
                   <tr key={filme.id}>
+                    <td>
+                      <div
+                        className="poster-thumb"
+                        style={{
+                          backgroundImage: filme.imagemUrl ? `url(${filme.imagemUrl})` : 'linear-gradient(135deg, #4f46e5, #9333ea)'
+                        }}
+                        aria-label={`Poster do filme ${filme.titulo}`}
+                      />
+                    </td>
                     <td>#{filme.id}</td>
                     <td>
                       <strong style={{ color: 'white' }}>{filme.titulo}</strong>
@@ -386,6 +402,27 @@ const Filmes = ({ usuario }) => {
                   rows="4"
                   placeholder="Descreva o filme..."
                 />
+              </div>
+
+              <div className="form-group">
+                <label>URL da imagem do filme</label>
+                <input
+                  type="url"
+                  value={formData.imagemUrl}
+                  onChange={(e) => setFormData({ ...formData, imagemUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+                <p className="help-text">Utilize uma imagem horizontal (mínimo 1200x800) hospedada em um CDN confiável.</p>
+                <div className="poster-preview">
+                  <div
+                    className="poster-preview-frame"
+                    style={{
+                      backgroundImage: formData.imagemUrl ? `url(${formData.imagemUrl})` : 'linear-gradient(135deg, rgba(79,70,229,0.4), rgba(147,51,234,0.4))'
+                    }}
+                  >
+                    {!formData.imagemUrl && <span>Prévia aparecerá aqui</span>}
+                  </div>
+                </div>
               </div>
 
               <div className="form-row">

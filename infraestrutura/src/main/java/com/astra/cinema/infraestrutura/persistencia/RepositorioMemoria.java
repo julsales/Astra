@@ -116,6 +116,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 filme.getSinopse(),
                 filme.getClassificacaoEtaria(),
                 filme.getDuracao(),
+                filme.getImagemUrl(),
                 filme.getStatus()
             );
         }

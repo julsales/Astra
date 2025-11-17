@@ -11,8 +11,8 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class CriarSessaoFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private FilmeId filmeId = new FilmeId(1);
-    private FilmeId filmeId2 = new FilmeId(2);
     
     private Sessao sessaoCriada;
     private RuntimeException excecao;
@@ -20,7 +20,7 @@ public class CriarSessaoFuncionalidade extends CinemaFuncionalidade {
     @Dado("que o filme {string} está com status {string}")
     public void que_o_filme_esta_com_status(String tituloFilme, String status) {
         var statusFilme = StatusFilme.valueOf(status.replace(" ", "_"));
-        var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "12", 150, statusFilme);
+    var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "12", 150, IMAGEM_PADRAO, statusFilme);
         filmeService.salvar(filme);
     }
 

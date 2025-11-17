@@ -11,6 +11,7 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class MarcarSessaoEsgotadaFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private SessaoId sessaoId = new SessaoId(1);
     private RuntimeException excecao;
 
@@ -18,7 +19,7 @@ public class MarcarSessaoEsgotadaFuncionalidade extends CinemaFuncionalidade {
     public void que_todos_os_assentos_da_sessao_foram_reservados() {
         // Cria filme
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "Oppenheimer", "Sinopse", "14", 180, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Oppenheimer", "Sinopse", "14", 180, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria sessão com apenas um assento disponível
@@ -52,7 +53,7 @@ public class MarcarSessaoEsgotadaFuncionalidade extends CinemaFuncionalidade {
     public void que_ainda_ha_assentos_disponiveis_na_sessao() {
         // Cria filme
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "Barbie", "Sinopse", "Livre", 120, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Barbie", "Sinopse", "Livre", 120, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria sessão com assentos disponíveis

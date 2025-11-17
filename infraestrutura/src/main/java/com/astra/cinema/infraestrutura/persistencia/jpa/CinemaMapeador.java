@@ -7,14 +7,10 @@ import com.astra.cinema.dominio.comum.FuncionarioId;
 import com.astra.cinema.dominio.comum.ProdutoId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.filme.Filme;
-import com.astra.cinema.dominio.filme.StatusFilme;
 import com.astra.cinema.dominio.sessao.Sessao;
-import com.astra.cinema.dominio.sessao.StatusSessao;
-import com.astra.cinema.dominio.usuario.Cargo;
 import com.astra.cinema.dominio.usuario.Funcionario;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -50,6 +46,7 @@ public class CinemaMapeador {
         filmeJpa.setClassificacaoEtaria(filme.getClassificacaoEtaria());
         filmeJpa.setDuracao(filme.getDuracao());
         filmeJpa.setStatus(filme.getStatus());
+        filmeJpa.setImagemUrl(filme.getImagemUrl());
         
         return filmeJpa;
     }
@@ -70,6 +67,7 @@ public class CinemaMapeador {
             filmeJpa.getSinopse(),
             filmeJpa.getClassificacaoEtaria(),
             filmeJpa.getDuracao(),
+            filmeJpa.getImagemUrl(),
             filmeJpa.getStatus()
         );
     }

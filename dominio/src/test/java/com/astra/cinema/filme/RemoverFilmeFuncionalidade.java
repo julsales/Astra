@@ -11,12 +11,13 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private FilmeId filmeId = new FilmeId(1);
     private RuntimeException excecao;
 
     @Dado("que o filme {string} não possui sessões agendadas")
     public void que_o_filme_nao_possui_sessoes_agendadas(String tituloFilme) {
-        var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "16", 130, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "16", 130, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Não cria nenhuma sessão
@@ -39,7 +40,7 @@ public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
 
     @Dado("que o filme {string} ainda possui sessões futuras")
     public void que_o_filme_ainda_possui_sessoes_futuras(String tituloFilme) {
-        var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "12", 150, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, tituloFilme, "Sinopse do filme", "12", 150, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria uma sessão FUTURA para o filme (amanhã)

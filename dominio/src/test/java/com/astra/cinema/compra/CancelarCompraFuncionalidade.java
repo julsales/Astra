@@ -14,6 +14,7 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class CancelarCompraFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private ClienteId clienteId = new ClienteId(1);
     private CompraId compraId = new CompraId(1);
     private PagamentoId pagamentoId = new PagamentoId(1);
@@ -28,7 +29,7 @@ public class CancelarCompraFuncionalidade extends CinemaFuncionalidade {
         
         // Cria filme e sessão
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "Matrix", "Sinopse", "14", 136, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Matrix", "Sinopse", "14", 136, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         var sessaoId = new SessaoId(1);
@@ -79,7 +80,7 @@ public class CancelarCompraFuncionalidade extends CinemaFuncionalidade {
         
         // Cria filme e sessão
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "Matrix", "Sinopse", "14", 136, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Matrix", "Sinopse", "14", 136, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         var sessaoId = new SessaoId(1);

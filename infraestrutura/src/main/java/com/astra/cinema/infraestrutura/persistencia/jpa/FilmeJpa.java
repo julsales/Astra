@@ -38,6 +38,9 @@ class FilmeJpa {
     @Column(nullable = false)
     private StatusFilme status;
 
+    @Column(name = "imagem_url", length = 1000)
+    private String imagemUrl;
+
     // Getters e Setters
     public Integer getId() {
         return id;
@@ -85,6 +88,14 @@ class FilmeJpa {
 
     public void setStatus(StatusFilme status) {
         this.status = status;
+    }
+
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
     }
 }
 

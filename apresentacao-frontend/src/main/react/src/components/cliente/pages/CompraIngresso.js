@@ -4,13 +4,16 @@ import { gerarQrCodeDataUrl } from '../../../utils/qr';
 import { useMeusIngressos } from '../../../hooks/useMeusIngressos';
 
 const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
-  const [etapa, setEtapa] = useState(1); // 1=assentos, 2=tipos, 3=pagamento
+  const [etapa, setEtapa] = useState(1); // 1=assentos, 2=tipos, 3=bomboniere, 4=pagamento
   const [assentos, setAssentos] = useState([]);
   const [assentosSelecionados, setAssentosSelecionados] = useState([]);
   const [tipoIngresso, setTipoIngresso] = useState('inteira'); // 'inteira' ou 'meia'
   const [metodoPagamento, setMetodoPagamento] = useState('');
   const [processando, setProcessando] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [produtos, setProdutos] = useState([]);
+  const [itensBomboniere, setItensBomboniere] = useState({});
+  const [carregandoProdutos, setCarregandoProdutos] = useState(false);
   
   const { registrarCompra } = useMeusIngressos(usuario);
 
@@ -68,6 +71,26 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
     carregarAssentos();
   }, [carregarAssentos]);
 
+  useEffect(() => {
+    const carregarProdutos = async () => {
+      setCarregandoProdutos(true);
+      try {
+        const response = await fetch('/api/produtos');
+        if (!response.ok) {
+          throw new Error('Falha ao carregar produtos da bomboniere');
+        }
+        const data = await response.json();
+        setProdutos(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
+      } finally {
+        setCarregandoProdutos(false);
+      }
+    };
+
+    carregarProdutos();
+  }, []);
+
   const reservarAssentosSelecionados = async () => {
     if (!sessao?.id) {
       throw new Error('Sessão inválida. Volte e selecione novamente.');
@@ -116,6 +139,45 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
     return assentosSelecionados.length * precoBase;
   };
 
+  const atualizarQuantidadeProduto = (produtoId, delta, limite = Infinity) => {
+    setItensBomboniere((prev) => {
+      const atual = prev[produtoId] || 0;
+      let novoValor = atual + delta;
+      if (novoValor < 0) novoValor = 0;
+      if (novoValor > limite) novoValor = limite;
+      const atualizado = { ...prev };
+      if (novoValor === 0) {
+        delete atualizado[produtoId];
+      } else {
+        atualizado[produtoId] = novoValor;
+      }
+      return atualizado;
+    });
+  };
+
+  const calcularTotalBomboniere = () => {
+    return Object.entries(itensBomboniere).reduce((total, [id, quantidade]) => {
+      const produto = produtos.find((p) => String(p.id) === String(id));
+      if (!produto) return total;
+      return total + (produto.preco || 0) * quantidade;
+    }, 0);
+  };
+
+  const totalGeral = () => calcularPreco() + calcularTotalBomboniere();
+
+  const obterQuantidadeProduto = (produtoId) => itensBomboniere[produtoId] || 0;
+
+  const itensBomboniereSelecionados = produtos
+    .filter((produto) => itensBomboniere[produto.id])
+    .map((produto) => {
+      const quantidade = itensBomboniere[produto.id];
+      return {
+        ...produto,
+        quantidade,
+        subtotal: (produto.preco || 0) * quantidade
+      };
+    });
+
   const formatarData = (iso) => {
     const data = new Date(iso);
     return data.toLocaleDateString('pt-BR', { 
@@ -153,13 +215,17 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
 
       const codigo = `ASTRA${Date.now().toString().slice(-6)}`;
       const qrCode = await gerarQrCodeDataUrl(codigo);
+      const totalBomboniere = calcularTotalBomboniere();
+      const totalIngressos = calcularPreco();
       
       const compra = {
         filme,
         sessao,
         assentos: assentosSelecionados,
-        produtos: [],
-        total: calcularPreco(),
+        produtos: itensBomboniereSelecionados,
+        totalIngressos,
+        totalBomboniere,
+        total: totalIngressos + totalBomboniere,
         metodoPagamento,
         status: 'CONFIRMADO',
         qrCode,
@@ -169,6 +235,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       registrarCompra(compra);
       
       setAssentosSelecionados([]);
+      setItensBomboniere({});
       setEtapa(1);
 
       setTimeout(() => {
@@ -201,7 +268,11 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 18l6-6-6-6" />
           </svg>
-          <span className={etapa >= 3 ? 'active' : ''}>3. Pagamento</span>
+          <span className={etapa >= 3 ? 'active' : ''}>3. Bomboniere</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+          <span className={etapa >= 4 ? 'active' : ''}>4. Pagamento</span>
         </div>
       </header>
 
@@ -242,11 +313,44 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
               </div>
 
               <div className="resumo-total">
-                <span>Total:</span>
+                <span>Total ingressos:</span>
                 <span className="preco-destaque">R$ {calcularPreco().toFixed(2)}</span>
               </div>
             </>
           )}
+
+          {itensBomboniereSelecionados.length > 0 && (
+            <div className="resumo-bomboniere">
+              <h5>Bomboniere</h5>
+              <ul>
+                {itensBomboniereSelecionados.map((item) => (
+                  <li key={item.id}>
+                    <span>{item.quantidade}x {item.nome}</span>
+                    <span>R$ {item.subtotal.toFixed(2)}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="resumo-total">
+                <span>Total combos:</span>
+                <span className="preco-destaque">R$ {calcularTotalBomboniere().toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="resumo-geral">
+            <div className="resumo-geral-linha">
+              <span>Ingressos</span>
+              <span>R$ {calcularPreco().toFixed(2)}</span>
+            </div>
+            <div className="resumo-geral-linha">
+              <span>Bomboniere</span>
+              <span>R$ {calcularTotalBomboniere().toFixed(2)}</span>
+            </div>
+            <div className="resumo-geral-total">
+              <span>Total geral</span>
+              <strong>R$ {totalGeral().toFixed(2)}</strong>
+            </div>
+          </div>
         </aside>
 
         {/* Área principal - muda conforme a etapa */}
@@ -370,7 +474,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
                   Voltar
                 </button>
                 <button className="btn-primary-largo" onClick={() => setEtapa(3)}>
-                  Continuar
+                  Ir para bomboniere
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
@@ -380,6 +484,115 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
           )}
 
           {etapa === 3 && (
+            <div className="etapa-bomboniere">
+              <div className="bomboniere-hero">
+                <div>
+                  <h2>Bomboniere futurista</h2>
+                  <p className="etapa-subtitulo">
+                    Combine pipocas, bebidas e doces reais do nosso estoque digital.
+                  </p>
+                </div>
+                <div className="bomboniere-total-hero">
+                  <span>Total combos</span>
+                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                </div>
+              </div>
+
+              {carregandoProdutos ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>Carregando delícias da bomboniere...</p>
+                </div>
+              ) : produtos.length === 0 ? (
+                <div className="empty-state">
+                  <p>Nenhum produto disponível agora. Nossa equipe já está reabastecendo.</p>
+                </div>
+              ) : (
+                <div className="bomboniere-grid">
+                  {produtos.map((produto) => {
+                    const quantidade = obterQuantidadeProduto(produto.id);
+                    const limite = typeof produto.estoque === 'number' ? produto.estoque : Infinity;
+                    const semEstoque = Number.isFinite(limite) && limite === 0;
+                    return (
+                      <article key={produto.id} className={`bomboniere-card ${quantidade ? 'selecionado' : ''}`}>
+                        <div className="bomboniere-card-body">
+                          <h3>{produto.nome}</h3>
+                          <p className="bomboniere-preco">R$ {produto.preco?.toFixed(2)}</p>
+                          <p className="bomboniere-estoque">
+                            {produto.estoque != null ? `${produto.estoque} em estoque` : 'Estoque em atualização'}
+                          </p>
+                          {semEstoque && <span className="bomboniere-tag">Esgotado</span>}
+                        </div>
+                        <div className="bomboniere-controles">
+                          <button
+                            className="btn-quantidade"
+                            onClick={() => atualizarQuantidadeProduto(produto.id, -1, limite)}
+                            disabled={quantidade === 0}
+                          >
+                            –
+                          </button>
+                          <span className="quantidade-valor">{quantidade}</span>
+                          <button
+                            className="btn-quantidade"
+                            onClick={() => atualizarQuantidadeProduto(produto.id, 1, limite)}
+                            disabled={semEstoque || quantidade >= limite}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="bomboniere-carrinho">
+                <div className="bomboniere-carrinho-header">
+                  <h4>Seu carrinho</h4>
+                  <span>{itensBomboniereSelecionados.length} itens</span>
+                </div>
+                {itensBomboniereSelecionados.length === 0 ? (
+                  <p className="bomboniere-carrinho-vazio">
+                    Comece adicionando combos — você retira tudo pronto ao chegar.
+                  </p>
+                ) : (
+                  <ul>
+                    {itensBomboniereSelecionados.map((item) => (
+                      <li key={item.id}>
+                        <div>
+                          <strong>{item.nome}</strong>
+                          <span>{item.quantidade}x</span>
+                        </div>
+                        <span>R$ {item.subtotal.toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="bomboniere-carrinho-total">
+                  <span>Total combos</span>
+                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                </div>
+              </div>
+
+              <div className="compra-acoes">
+                <button className="btn-secondary-largo" onClick={() => setEtapa(2)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                  Voltar
+                </button>
+                <button className="btn-primary-largo" onClick={() => setEtapa(4)}>
+                  Ir para pagamento
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {etapa === 4 && (
             <div className="etapa-pagamento">
               <h2>Pagamento</h2>
               <p className="etapa-subtitulo">Escolha a forma de pagamento</p>
@@ -428,8 +641,23 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
                 </button>
               </div>
 
+              <div className="pagamento-resumo">
+                <div>
+                  <span>Ingressos</span>
+                  <strong>R$ {calcularPreco().toFixed(2)}</strong>
+                </div>
+                <div>
+                  <span>Bomboniere</span>
+                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                </div>
+                <div className="pagamento-total-geral">
+                  <span>Total a pagar</span>
+                  <strong>R$ {totalGeral().toFixed(2)}</strong>
+                </div>
+              </div>
+
               <div className="compra-acoes">
-                <button className="btn-secondary-largo" onClick={() => setEtapa(2)}>
+                <button className="btn-secondary-largo" onClick={() => setEtapa(3)}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 12H5M12 19l-7-7 7-7" />
                   </svg>

@@ -183,7 +183,8 @@ public class FilmeController {
                 request.titulo(),
                 request.sinopse(),
                 request.classificacaoEtaria(),
-                request.duracao()
+                request.duracao(),
+                request.imagemUrl()
             );
 
             response.put("mensagem", "Filme adicionado com sucesso");
@@ -227,7 +228,8 @@ public class FilmeController {
                 request.titulo(),
                 request.sinopse(),
                 request.classificacaoEtaria(),
-                request.duracao() != null ? request.duracao() : 0
+                request.duracao() != null ? request.duracao() : 0,
+                request.imagemUrl()
             );
 
             response.put("mensagem", "Filme alterado com sucesso");
@@ -263,7 +265,8 @@ public class FilmeController {
         String sinopse,
         String classificacaoEtaria,
         Integer duracao,
-        String status
+        String status,
+        String imagemUrl
     ) {}
 
     /**
@@ -282,6 +285,7 @@ public class FilmeController {
         String sinopse,
         String classificacaoEtaria,
         Integer duracao,
+        String imagemUrl,
         FuncionarioRequestDTO funcionario
     ) {}
 
@@ -293,6 +297,7 @@ public class FilmeController {
         String sinopse,
         String classificacaoEtaria,
         Integer duracao,
+        String imagemUrl,
         FuncionarioRequestDTO funcionario
     ) {}
 
@@ -305,7 +310,8 @@ public class FilmeController {
             filme.getSinopse(),
             filme.getClassificacaoEtaria(),
             filme.getDuracao(),
-            filme.getStatus().toString()
+            filme.getStatus().toString(),
+            filme.getImagemUrl()
         );
     }
 

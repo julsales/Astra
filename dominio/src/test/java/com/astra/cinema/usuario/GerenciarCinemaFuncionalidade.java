@@ -12,6 +12,7 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private Funcionario funcionario;
     private Sessao sessaoCriada;
     private RuntimeException excecao;
@@ -30,7 +31,7 @@ public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
             
             // Cria filme
             var filmeId = new FilmeId(1);
-            var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, StatusFilme.EM_CARTAZ);
+            var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
             filmeService.salvar(filme);
             
             // Cria sessão
@@ -62,7 +63,7 @@ public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
             }
             
             var filmeId = new FilmeId(1);
-            var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, StatusFilme.EM_CARTAZ);
+            var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
             filmeService.salvar(filme);
             
             Map<AssentoId, Boolean> assentos = new HashMap<>();

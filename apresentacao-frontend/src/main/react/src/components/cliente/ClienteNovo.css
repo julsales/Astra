@@ -299,19 +299,20 @@
 
 .filme-poster {
   flex-shrink: 0;
-  width: 140px;
+  width: 160px;
+  height: 230px;
+  border-radius: 16px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.poster-placeholder {
-  width: 100%;
-  height: 200px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.25) 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(139, 92, 246, 0.5);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+.poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 6, 32, 0.1) 0%, rgba(15, 6, 32, 0.7) 100%);
 }
 
 .filme-info {
@@ -1031,6 +1032,7 @@
 
 .etapa-assentos h2,
 .etapa-tipos h2,
+.etapa-bomboniere h2,
 .etapa-pagamento h2 {
   font-size: 1.8rem;
   font-weight: 700;
@@ -1258,6 +1260,226 @@
   margin: 0;
 }
 
+/* === BOMBONIERE === */
+.etapa-bomboniere {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bomboniere-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(120deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.bomboniere-total-hero {
+  text-align: right;
+  color: #fff;
+}
+
+.bomboniere-total-hero span {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.bomboniere-total-hero strong {
+  font-size: 1.8rem;
+  color: #10b981;
+}
+
+.bomboniere-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.bomboniere-card {
+  background: rgba(26, 11, 46, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  transition: border 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.bomboniere-card.selecionado {
+  border-color: #8b5cf6;
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.2);
+  transform: translateY(-4px);
+}
+
+.bomboniere-card-body h3 {
+  margin: 0 0 0.35rem 0;
+  color: #fff;
+  font-size: 1.15rem;
+}
+
+.bomboniere-preco {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin: 0.35rem 0;
+}
+
+.bomboniere-estoque {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.bomboniere-tag {
+  display: inline-flex;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.bomboniere-controles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-quantidade {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.15);
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-quantidade:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-quantidade:not(:disabled):hover {
+  transform: scale(1.05);
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.quantidade-valor {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.bomboniere-carrinho {
+  background: rgba(26, 11, 46, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  padding: 1.25rem;
+}
+
+.bomboniere-carrinho-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.bomboniere-carrinho ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bomboniere-carrinho li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.bomboniere-carrinho-vazio {
+  margin: 0 0 1rem 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.bomboniere-carrinho-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* === RESUMO AJUSTES === */
+.resumo-bomboniere {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.resumo-bomboniere h5 {
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.5rem 0;
+}
+
+.resumo-bomboniere ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.resumo-bomboniere li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.resumo-geral {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  background: rgba(15, 6, 32, 0.4);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.resumo-geral-linha,
+.resumo-geral-total {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.resumo-geral-total strong {
+  font-size: 1.4rem;
+  color: #10b981;
+}
+
 /* === PAGAMENTO === */
 .pagamento-grid {
   display: grid;
@@ -1303,6 +1525,28 @@
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
   margin: 0;
+}
+
+.pagamento-resumo {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(26, 11, 46, 0.45);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pagamento-resumo > div {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pagamento-total-geral strong {
+  font-size: 1.5rem;
+  color: #10b981;
 }
 
 /* === AÇÕES COMPRA === */
@@ -1394,6 +1638,16 @@
 
   .header-novo {
     padding: 1rem 1.5rem;
+  }
+
+  .bomboniere-hero {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .bomboniere-total-hero {
+    text-align: center;
   }
 
   .hero-title {

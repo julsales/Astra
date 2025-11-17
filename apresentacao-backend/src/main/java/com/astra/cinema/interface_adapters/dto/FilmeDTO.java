@@ -10,18 +10,20 @@ public class FilmeDTO {
     private String classificacaoEtaria;
     private Integer duracao;
     private String status;
+    private String imagemUrl;
 
     public FilmeDTO() {
     }
 
     public FilmeDTO(Integer filmeId, String titulo, String sinopse, 
-                    String classificacaoEtaria, Integer duracao, String status) {
+                    String classificacaoEtaria, Integer duracao, String status, String imagemUrl) {
         this.filmeId = filmeId;
         this.titulo = titulo;
         this.sinopse = sinopse;
         this.classificacaoEtaria = classificacaoEtaria;
         this.duracao = duracao;
         this.status = status;
+        this.imagemUrl = imagemUrl;
     }
 
     public Integer getFilmeId() {
@@ -70,5 +72,13 @@ public class FilmeDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
     }
 }

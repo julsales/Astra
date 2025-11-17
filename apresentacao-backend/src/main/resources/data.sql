@@ -3,11 +3,12 @@
 -- ===============================================
 
 -- Inserindo filmes (sem ID explícito para usar auto-incremento)
-INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status) VALUES ('Duna 2', 'Paul Atreides se une aos Fremen em uma jornada de vingança contra aqueles que destruíram sua família.', '14 anos', 166, 'EM_CARTAZ');
-INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status) VALUES ('Matrix', 'Um hacker descobre a verdade sobre sua realidade e seu papel na guerra contra seus controladores.', '14 anos', 136, 'EM_CARTAZ');
-INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status) VALUES ('Avatar 3', 'Jake Sully e Neytiri enfrentam novos desafios em Pandora.', '12 anos', 195, 'RETIRADO');
-INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status) VALUES ('Oppenheimer', 'A história de J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica.', '14 anos', 180, 'EM_CARTAZ');
-INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status) VALUES ('Barbie', 'Barbie e Ken vivem uma aventura no mundo real.', 'Livre', 114, 'EM_BREVE');
+INSERT INTO FILME (titulo, sinopse, classificacao_etaria, duracao, status, imagem_url) VALUES
+('Duna 2', 'Paul Atreides se une aos Fremen em uma jornada de vingança contra aqueles que destruíram sua família.', '14 anos', 166, 'EM_CARTAZ', 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=80'),
+('Matrix', 'Um hacker descobre a verdade sobre sua realidade e seu papel na guerra contra seus controladores.', '14 anos', 136, 'EM_CARTAZ', 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&w=900&q=80'),
+('Avatar 3', 'Jake Sully e Neytiri enfrentam novos desafios em Pandora.', '12 anos', 195, 'RETIRADO', 'https://images.unsplash.com/photo-1502139214982-d0ad755818d8?auto=format&fit=crop&w=900&q=80'),
+('Oppenheimer', 'A história de J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica.', '14 anos', 180, 'EM_CARTAZ', 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80'),
+('Barbie', 'Barbie e Ken vivem uma aventura no mundo real.', 'Livre', 114, 'EM_BREVE', 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=80');
 
 -- Inserindo funcionários (sem ID explícito para usar auto-incremento)
 INSERT INTO FUNCIONARIO (nome, cargo) VALUES ('João Silva', 'GERENTE');

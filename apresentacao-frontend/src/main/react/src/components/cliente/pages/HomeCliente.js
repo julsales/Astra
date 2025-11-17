@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useMeusIngressos } from '../../../hooks/useMeusIngressos';
 
+const posterFallback = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=900&q=80';
+const getPoster = (url) => {
+  if (!url) return posterFallback;
+  const trimmed = url.trim();
+  return trimmed.length ? trimmed : posterFallback;
+};
+
 const HomeCliente = ({ usuario, onIniciarCompra }) => {
   const [abaAtiva, setAbaAtiva] = useState('filmes'); // 'filmes' ou 'ingressos'
   const [filmes, setFilmes] = useState([]);
@@ -103,15 +110,13 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                 const sessoes = sessoesPorFilme[filme.id] || [];
                 return (
                   <article key={filme.id} className="filme-card-novo">
-                    <div className="filme-poster">
-                      <div className="poster-placeholder">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <rect x="2" y="3" width="20" height="18" rx="2" />
-                          <path d="M7 3v18M12 3v18M17 3v18" />
-                        </svg>
-                      </div>
+                    <div
+                      className="filme-poster"
+                      style={{ backgroundImage: `url(${getPoster(filme.imagemUrl)})` }}
+                    >
+                      <div className="poster-overlay" />
                     </div>
-                    
+
                     <div className="filme-info">
                       <div className="filme-cabecalho">
                         <h3 className="filme-titulo">{filme.titulo}</h3>
@@ -123,8 +128,8 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                       <p className="filme-sinopse">{filme.sinopse}</p>
                       
                       <div className="filme-detalhes">
-                        <span>⏱️ {filme.duracao} min</span>
-                        <span>• {filme.status}</span>
+                        <span>{filme.duracao} min</span>
+                        <span>{filme.status}</span>
                       </div>
 
                       {sessoes.length > 0 && (

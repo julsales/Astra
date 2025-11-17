@@ -13,6 +13,7 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class IniciarCompraFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private ClienteId clienteId = new ClienteId(1);
     private FilmeId filmeId = new FilmeId(1);
     private SessaoId sessaoId = new SessaoId(1);
@@ -25,7 +26,7 @@ public class IniciarCompraFuncionalidade extends CinemaFuncionalidade {
     @Dado("que existe uma sessão com assentos A1 e A2 disponíveis")
     public void que_existe_uma_sessao_com_assentos_a1_e_a2_disponiveis() {
         // Cria o filme
-        var filme = new Filme(filmeId, "Duna 2", "Sinopse", "12", 150, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Duna 2", "Sinopse", "12", 150, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria a sessão com assentos disponíveis
@@ -73,7 +74,7 @@ public class IniciarCompraFuncionalidade extends CinemaFuncionalidade {
     @Dado("que o assento A1 da sessão já está ocupado")
     public void que_o_assento_a1_da_sessao_ja_esta_ocupado() {
         // Cria o filme
-        var filme = new Filme(filmeId, "Duna 2", "Sinopse", "12", 150, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Duna 2", "Sinopse", "12", 150, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria a sessão com A1 ocupado e A2 disponível

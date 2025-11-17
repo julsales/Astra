@@ -13,10 +13,11 @@ public class Filme implements Cloneable {
     private String sinopse;
     private String classificacaoEtaria;
     private int duracao;
+    private String imagemUrl;
     private StatusFilme status;
 
     public Filme(FilmeId filmeId, String titulo, String sinopse, String classificacaoEtaria,
-                int duracao, StatusFilme status) {
+                int duracao, String imagemUrl, StatusFilme status) {
         // NOTA: filmeId pode ser null durante a criação de um novo filme
         // O ID será gerado automaticamente pelo banco de dados (IDENTITY)
         // e preenchido após a persistência
@@ -26,6 +27,7 @@ public class Filme implements Cloneable {
         this.sinopse = sinopse;
         this.classificacaoEtaria = classificacaoEtaria;
         this.duracao = exigirPositivo(duracao, "A duração deve ser positiva");
+        this.imagemUrl = normalizarImagem(imagemUrl);
         this.status = exigirNaoNulo(status, "O status não pode ser nulo");
     }
 
@@ -49,6 +51,10 @@ public class Filme implements Cloneable {
         return duracao;
     }
 
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
     public StatusFilme getStatus() {
         return status;
     }
@@ -60,6 +66,14 @@ public class Filme implements Cloneable {
 
     public void retirarDeCartaz() {
         this.remover();
+    }
+
+    private String normalizarImagem(String imagemUrl) {
+        if (imagemUrl == null) {
+            return null;
+        }
+        String valor = imagemUrl.trim();
+        return valor.isEmpty() ? null : valor;
     }
 
     @Override

@@ -18,7 +18,8 @@ public class FilmeMapper {
             filme.getSinopse(),
             filme.getClassificacaoEtaria(),
             filme.getDuracao(),
-            filme.getStatus().name()
+            filme.getStatus().name(),
+            filme.getImagemUrl()
         );
     }
 
@@ -31,6 +32,7 @@ public class FilmeMapper {
             dto.getSinopse(),
             dto.getClassificacaoEtaria(),
             dto.getDuracao(),
+            dto.getImagemUrl(),
             StatusFilme.valueOf(dto.getStatus())
         );
     }

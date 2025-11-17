@@ -4,6 +4,8 @@ import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 
+import java.net.URI;
+
 /**
  * Caso de uso: Alterar dados de um filme existente
  * Responsabilidade: Orquestrar a atualização dos dados do filme
@@ -28,10 +30,11 @@ public class AlterarFilmeUseCase {
      * @param novaSinopse Nova sinopse (null mantém a atual)
      * @param novaClassificacao Nova classificação (null mantém a atual)
      * @param novaDuracao Nova duração (0 ou negativo mantém a atual)
-     * @return Filme atualizado
-     */
+    * @param novaImagemUrl Nova URL da imagem (null mantém a atual)
+    * @return Filme atualizado
+    */
     public Filme executar(FilmeId filmeId, String novoTitulo, String novaSinopse, 
-                          String novaClassificacao, int novaDuracao) {
+                     String novaClassificacao, int novaDuracao, String novaImagemUrl) {
         if (filmeId == null) {
             throw new IllegalArgumentException("O ID do filme não pode ser nulo");
         }
@@ -57,6 +60,7 @@ public class AlterarFilmeUseCase {
             novaSinopse != null ? novaSinopse : filme.getSinopse(),
             novaClassificacao != null && !novaClassificacao.isBlank() ? novaClassificacao : filme.getClassificacaoEtaria(),
             novaDuracao > 0 ? novaDuracao : filme.getDuracao(),
+            novaImagemUrl != null ? validarImagem(novaImagemUrl) : filme.getImagemUrl(),
             filme.getStatus()
         );
 
@@ -76,6 +80,24 @@ public class AlterarFilmeUseCase {
         }
         if (duracao > 600) { // 10 horas
             throw new IllegalArgumentException("A duração não pode exceder 600 minutos");
+        }
+    }
+
+    private String validarImagem(String imagemUrl) {
+        if (imagemUrl == null || imagemUrl.isBlank()) {
+            return null;
+        }
+
+        String valor = imagemUrl.trim();
+        try {
+            URI uri = URI.create(valor);
+            String esquema = uri.getScheme();
+            if (esquema == null || (!"http".equalsIgnoreCase(esquema) && !"https".equalsIgnoreCase(esquema))) {
+                throw new IllegalArgumentException("A URL da imagem deve usar HTTP ou HTTPS");
+            }
+            return valor;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("URL de imagem inválida", e);
         }
     }
 }

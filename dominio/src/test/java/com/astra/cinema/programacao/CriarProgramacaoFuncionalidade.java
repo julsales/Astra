@@ -12,6 +12,7 @@ import io.cucumber.java.pt.*;
 import java.util.*;
 
 public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
+    private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private List<SessaoId> sessoes = new ArrayList<>();
     private Programacao programacaoCriada;
     private RuntimeException excecao;
@@ -20,7 +21,7 @@ public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
     public void que_ha_tres_sessoes_com_status(String status) {
         // Cria filme
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "Interstellar", "Sinopse", "12", 169, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "Interstellar", "Sinopse", "12", 169, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         var statusSessao = StatusSessao.valueOf(status);
@@ -62,7 +63,7 @@ public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
     public void que_uma_das_sessoes_selecionadas_esta_com_status(String status) {
         // Cria filme
         var filmeId = new FilmeId(1);
-        var filme = new Filme(filmeId, "The Batman", "Sinopse", "14", 176, StatusFilme.EM_CARTAZ);
+    var filme = new Filme(filmeId, "The Batman", "Sinopse", "14", 176, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
         
         // Cria duas sessões disponíveis
