@@ -1,0 +1,1444 @@
+/* ============================================
+   ASTRA CINEMAS - NOVO DESIGN (PROTÓTIPO)
+   Cliente Interface - 100% Fidelidade
+   ============================================ */
+
+/* === RESET E VARIÁVEIS === */
+.cliente-novo-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* === HEADER === */
+.header-novo {
+  background: rgba(26, 11, 46, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+  padding: 1rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-image {
+  height: clamp(100px, 13vw, 150px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 25px rgba(123, 159, 255, 0.35));
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.logo-astra {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.logo-cinemas {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+.header-usuario {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.badge-cliente-novo {
+  padding: 0.4rem 0.9rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #60a5fa;
+}
+
+.btn-conta-demo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.1rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-conta-demo:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-sair-novo {
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sair-novo:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* === MAIN CONTENT === */
+.main-content-novo {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* === FOOTER === */
+.footer-novo {
+  background: rgba(26, 11, 46, 0.8);
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  padding: 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.footer-novo p {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* === HOME CLIENTE === */
+.home-cliente-wrapper {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === HERO SECTION === */
+.hero-section {
+  text-align: center;
+  padding: 3rem 1rem 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #fff 0%, #e0d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* === TABS NAVIGATION === */
+.tabs-navigation {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 2px solid rgba(139, 92, 246, 0.1);
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.875rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  top: 2px;
+}
+
+.tab-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.tab-btn.active {
+  color: #8b5cf6;
+  border-bottom-color: #8b5cf6;
+}
+
+.tab-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* === FILMES SECTION === */
+.secao-filmes {
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(139, 92, 246, 0.1);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p,
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.empty-state svg {
+  margin-bottom: 1.5rem;
+  color: rgba(139, 92, 246, 0.3);
+}
+
+/* === FILMES LISTA === */
+.filmes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.filme-card-novo {
+  display: flex;
+  gap: 2rem;
+  background: rgba(42, 31, 71, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 16px;
+  padding: 1.75rem;
+  transition: all 0.3s;
+}
+
+.filme-card-novo:hover {
+  background: rgba(42, 31, 71, 0.6);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
+.filme-poster {
+  flex-shrink: 0;
+  width: 140px;
+}
+
+.poster-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.25) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(139, 92, 246, 0.5);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.filme-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filme-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.filme-titulo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.filme-classificacao {
+  flex-shrink: 0;
+  padding: 0.35rem 0.75rem;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.filme-codigo {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: -0.5rem 0 0 0;
+  font-family: 'Courier New', monospace;
+}
+
+.filme-sinopse {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.filme-detalhes {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* === SESSÕES DISPONÍVEIS === */
+.sessoes-disponiveis {
+  margin-top: 0.5rem;
+}
+
+.sessoes-disponiveis h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.sessoes-grid-novo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.sessao-card-novo {
+  background: rgba(26, 11, 46, 0.6);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.sessao-card-novo:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.sessao-data,
+.sessao-hora,
+.sessao-sala,
+.sessao-assento {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sessao-data svg,
+.sessao-hora svg,
+.sessao-sala svg,
+.sessao-assento svg {
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+/* === AVISO CANCELAMENTO === */
+.aviso-cancelamento {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+.aviso-cancelamento svg {
+  flex-shrink: 0;
+  color: #fbbf24;
+}
+
+.aviso-cancelamento p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* === SEÇÃO INGRESSOS === */
+.secao-ingressos {
+  animation: slideIn 0.4s ease;
+}
+
+.ingressos-header {
+  margin-bottom: 2rem;
+}
+
+.ingressos-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.ingressos-header p {
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ingressos-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.ingresso-card-novo {
+  background: rgba(42, 31, 71, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ingresso-card-novo:hover {
+  background: rgba(42, 31, 71, 0.6);
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
+.ingresso-header-novo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.ingresso-header-novo h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 0.25rem 0;
+}
+
+.ingresso-codigo-pequeno {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.badge-status {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-status.confirmado {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ingresso-detalhes-novo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+.detalhe-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detalhe-item .label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detalhe-item .valor {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.ingresso-footer-novo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.ingresso-tipo .label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.valor-ingresso {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.btn-qr-code-novo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-qr-code-novo:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary-novo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary-novo:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.btn-secondary-novo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary-novo:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* === MODAL QR CODE - IGUAL AO PROTÓTIPO === */
+.modal-qr-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-qr-content {
+  background: linear-gradient(135deg, #2d1b4e 0%, #1a0b2e 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-qr-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #f87171;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-qr-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
+}
+
+.modal-qr-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.modal-qr-header svg {
+  color: #8b5cf6;
+  margin-bottom: 1rem;
+}
+
+.modal-qr-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.modal-qr-header p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.modal-qr-code {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+.modal-qr-code img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.qr-placeholder-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.modal-qr-info {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.modal-qr-info h4 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.qr-codigo {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 1.5rem 0;
+  font-family: 'Courier New', monospace;
+}
+
+.qr-detalhes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 12px;
+}
+
+.qr-detalhe {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.qr-detalhe .label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.qr-detalhe .valor {
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.qr-preco-final {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+}
+
+.qr-preco-final span:first-child {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.qr-preco-final .preco {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.modal-qr-acoes {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-qr-acoes button {
+  flex: 1;
+}
+
+.modal-qr-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.aviso-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.aviso-item svg {
+  flex-shrink: 0;
+  color: #8b5cf6;
+}
+
+/* === COMPRA INGRESSO PAGE === */
+.compra-ingresso-wrapper {
+  animation: fadeIn 0.4s ease;
+}
+
+.compra-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.btn-voltar-compra {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-voltar-compra:hover {
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateX(-3px);
+}
+
+.compra-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.compra-breadcrumb span {
+  transition: all 0.3s;
+}
+
+.compra-breadcrumb span.active {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+.compra-breadcrumb svg {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.compra-content {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2.5rem;
+}
+
+/* === SIDEBAR RESUMO === */
+.compra-sidebar {
+  background: rgba(42, 31, 71, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 16px;
+  padding: 2rem;
+  height: fit-content;
+  position: sticky;
+  top: 100px;
+}
+
+.compra-sidebar h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 1.5rem 0;
+}
+
+.resumo-filme {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.resumo-filme h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.resumo-codigo {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+.resumo-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.resumo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resumo-item .label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.resumo-item .valor {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.resumo-assentos,
+.resumo-tipo {
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+}
+
+.resumo-assentos h5,
+.resumo-tipo h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resumo-assentos p,
+.resumo-tipo p {
+  font-size: 0.95rem;
+  color: #fff;
+  margin: 0;
+}
+
+.resumo-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 10px;
+}
+
+.resumo-total span:first-child {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.preco-destaque {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* === MAIN COMPRA === */
+.compra-main {
+  background: rgba(42, 31, 71, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  border-radius: 16px;
+  padding: 2.5rem;
+}
+
+.etapa-assentos h2,
+.etapa-tipos h2,
+.etapa-pagamento h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.etapa-subtitulo {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 2rem 0;
+}
+
+/* === LEGENDA E ASSENTOS === */
+.legenda-assentos-nova {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: rgba(26, 11, 46, 0.4);
+  border-radius: 12px;
+}
+
+.legenda-item-nova {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.assento-demo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid;
+}
+
+.assento-demo.disponivel {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.assento-demo.selecionado {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+}
+
+.assento-demo.ocupado {
+  background: rgba(107, 114, 128, 0.3);
+  border-color: rgba(107, 114, 128, 0.5);
+}
+
+.tela-cinema-nova {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.tela-label-nova {
+  display: inline-block;
+  padding: 0.75rem 3rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.grid-assentos-nova {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.6rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+}
+
+.assento-btn {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assento-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.25);
+  transform: scale(1.08);
+}
+
+.assento-btn.selecionado {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: #8b5cf6;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.assento-btn.ocupado {
+  background: rgba(107, 114, 128, 0.3);
+  border-color: rgba(107, 114, 128, 0.5);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.assento-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* === TIPOS DE INGRESSO === */
+.tipos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tipo-card {
+  position: relative;
+  background: rgba(26, 11, 46, 0.4);
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-radius: 14px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tipo-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-4px);
+}
+
+.tipo-card.selecionado {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+}
+
+.tipo-icon {
+  margin-bottom: 1rem;
+  color: #8b5cf6;
+}
+
+.tipo-card h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.75rem 0;
+}
+
+.tipo-preco {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #10b981;
+  margin: 0.5rem 0;
+}
+
+.tipo-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.tipo-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.meia-entrada-info {
+  padding: 1.5rem;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.meia-entrada-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.meia-entrada-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.meia-entrada-info li {
+  padding: 0.5rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.meia-entrada-info li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.meia-aviso {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  margin: 0;
+}
+
+/* === PAGAMENTO === */
+.pagamento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pagamento-card {
+  background: rgba(26, 11, 46, 0.4);
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-radius: 14px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.pagamento-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-4px);
+}
+
+.pagamento-card.selecionado {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+}
+
+.pagamento-icon {
+  margin-bottom: 1rem;
+  color: #8b5cf6;
+}
+
+.pagamento-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.pagamento-card p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* === AÇÕES COMPRA === */
+.compra-acoes {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-primary-largo,
+.btn-secondary-largo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 180px;
+}
+
+.btn-primary-largo {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  color: #fff;
+}
+
+.btn-primary-largo:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary-largo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary-largo {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+.btn-secondary-largo:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.btn-finalizar {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.btn-finalizar:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.spinner-pequeno {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* === RESPONSIVO === */
+@media (max-width: 1024px) {
+  .compra-content {
+    grid-template-columns: 1fr;
+  }
+
+  .compra-sidebar {
+    position: static;
+    margin-bottom: 2rem;
+  }
+
+  .pagamento-grid,
+  .tipos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content-novo {
+    padding: 1.5rem 1rem;
+  }
+
+  .header-novo {
+    padding: 1rem 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .filme-card-novo {
+    flex-direction: column;
+  }
+
+  .filme-poster {
+    width: 100%;
+  }
+
+  .sessoes-grid-novo {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-assentos-nova {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.4rem;
+  }
+
+  .assento-btn {
+    font-size: 0.7rem;
+  }
+
+  .ingressos-lista {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs-navigation {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .tab-btn {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    padding: 1rem 1.5rem;
+  }
+
+  .tab-btn.active {
+    border-left-color: #8b5cf6;
+    border-bottom-color: transparent;
+  }
+}
+

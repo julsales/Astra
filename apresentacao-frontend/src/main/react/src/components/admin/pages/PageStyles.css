@@ -337,6 +337,24 @@
   box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
 }
 
+.btn-primary svg,
+.btn-secondary svg,
+.btn-tertiary svg,
+.btn-icon svg {
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+}
+
+.btn-primary:hover svg,
+.btn-secondary:hover svg,
+.btn-tertiary:hover svg {
+  transform: scale(1.1);
+}
+
+.btn-icon:hover svg {
+  transform: scale(1.15);
+}
+
 .btn-secondary {
   padding: 10px 20px;
   background: rgba(139, 92, 246, 0.15);

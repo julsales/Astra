@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
+import { SearchIcon, ViewIcon } from '../Icons';
 
 const Relatorios = ({ usuario }) => {
   const [dados, setDados] = useState({
@@ -101,7 +102,7 @@ const Relatorios = ({ usuario }) => {
           </p>
         </div>
         <button className="btn-primary" onClick={carregarDadosRelatorio}>
-          Atualizar
+          <SearchIcon size={18} /> Atualizar
         </button>
       </div>
 

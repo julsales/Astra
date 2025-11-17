@@ -256,6 +256,31 @@
   letter-spacing: 0.3px;
 }
 
+/* ===== ICON STYLES ===== */
+.nav-icon svg {
+  vertical-align: middle;
+  transition: transform 0.3s ease;
+}
+
+.nav-item:hover .nav-icon svg {
+  transform: scale(1.1);
+}
+
+.nav-item.active .nav-icon svg {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+/* Botões com ícones */
+button svg {
+  vertical-align: middle;
+  margin-right: 4px;
+  transition: transform 0.2s ease;
+}
+
+button:hover svg {
+  transform: scale(1.1);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .admin-header {

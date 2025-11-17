@@ -29,11 +29,14 @@ public class FuncionarioController {
 
     private final GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase;
     private final GerenciarCinemaUseCase gerenciarCinemaUseCase;
+    private final FuncionarioEmailRepository funcionarioEmailRepository;
 
     public FuncionarioController(GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase,
-                                 GerenciarCinemaUseCase gerenciarCinemaUseCase) {
+                                 GerenciarCinemaUseCase gerenciarCinemaUseCase,
+                                 FuncionarioEmailRepository funcionarioEmailRepository) {
         this.gerenciarFuncionariosUseCase = gerenciarFuncionariosUseCase;
         this.gerenciarCinemaUseCase = gerenciarCinemaUseCase;
+        this.funcionarioEmailRepository = funcionarioEmailRepository;
     }
 
     @GetMapping
@@ -66,7 +69,7 @@ public class FuncionarioController {
     public ResponseEntity<?> criar(@RequestBody CriarFuncionarioRequest request) {
         try {
             validarPermissao(request.autorizacao());
-            Funcionario novo = gerenciarFuncionariosUseCase.criar(request.nome(), converterCargo(request.cargo()));
+            Funcionario novo = gerenciarFuncionariosUseCase.criar(request.nome(), converterCargo(request.cargo()), request.email(), request.senha());
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of(
                             "mensagem", "Funcionário criado com sucesso",
@@ -135,14 +138,15 @@ public class FuncionarioController {
 
     private FuncionarioResponseDTO mapear(Funcionario funcionario) {
         Integer id = funcionario.getFuncionarioId() != null ? funcionario.getFuncionarioId().getValor() : null;
-        return new FuncionarioResponseDTO(id, funcionario.getNome(), funcionario.getCargo().name());
+        String email = id != null ? funcionarioEmailRepository.buscarEmailPorFuncionarioId(id) : null;
+        return new FuncionarioResponseDTO(id, funcionario.getNome(), email, funcionario.getCargo().name());
     }
 
-    public record FuncionarioResponseDTO(Integer id, String nome, String cargo) {}
+    public record FuncionarioResponseDTO(Integer id, String nome, String email, String cargo) {}
 
     public record FuncionarioAutorizacaoDTO(String nome, String cargo) {}
 
-    public record CriarFuncionarioRequest(String nome, String cargo, FuncionarioAutorizacaoDTO autorizacao) {}
+    public record CriarFuncionarioRequest(String nome, String cargo, String email, String senha, FuncionarioAutorizacaoDTO autorizacao) {}
 
     public record AtualizarFuncionarioRequest(String nome, String cargo, FuncionarioAutorizacaoDTO autorizacao) {}
 }

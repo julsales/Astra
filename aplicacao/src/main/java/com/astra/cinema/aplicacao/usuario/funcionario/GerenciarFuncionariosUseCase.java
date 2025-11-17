@@ -7,6 +7,9 @@ import com.astra.cinema.dominio.comum.FuncionarioId;
 import com.astra.cinema.dominio.usuario.Cargo;
 import com.astra.cinema.dominio.usuario.Funcionario;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
+import com.astra.cinema.dominio.usuario.Usuario;
+import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
+import com.astra.cinema.dominio.usuario.TipoUsuario;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -19,10 +22,13 @@ import java.util.stream.Collectors;
 public class GerenciarFuncionariosUseCase {
 
     private final FuncionarioRepositorio funcionarioRepositorio;
+    private final UsuarioRepositorio usuarioRepositorio;
 
-    public GerenciarFuncionariosUseCase(FuncionarioRepositorio funcionarioRepositorio) {
+    public GerenciarFuncionariosUseCase(FuncionarioRepositorio funcionarioRepositorio, UsuarioRepositorio usuarioRepositorio) {
         this.funcionarioRepositorio = exigirNaoNulo(funcionarioRepositorio,
                 "O repositório de funcionários não pode ser nulo");
+        this.usuarioRepositorio = exigirNaoNulo(usuarioRepositorio,
+                "O repositório de usuários não pode ser nulo");
     }
 
     public List<Funcionario> listar(String termoBusca, Cargo cargo) {
@@ -34,17 +40,39 @@ public class GerenciarFuncionariosUseCase {
                 .collect(Collectors.toList());
     }
 
-    public Funcionario criar(String nome, Cargo cargo) {
+    public Funcionario criar(String nome, Cargo cargo, String email, String senha) {
         Cargo cargoValidado = exigirNaoNulo(cargo, "O cargo não pode ser nulo");
         String nomeValidado = exigirTexto(nome, "O nome do funcionário é obrigatório");
+        String emailValidado = exigirTexto(email, "O email do funcionário é obrigatório");
+        String senhaValidada = exigirTexto(senha, "A senha do funcionário é obrigatória");
+        
+        // Verificar se email já existe
+        if (usuarioRepositorio.buscarPorEmail(emailValidado).isPresent()) {
+            throw new IllegalArgumentException("Já existe um usuário com este email");
+        }
+        
         validarDuplicidade(nomeValidado, cargoValidado, null);
+        
+        // Criar funcionário
         Funcionario novoFuncionario = new Funcionario(nomeValidado, cargoValidado);
-        return funcionarioRepositorio.salvar(novoFuncionario);
+        Funcionario funcionarioSalvo = funcionarioRepositorio.salvar(novoFuncionario);
+        
+        // Criar usuário correspondente
+        Usuario novoUsuario = new Usuario(
+            null,
+            emailValidado,
+            senhaValidada,
+            nomeValidado,
+            TipoUsuario.FUNCIONARIO
+        );
+        usuarioRepositorio.salvar(novoUsuario);
+        
+        return funcionarioSalvo;
     }
 
     public Funcionario atualizar(FuncionarioId funcionarioId, String nome, Cargo cargo) {
         FuncionarioId id = exigirNaoNulo(funcionarioId, "O identificador do funcionário é obrigatório");
-        Funcionario existente = funcionarioRepositorio.buscarPorId(id)
+        funcionarioRepositorio.buscarPorId(id)
                 .orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado"));
 
         Cargo cargoValidado = exigirNaoNulo(cargo, "O cargo não pode ser nulo");

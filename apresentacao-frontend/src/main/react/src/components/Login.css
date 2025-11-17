@@ -30,10 +30,10 @@
 }
 
 .logo-image {
-  max-width: 420px;
+  width: clamp(280px, 80vw, 540px);
   height: auto;
   filter: drop-shadow(0 0 25px rgba(123, 159, 255, 0.8)) 
-          drop-shadow(0 0 50px rgba(155, 143, 255, 0.6));
+          drop-shadow(0 0 60px rgba(155, 143, 255, 0.8));
   animation: logo-float 3s ease-in-out infinite;
 }
 

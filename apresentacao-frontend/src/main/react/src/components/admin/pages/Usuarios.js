@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ViewIcon } from '../Icons';
 
 const Usuarios = ({ usuario }) => {
   const [clientes, setClientes] = useState([]);
@@ -8,7 +9,7 @@ const Usuarios = ({ usuario }) => {
   const [tipoFiltro, setTipoFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
-  const [formulario, setFormulario] = useState({ nome: '', cargo: 'ATENDENTE' });
+  const [formulario, setFormulario] = useState({ nome: '', email: '', senha: '', cargo: 'ATENDENTE' });
   const [alvoEdicao, setAlvoEdicao] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [processando, setProcessando] = useState(false);
@@ -45,19 +46,19 @@ const Usuarios = ({ usuario }) => {
 
   const abrirModalNovo = () => {
     setAlvoEdicao(null);
-    setFormulario({ nome: '', cargo: 'ATENDENTE' });
+    setFormulario({ nome: '', email: '', senha: '', cargo: 'ATENDENTE' });
     setModalAberto(true);
   };
 
   const abrirModalEdicao = (func) => {
     setAlvoEdicao(func);
-    setFormulario({ nome: func.nome, cargo: func.cargo });
+    setFormulario({ nome: func.nome, email: func.email || '', senha: '', cargo: func.cargo });
     setModalAberto(true);
   };
 
   const fecharModal = () => {
     setModalAberto(false);
-    setFormulario({ nome: '', cargo: 'ATENDENTE' });
+    setFormulario({ nome: '', email: '', senha: '', cargo: 'ATENDENTE' });
     setAlvoEdicao(null);
   };
 
@@ -67,18 +68,37 @@ const Usuarios = ({ usuario }) => {
       return;
     }
 
+    if (!alvoEdicao && !formulario.email.trim()) {
+      setFeedback({ tipo: 'erro', mensagem: 'Informe o email do funcionário.' });
+      return;
+    }
+
+    if (!alvoEdicao && !formulario.senha.trim()) {
+      setFeedback({ tipo: 'erro', mensagem: 'Informe a senha do funcionário.' });
+      return;
+    }
+
     try {
       setProcessando(true);
       const metodo = alvoEdicao ? 'PUT' : 'POST';
       const url = alvoEdicao ? `/api/funcionarios/${alvoEdicao.id}` : '/api/funcionarios';
+      
+      const payload = {
+        nome: formulario.nome,
+        cargo: formulario.cargo,
+        autorizacao: payloadAutorizacao()
+      };
+
+      // Adicionar email e senha apenas ao criar novo funcionário
+      if (!alvoEdicao) {
+        payload.email = formulario.email;
+        payload.senha = formulario.senha;
+      }
+
       const resposta = await fetch(url, {
         method: metodo,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: formulario.nome,
-          cargo: formulario.cargo,
-          autorizacao: payloadAutorizacao()
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!resposta.ok) {
@@ -126,7 +146,7 @@ const Usuarios = ({ usuario }) => {
 
   const todosUsuarios = useMemo(() => ([
     ...clientes.map(c => ({ id: c.id, nome: c.nome, email: c.email, tipo: 'Cliente', status: 'Ativo' })),
-    ...funcionarios.map(f => ({ id: f.id, nome: f.nome, email: '-', tipo: f.cargo, cargo: f.cargo, status: 'Ativo' }))
+    ...funcionarios.map(f => ({ id: f.id, nome: f.nome, email: f.email || '-', tipo: f.cargo, cargo: f.cargo, status: 'Ativo' }))
   ]), [clientes, funcionarios]);
 
   const usuariosFiltrados = useMemo(() => todosUsuarios.filter(u => {
@@ -166,8 +186,12 @@ const Usuarios = ({ usuario }) => {
           <p className="page-subtitle">Controle de clientes e funcionários</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn-secondary" onClick={carregarDados}>Atualizar</button>
-          <button className="btn-primary" onClick={abrirModalNovo}>Novo Funcionário</button>
+          <button className="btn-secondary" onClick={carregarDados}>
+            <SearchIcon size={16} /> Atualizar
+          </button>
+          <button className="btn-primary" onClick={abrirModalNovo}>
+            <AddIcon size={18} /> Novo Funcionário
+          </button>
         </div>
       </div>
 
@@ -255,8 +279,12 @@ const Usuarios = ({ usuario }) => {
                   <td>
                     {item.tipo !== 'Cliente' ? (
                       <div className="actions-inline">
-                        <button className="btn-icon" title="Editar" onClick={() => abrirModalEdicao(item)}>✏️</button>
-                        <button className="btn-icon danger" title="Remover" onClick={() => removerFuncionario(item)}>🗑️</button>
+                        <button className="btn-icon" title="Editar" onClick={() => abrirModalEdicao(item)}>
+                          <EditIcon size={16} />
+                        </button>
+                        <button className="btn-icon danger" title="Remover" onClick={() => removerFuncionario(item)}>
+                          <DeleteIcon size={16} />
+                        </button>
                       </div>
                     ) : (
                       <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>somente leitura</span>
@@ -274,14 +302,37 @@ const Usuarios = ({ usuario }) => {
           <div className="modal-card">
             <h3>{alvoEdicao ? 'Editar funcionário' : 'Novo funcionário'}</h3>
             <div className="modal-body">
-              <label>Nome completo</label>
+              <label>Nome completo *</label>
               <input
                 className="input-control"
                 value={formulario.nome}
                 onChange={(e) => setFormulario({ ...formulario, nome: e.target.value })}
                 placeholder="Ex.: Ana Souza"
               />
-              <label>Cargo</label>
+              
+              {!alvoEdicao && (
+                <>
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    className="input-control"
+                    value={formulario.email}
+                    onChange={(e) => setFormulario({ ...formulario, email: e.target.value })}
+                    placeholder="Ex.: ana.souza@astra.com"
+                  />
+                  
+                  <label>Senha *</label>
+                  <input
+                    type="password"
+                    className="input-control"
+                    value={formulario.senha}
+                    onChange={(e) => setFormulario({ ...formulario, senha: e.target.value })}
+                    placeholder="Senha de acesso"
+                  />
+                </>
+              )}
+              
+              <label>Cargo *</label>
               <select
                 className="input-control"
                 value={formulario.cargo}
@@ -292,9 +343,11 @@ const Usuarios = ({ usuario }) => {
               </select>
             </div>
             <div className="modal-actions">
-              <button className="btn-secondary" onClick={fecharModal}>Cancelar</button>
+              <button className="btn-secondary" onClick={fecharModal}>
+                <DeleteIcon size={16} /> Cancelar
+              </button>
               <button className="btn-primary" disabled={processando} onClick={salvarFuncionario}>
-                {processando ? 'Salvando...' : 'Salvar'}
+                <AddIcon size={16} /> {processando ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>

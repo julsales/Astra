@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ViewIcon, SaveIcon, CancelIcon } from '../Icons';
 
 const statusOptions = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -297,7 +298,7 @@ const Sessoes = ({ usuario }) => {
           </p>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
-           Nova Sessão
+          <AddIcon size={18} /> Nova Sessão
         </button>
       </div>
 
@@ -368,7 +369,7 @@ const Sessoes = ({ usuario }) => {
         </label>
 
         <button type="button" className="btn-tertiary" onClick={resetFiltros}>
-          Limpar filtros
+          <SearchIcon size={16} /> Limpar filtros
         </button>
       </form>
 
@@ -435,20 +436,23 @@ const Sessoes = ({ usuario }) => {
                         <button 
                           className="btn-secondary" 
                           onClick={() => abrirModal(sessao)}
+                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
                         >
-                           Modificar
+                          <EditIcon size={14} /> Modificar
                         </button>
                         <button 
                           className="btn-tertiary"
                           onClick={() => abrirRemarcacaoModal(sessao)}
+                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
                         >
-                           Remarcar
+                          <ViewIcon size={14} /> Remarcar
                         </button>
                         <button 
                           className="btn-danger" 
                           onClick={() => removerSessao(sessao.id)}
+                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
                         >
-                           Cancelar
+                          <DeleteIcon size={14} /> Cancelar
                         </button>
                       </div>
                     </td>
@@ -527,10 +531,10 @@ const Sessoes = ({ usuario }) => {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={fecharModal}>
-                  Cancelar
+                  <CancelIcon size={16} /> Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editando ? 'Salvar Alterações' : 'Criar Sessão'}
+                  <SaveIcon size={16} /> {editando ? 'Salvar Alterações' : 'Criar Sessão'}
                 </button>
               </div>
             </form>
@@ -583,10 +587,10 @@ const Sessoes = ({ usuario }) => {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setShowRemarcarModal(false)}>
-                  Fechar
+                  <CancelIcon size={16} /> Fechar
                 </button>
                 <button type="submit" className="btn-primary">
-                  Confirmar Remarcação
+                  <SaveIcon size={16} /> Confirmar Remarcação
                 </button>
               </div>
             </form>

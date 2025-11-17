@@ -1,195 +1,74 @@
-import React, { useMemo, useState } from 'react';
-import './ClientePainel.css';
-import Filmes from './pages/Filmes';
-import Assentos from './pages/Assentos';
-import Bomboniere from './pages/Bomboniere';
-import Checkout from './pages/Checkout';
-import Sucesso from './pages/Sucesso';
-import MeusIngressos from './pages/MeusIngressos';
-import { useMeusIngressos } from '../../hooks/useMeusIngressos';
+import React, { useState } from 'react';
+import './ClienteNovo.css';
+import HomeCliente from './pages/HomeCliente';
+import CompraIngresso from './pages/CompraIngresso';
+import Stars from '../Stars';
+import logo from '../unnamed-removebg-preview.png';
 
 const ClientePainel = ({ usuario, onLogout }) => {
-  const [etapa, setEtapa] = useState('filmes'); // filmes, assentos, bomboniere, checkout, sucesso, meusIngressos
+  const [tela, setTela] = useState('home'); // 'home' ou 'compraIngresso'
   const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
   const [filmeSelecionado, setFilmeSelecionado] = useState(null);
-  const [carrinho, setCarrinho] = useState({
-    ingressos: [],
-    produtos: [],
-    totalIngressos: 0,
-    sessao: null,
-    filme: null
-  });
-  const [ultimaCompra, setUltimaCompra] = useState(null);
 
-  const { ingressos, registrarCompra } = useMeusIngressos(usuario);
-  const resumoCarrinho = useMemo(() => ({
-    ...carrinho,
-    usuario,
-  }), [carrinho, usuario]);
-
-  // Handlers
-  const handleSelecionarSessao = (sessao, filme) => {
+  const handleIniciarCompra = (sessao, filme) => {
     setSessaoSelecionada(sessao);
     setFilmeSelecionado(filme);
-    setEtapa('assentos');
+    setTela('compraIngresso');
   };
 
-  const handleConfirmarAssentos = (assentos) => {
-    const totalIngressos = assentos.length * 25.0;
-    setCarrinho({
-      ...carrinho,
-      ingressos: assentos,
-      totalIngressos,
-      sessao: sessaoSelecionada,
-      filme: filmeSelecionado
-    });
-    setEtapa('bomboniere');
-  };
-
-  const handleAdicionarProduto = (produto) => {
-    const produtosAtualizados = [...carrinho.produtos];
-    const index = produtosAtualizados.findIndex(p => p.id === produto.id);
-    
-    if (index >= 0) {
-      produtosAtualizados[index].quantidade += 1;
-    } else {
-      produtosAtualizados.push({ ...produto, quantidade: 1 });
-    }
-    
-    setCarrinho({ ...carrinho, produtos: produtosAtualizados });
-  };
-
-  const handleRemoverProduto = (produto) => {
-    const produtosAtualizados = [...carrinho.produtos];
-    const index = produtosAtualizados.findIndex(p => p.id === produto.id);
-    
-    if (index >= 0) {
-      if (produtosAtualizados[index].quantidade > 1) {
-        produtosAtualizados[index].quantidade -= 1;
-      } else {
-        produtosAtualizados.splice(index, 1);
-      }
-    }
-    
-    setCarrinho({ ...carrinho, produtos: produtosAtualizados });
-  };
-
-  const handleIrParaCheckout = () => {
-    setEtapa('checkout');
-  };
-
-  const handleConfirmarPagamento = (detalhesCompra) => {
-    const registro = registrarCompra(detalhesCompra);
-    setUltimaCompra(registro);
-    setEtapa('sucesso');
-  };
-
-  const handleVoltarInicio = () => {
-    setEtapa('filmes');
+  const handleVoltarHome = () => {
+    setTela('home');
     setSessaoSelecionada(null);
     setFilmeSelecionado(null);
-    setCarrinho({
-      ingressos: [],
-      produtos: [],
-      totalIngressos: 0,
-      sessao: null,
-      filme: null
-    });
-    setUltimaCompra(null);
   };
 
   return (
-    <div className="cliente-container">
-      {/* Header Global */}
-      {etapa !== 'sucesso' && (
-        <header className="cliente-header-global">
-          <div className="header-info">
-            <p className="bem-vindo">Olá, {usuario.nome} 👋</p>
-            <div className="progress-steps">
-              <span className={etapa === 'filmes' ? 'active' : etapa !== 'filmes' ? 'completed' : ''}>
-                🎬 Filmes
-              </span>
-              <span className="step-separator">→</span>
-              <span className={etapa === 'assentos' ? 'active' : ['bomboniere', 'checkout'].includes(etapa) ? 'completed' : ''}>
-                🎫 Assentos
-              </span>
-              <span className="step-separator">→</span>
-              <span className={etapa === 'bomboniere' ? 'active' : etapa === 'checkout' ? 'completed' : ''}>
-                🍿 Bomboniere
-              </span>
-              <span className="step-separator">→</span>
-              <span className={etapa === 'checkout' ? 'active' : ''}>
-                💳 Pagamento
-              </span>
-            </div>
-          </div>
-          <div className="header-actions">
-            <button
-              type="button"
-              className="meus-ingressos-btn"
-              onClick={() => setEtapa('meusIngressos')}
-            >
-              🎟️ Meus ingressos
-            </button>
-            <span className="badge-cliente">{usuario.tipo}</span>
-            <button type="button" className="logout-btn" onClick={onLogout}>
-              Sair
-            </button>
-          </div>
-        </header>
-      )}
+    <div className="cliente-novo-container">
+      <Stars />
+      {/* Header fixo - igual ao protótipo */}
+      <header className="header-novo">
+        <div className="header-logo">
+          <img src={logo} alt="Astra Cinemas" className="logo-image" />
+        </div>
 
-      {/* Renderiza a etapa atual */}
-      {etapa === 'filmes' && (
-        <Filmes
-          usuario={usuario}
-          onSelecionarSessao={handleSelecionarSessao}
-          onAbrirIngressos={() => setEtapa('meusIngressos')}
-        />
-      )}
+        <div className="header-usuario">
+          {usuario.tipo === 'CLIENTE' && (
+            <span className="badge-cliente-novo">Cliente</span>
+          )}
+          <button className="btn-conta-demo" onClick={onLogout}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="8" cy="5" r="3" />
+              <path d="M2 14C2 11 5 9 8 9C11 9 14 11 14 14" />
+            </svg>
+            Conta Demo
+          </button>
+          <button className="btn-sair-novo" onClick={onLogout}>
+            Sair
+          </button>
+        </div>
+      </header>
 
-      {etapa === 'assentos' && (
-        <Assentos
-          sessao={sessaoSelecionada}
-          filme={filmeSelecionado}
-          onVoltar={() => setEtapa('filmes')}
-          onConfirmar={handleConfirmarAssentos}
-        />
-      )}
+      {/* Conteúdo principal */}
+      <main className="main-content-novo">
+        {tela === 'home' && (
+          <HomeCliente usuario={usuario} onIniciarCompra={handleIniciarCompra} />
+        )}
+        
+        {tela === 'compraIngresso' && (
+          <CompraIngresso 
+            sessao={sessaoSelecionada}
+            filme={filmeSelecionado}
+            usuario={usuario}
+            onVoltar={handleVoltarHome}
+            onConcluir={handleVoltarHome}
+          />
+        )}
+      </main>
 
-      {etapa === 'bomboniere' && (
-        <Bomboniere
-          carrinho={carrinho}
-          onAdicionarProduto={handleAdicionarProduto}
-          onRemoverProduto={handleRemoverProduto}
-          onVoltar={() => setEtapa('assentos')}
-          onFinalizar={handleIrParaCheckout}
-        />
-      )}
-
-      {etapa === 'checkout' && (
-        <Checkout
-          carrinho={resumoCarrinho}
-          onVoltar={() => setEtapa('bomboniere')}
-          onConfirmarPagamento={handleConfirmarPagamento}
-        />
-      )}
-
-      {etapa === 'sucesso' && (
-        <Sucesso
-          compra={ultimaCompra}
-          fallbackCarrinho={resumoCarrinho}
-          onVoltarInicio={handleVoltarInicio}
-          onAbrirIngressos={() => setEtapa('meusIngressos')}
-        />
-      )}
-
-      {etapa === 'meusIngressos' && (
-        <MeusIngressos
-          ingressos={ingressos}
-          onVoltar={() => setEtapa('filmes')}
-        />
-      )}
+      {/* Footer */}
+      <footer className="footer-novo">
+        <p>© 2025 Astra Cinemas · Protótipo de Sistema de Reservas · Dados simulados para demonstração</p>
+      </footer>
     </div>
   );
 };

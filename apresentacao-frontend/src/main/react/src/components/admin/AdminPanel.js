@@ -6,17 +6,25 @@ import Filmes from './pages/Filmes';
 import Promocoes from './pages/Promocoes';
 import Relatorios from './pages/Relatorios';
 import Usuarios from './pages/Usuarios';
+import {
+  OverviewIcon,
+  FilmeIcon,
+  SessaoIcon,
+  BomboniereIcon,
+  RelatorioIcon,
+  UsuarioIcon,
+} from './Icons';
 
 const AdminPanel = ({ usuario, onLogout }) => {
   const [paginaAtiva, setPaginaAtiva] = useState('overview');
 
   const menu = [
-    { id: 'overview', nome: 'Overview', icone: '' },
-    { id: 'filmes', nome: 'Filmes', icone: '' },
-    { id: 'sessoes', nome: 'Sessões', icone: '' },
-    { id: 'promocoes', nome: 'Bomboniere', icone: '' },
-    { id: 'relatorios', nome: 'Relatórios', icone: '' },
-    { id: 'usuarios', nome: 'Usuários', icone: '' },
+    { id: 'overview', nome: 'Overview', icone: <OverviewIcon size={20} /> },
+    { id: 'filmes', nome: 'Filmes', icone: <FilmeIcon size={20} /> },
+    { id: 'sessoes', nome: 'Sessões', icone: <SessaoIcon size={20} /> },
+    { id: 'promocoes', nome: 'Bomboniere', icone: <BomboniereIcon size={20} /> },
+    { id: 'relatorios', nome: 'Relatórios', icone: <RelatorioIcon size={20} /> },
+    { id: 'usuarios', nome: 'Usuários', icone: <UsuarioIcon size={20} /> },
   ];
 
   const renderizarPagina = () => {

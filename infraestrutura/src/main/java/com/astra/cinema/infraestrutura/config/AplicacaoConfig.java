@@ -16,6 +16,7 @@ import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
+import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -61,8 +62,10 @@ public class AplicacaoConfig {
      * Bean para o Use Case de gerenciamento de funcionários
      */
     @Bean
-    public GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase(FuncionarioRepositorio funcionarioRepositorio) {
-        return new GerenciarFuncionariosUseCase(funcionarioRepositorio);
+    public GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase(
+            FuncionarioRepositorio funcionarioRepositorio,
+            UsuarioRepositorio usuarioRepositorio) {
+        return new GerenciarFuncionariosUseCase(funcionarioRepositorio, usuarioRepositorio);
     }
 
     // ==================== FILMES ====================

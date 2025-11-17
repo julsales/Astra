@@ -139,7 +139,33 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
             throw new IllegalArgumentException("A sessão não pode ser nula");
         }
         
-        SessaoJpa sessaoJpa = mapeador.mapearParaSessaoJpa(sessao);
+        SessaoJpa sessaoJpa;
+        
+        // Se a sessão já existe, busca do banco para manter o contexto JPA
+        if (sessao.getSessaoId() != null && sessao.getSessaoId().getId() > 0) {
+            sessaoJpa = repository.findById(sessao.getSessaoId().getId())
+                    .orElse(new SessaoJpa());
+            
+            // Atualiza os campos da entidade existente
+            sessaoJpa.setFilmeId(sessao.getFilmeId().getId());
+            sessaoJpa.setHorario(sessao.getHorario());
+            sessaoJpa.setStatus(sessao.getStatus());
+            sessaoJpa.setSala(sessao.getSala());
+            sessaoJpa.setCapacidade(sessao.getCapacidade());
+            
+            // IMPORTANTE: Limpa o mapa antigo e adiciona o novo
+            sessaoJpa.getAssentosDisponiveis().clear();
+            Map<String, Boolean> assentosJpa = sessao.getMapaAssentosDisponiveis().entrySet().stream()
+                    .collect(java.util.stream.Collectors.toMap(
+                        entry -> entry.getKey().getValor(),
+                        java.util.Map.Entry::getValue
+                    ));
+            sessaoJpa.getAssentosDisponiveis().putAll(assentosJpa);
+        } else {
+            // Nova sessão - usa o mapeador normalmente
+            sessaoJpa = mapeador.mapearParaSessaoJpa(sessao);
+        }
+        
         SessaoJpa sessaoSalva = repository.save(sessaoJpa);
         
         // Retorna a sessão com o ID gerado pelo banco

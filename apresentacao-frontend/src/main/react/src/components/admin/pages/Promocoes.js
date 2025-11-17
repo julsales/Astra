@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
 
 const Promocoes = ({ usuario }) => {
   const [produtos, setProdutos] = useState([]);
@@ -153,7 +154,7 @@ const Promocoes = ({ usuario }) => {
           </p>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
-           Adicionar Produto
+          <AddIcon size={18} /> Adicionar Produto
         </button>
       </div>
 
@@ -258,16 +259,16 @@ const Promocoes = ({ usuario }) => {
                       <button 
                         className="btn-secondary" 
                         onClick={() => abrirModal(produto)}
-                        style={{ padding: '6px 12px', fontSize: '12px', marginRight: '8px' }}
+                        style={{ padding: '6px 12px', fontSize: '12px', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
-                         Editar
+                        <EditIcon size={14} /> Editar
                       </button>
                       <button 
                         className="btn-danger" 
                         onClick={() => removerProduto(produto.id)}
-                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
-                         Remover
+                        <DeleteIcon size={14} /> Remover
                       </button>
                     </td>
                   </tr>
@@ -328,10 +329,10 @@ const Promocoes = ({ usuario }) => {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={fecharModal}>
-                  Cancelar
+                  <DeleteIcon size={16} /> Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editando ? 'Salvar Alterações' : 'Adicionar Produto'}
+                  <AddIcon size={16} /> {editando ? 'Salvar Alterações' : 'Adicionar Produto'}
                 </button>
               </div>
             </form>

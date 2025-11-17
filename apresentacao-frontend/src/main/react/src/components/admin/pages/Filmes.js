@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
 
 const statusOpcoes = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -207,7 +208,7 @@ const Filmes = ({ usuario }) => {
           </p>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
-          + Adicionar Filme
+          <AddIcon size={18} /> Adicionar Filme
         </button>
       </div>
 
@@ -230,7 +231,7 @@ const Filmes = ({ usuario }) => {
           ))}
         </select>
         <button type="submit" className="btn-secondary">
-          Aplicar
+          <SearchIcon size={16} /> Aplicar
         </button>
         <button type="button" className="btn-tertiary" onClick={limparFiltros}>
           Limpar
@@ -335,16 +336,16 @@ const Filmes = ({ usuario }) => {
                       <button 
                         className="btn-secondary" 
                         onClick={() => abrirModal(filme)}
-                        style={{ padding: '6px 12px', fontSize: '12px', marginRight: '8px' }}
+                        style={{ padding: '6px 12px', fontSize: '12px', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        Editar
+                        <EditIcon size={14} /> Editar
                       </button>
                       <button 
                         className="btn-danger" 
                         onClick={() => removerFilme(filme.id)}
-                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        Remover
+                        <DeleteIcon size={14} /> Remover
                       </button>
                     </td>
                   </tr>
