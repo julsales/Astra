@@ -1,4 +1,4 @@
-package com.astra.cinema.infraestrutura.config;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                package com.astra.cinema.infraestrutura.config;
 
 import com.astra.cinema.aplicacao.bomboniere.AdicionarProdutoUseCase;
 import com.astra.cinema.aplicacao.bomboniere.ModificarProdutoUseCase;
@@ -6,6 +6,9 @@ import com.astra.cinema.aplicacao.bomboniere.RemoverProdutoUseCase;
 import com.astra.cinema.aplicacao.filme.AdicionarFilmeUseCase;
 import com.astra.cinema.aplicacao.filme.AlterarFilmeUseCase;
 import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
+import com.astra.cinema.aplicacao.compra.IniciarCompraUseCase;
+import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
+import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
@@ -13,6 +16,7 @@ import com.astra.cinema.aplicacao.sessao.RemoverSessaoUseCase;
 import com.astra.cinema.aplicacao.usuario.GerenciarCinemaUseCase;
 import com.astra.cinema.aplicacao.usuario.funcionario.GerenciarFuncionariosUseCase;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
@@ -136,5 +140,39 @@ public class AplicacaoConfig {
     @Bean
     public RemoverProdutoUseCase removerProdutoUseCase(ProdutoRepositorio produtoRepositorio) {
         return new RemoverProdutoUseCase(produtoRepositorio);
+    }
+
+    // ==================== COMPRAS ====================
+
+    /**
+     * Bean para o Use Case de Iniciar Compra
+     */
+    @Bean
+    public IniciarCompraUseCase iniciarCompraUseCase(
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new IniciarCompraUseCase(compraRepositorio, sessaoRepositorio);
+    }
+
+    // ==================== INGRESSOS ====================
+
+    /**
+     * Bean para o Use Case de Validar Ingresso
+     */
+    @Bean
+    public ValidarIngressoUseCase validarIngressoUseCase(
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new ValidarIngressoUseCase(compraRepositorio, sessaoRepositorio);
+    }
+
+    /**
+     * Bean para o Use Case de Remarcar Ingresso
+     */
+    @Bean
+    public RemarcarIngressoUseCase remarcarIngressoUseCase(
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new RemarcarIngressoUseCase(compraRepositorio, sessaoRepositorio);
     }
 }

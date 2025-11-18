@@ -25,8 +25,17 @@ public class ValidarIngressoUseCase {
     public ResultadoValidacao executar(String qrCode) {
         exigirNaoNulo(qrCode, "O QR Code não pode ser nulo");
 
-        Ingresso ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
-        exigirNaoNulo(ingresso, "Ingresso não encontrado");
+        Ingresso ingresso = null;
+        try {
+            ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
+        } catch (IllegalArgumentException e) {
+            // Se houver erro na busca, retorna resultado inválido
+            return new ResultadoValidacao(false, "Código inválido: " + e.getMessage(), null, null);
+        }
+        
+        if (ingresso == null) {
+            return new ResultadoValidacao(false, "Ingresso não encontrado. Verifique se o código está correto.", null, null);
+        }
 
         Sessao sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
         exigirNaoNulo(sessao, "Sessão não encontrada");

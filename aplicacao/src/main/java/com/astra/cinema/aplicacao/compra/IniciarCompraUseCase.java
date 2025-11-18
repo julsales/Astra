@@ -34,26 +34,45 @@ public class IniciarCompraUseCase {
             throw new IllegalArgumentException("A lista de ingressos não pode ser vazia");
         }
         
-        // Verifica se todos os assentos estão disponíveis
+        // Verifica se todos os assentos estão disponíveis ou já foram reservados
+        // (os assentos podem já estar reservados pela chamada anterior de reserva do frontend)
         for (Ingresso ingresso : ingressos) {
             var sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
-            if (!sessao.assentoDisponivel(ingresso.getAssentoId())) {
-                throw new IllegalStateException("O assento " + ingresso.getAssentoId() + " não está disponível");
+            if (sessao == null) {
+                throw new IllegalStateException("Sessão não encontrada: " + ingresso.getSessaoId().getId());
             }
-        }
-        
-        // Reserva os assentos
-        for (Ingresso ingresso : ingressos) {
-            var sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
-            sessao.reservarAssento(ingresso.getAssentoId());
-            sessaoRepositorio.salvar(sessao);
+            
+            // Se o assento já está ocupado, assumimos que foi reservado no mesmo processo
+            // (pela chamada anterior de /api/sessoes/{id}/assentos/reservar)
+            // Apenas reserva se ainda estiver disponível
+            if (sessao.assentoDisponivel(ingresso.getAssentoId())) {
+                // Assento disponível, reserva normalmente
+                sessao.reservarAssento(ingresso.getAssentoId());
+                sessaoRepositorio.salvar(sessao);
+            }
+            // Se já estiver ocupado, não faz nada (foi reservado anteriormente no mesmo processo)
         }
         
         // Cria a compra
-        var compraId = new CompraId(System.identityHashCode(ingressos));
+        // Gera um ID positivo para a compra (será substituído pelo banco)
+        // System.identityHashCode pode retornar 0 ou negativo, então garantimos que seja positivo
+        int hash = System.identityHashCode(ingressos);
+        int idCompra = Math.abs(hash);
+        if (idCompra == 0 || idCompra < 1) {
+            // Se for 0 ou negativo, usa timestamp garantindo que seja >= 1
+            idCompra = Math.max(1, (int) (System.currentTimeMillis() % 1000000));
+        }
+        var compraId = new CompraId(idCompra);
         var compra = new Compra(compraId, clienteId, ingressos, null, StatusCompra.PENDENTE);
         compraRepositorio.salvar(compra);
-        
-        return compra;
+
+        // Busca a última compra do cliente para obter o ID real gerado pelo banco
+        var comprasDoCliente = compraRepositorio.buscarPorCliente(clienteId);
+        if (comprasDoCliente == null || comprasDoCliente.isEmpty()) {
+            throw new IllegalStateException("Erro ao salvar compra - compra não encontrada após salvar");
+        }
+
+        // Retorna a última compra (mais recente)
+        return comprasDoCliente.get(comprasDoCliente.size() - 1);
     }
 }

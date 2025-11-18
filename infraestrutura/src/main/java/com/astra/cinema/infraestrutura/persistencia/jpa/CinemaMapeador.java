@@ -1,16 +1,14 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
 import com.astra.cinema.dominio.bomboniere.Produto;
-import com.astra.cinema.dominio.comum.AssentoId;
-import com.astra.cinema.dominio.comum.FilmeId;
-import com.astra.cinema.dominio.comum.FuncionarioId;
-import com.astra.cinema.dominio.comum.ProdutoId;
-import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.comum.*;
+import com.astra.cinema.dominio.compra.*;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.usuario.Funcionario;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -208,5 +206,97 @@ public class CinemaMapeador {
             produto.getPreco(),
             produto.getEstoque()
         );
+    }
+
+    // ==================== COMPRA ====================
+    
+    /**
+     * Mapeia Compra de domínio para CompraJpa
+     */
+    public CompraJpa mapearParaCompraJpa(Compra compra) {
+        if (compra == null) {
+            return null;
+        }
+
+        CompraJpa compraJpa = new CompraJpa();
+        
+        // Para novas compras, sempre deixa o ID como null para o JPA gerar automaticamente
+        // O ID só é setado quando buscamos uma compra existente do banco
+        // IDs temporários gerados com System.identityHashCode não devem ser usados aqui
+        // (o JPA vai gerar o ID real ao salvar)
+        
+        compraJpa.setClienteId(compra.getClienteId().getId());
+        compraJpa.setStatus(compra.getStatus().name());
+        compraJpa.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
+        
+        return compraJpa;
+    }
+
+    /**
+     * Mapeia CompraJpa para Compra de domínio
+     */
+    public Compra mapearParaCompra(CompraJpa compraJpa, List<Ingresso> ingressos) {
+        if (compraJpa == null) {
+            return null;
+        }
+
+        CompraId compraId = new CompraId(compraJpa.getId());
+        ClienteId clienteId = new ClienteId(compraJpa.getClienteId());
+        PagamentoId pagamentoId = compraJpa.getPagamentoId() != null 
+                ? new PagamentoId(compraJpa.getPagamentoId()) 
+                : null;
+        StatusCompra status = StatusCompra.valueOf(compraJpa.getStatus());
+
+        return new Compra(compraId, clienteId, ingressos, pagamentoId, status);
+    }
+
+    // ==================== INGRESSO ====================
+    
+    /**
+     * Mapeia Ingresso de domínio para IngressoJpa
+     */
+    public IngressoJpa mapearParaIngressoJpa(Ingresso ingresso, Integer compraId) {
+        if (ingresso == null) {
+            return null;
+        }
+
+        IngressoJpa ingressoJpa = new IngressoJpa();
+        
+        if (ingresso.getIngressoId() != null && ingresso.getIngressoId().getId() > 0) {
+            ingressoJpa.setId(ingresso.getIngressoId().getId());
+        }
+        
+        ingressoJpa.setCompraId(compraId);
+        ingressoJpa.setSessaoId(ingresso.getSessaoId().getId());
+        ingressoJpa.setAssento(ingresso.getAssentoId().getValor());
+        ingressoJpa.setTipo(ingresso.getTipo().name());
+        ingressoJpa.setStatus(ingresso.getStatus().name());
+        ingressoJpa.setQrCode(ingresso.getQrCode()); // Salva o QR Code do banco
+        
+        return ingressoJpa;
+    }
+
+    /**
+     * Mapeia IngressoJpa para Ingresso de domínio
+     */
+    public Ingresso mapearParaIngresso(IngressoJpa ingressoJpa) {
+        if (ingressoJpa == null) {
+            return null;
+        }
+
+        IngressoId ingressoId = new IngressoId(ingressoJpa.getId());
+        SessaoId sessaoId = new SessaoId(ingressoJpa.getSessaoId());
+        AssentoId assentoId = new AssentoId(ingressoJpa.getAssento());
+        TipoIngresso tipo = TipoIngresso.valueOf(ingressoJpa.getTipo());
+        StatusIngresso status = StatusIngresso.valueOf(ingressoJpa.getStatus());
+        
+        // Usa o QR Code do banco (gerado pelo backend)
+        String qrCode = ingressoJpa.getQrCode();
+        // Se não houver QR Code no banco (para ingressos antigos), gera um baseado no ID
+        if (qrCode == null || qrCode.isEmpty()) {
+            qrCode = "ASTRA" + ingressoJpa.getId();
+        }
+
+        return new Ingresso(ingressoId, sessaoId, assentoId, tipo, status, qrCode);
     }
 }

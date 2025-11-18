@@ -208,17 +208,56 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       return;
     }
 
+    if (!usuario?.id) {
+      alert('Usuário não identificado. Faça login novamente.');
+      return;
+    }
+
     setProcessando(true);
     try {
       await reservarAssentosSelecionados();
       await carregarAssentos();
 
-      const codigo = `ASTRA${Date.now().toString().slice(-6)}`;
-      const qrCode = await gerarQrCodeDataUrl(codigo);
+      // Chama o backend para criar a compra (gera QR Codes automaticamente)
+      const response = await fetch('/api/compras', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clienteId: usuario.id,
+          sessaoId: sessao.id,
+          assentos: assentosSelecionados,
+          tipoIngresso: 'INTEIRA' // Pode ser ajustado depois
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.erro || 'Erro ao criar compra');
+      }
+
+      const compraBackend = await response.json();
+      
+      // Gera QR Code visual para cada ingresso
+      const ingressosComQrCode = await Promise.all(
+        compraBackend.ingressos.map(async (ingresso) => {
+          const qrCodeDataUrl = await gerarQrCodeDataUrl(ingresso.qrCode);
+          return {
+            ...ingresso,
+            qrCodeDataUrl
+          };
+        })
+      );
+
       const totalBomboniere = calcularTotalBomboniere();
       const totalIngressos = calcularPreco();
       
+      // Usa o primeiro QR Code para compatibilidade (ou pode mostrar todos)
+      const primeiroIngresso = ingressosComQrCode[0];
+      
       const compra = {
+        id: compraBackend.compraId,
         filme,
         sessao,
         assentos: assentosSelecionados,
@@ -227,9 +266,10 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
         totalBomboniere,
         total: totalIngressos + totalBomboniere,
         metodoPagamento,
-        status: 'CONFIRMADO',
-        qrCode,
-        codigo
+        status: compraBackend.status || 'CONFIRMADO',
+        qrCode: primeiroIngresso.qrCodeDataUrl,
+        codigo: primeiroIngresso.qrCode, // Código do backend
+        ingressos: ingressosComQrCode // Todos os ingressos com QR Codes
       };
 
       registrarCompra(compra);

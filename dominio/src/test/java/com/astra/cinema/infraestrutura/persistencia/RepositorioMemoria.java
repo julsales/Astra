@@ -17,6 +17,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
 
     // Mapas para armazenamento em memória
     private final Map<CompraId, Compra> compras = new HashMap<>();
+    private final Map<IngressoId, Ingresso> ingressos = new HashMap<>();
     private final Map<SessaoId, Sessao> sessoes = new HashMap<>();
     private final Map<FilmeId, Filme> filmes = new HashMap<>();
     private final Map<PagamentoId, Pagamento> pagamentos = new HashMap<>();
@@ -50,9 +51,8 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
 
     @Override
     public Ingresso buscarIngressoPorQrCode(String qrCode) {
-        if (qrCode == null) throw new IllegalArgumentException("O QR Code não pode ser nulo");
-        return compras.values().stream()
-                .flatMap(c -> c.getIngressos().stream())
+        if (qrCode == null || qrCode.isEmpty()) throw new IllegalArgumentException("O QR Code não pode ser nulo ou vazio");
+        return ingressos.values().stream()
                 .filter(i -> qrCode.equals(i.getQrCode()))
                 .findFirst()
                 .map(Ingresso::clone)
@@ -62,23 +62,12 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     @Override
     public void atualizarIngresso(Ingresso ingresso) {
         if (ingresso == null) throw new IllegalArgumentException("O ingresso não pode ser nulo");
-        // Em memória, basta atualizar a referência - já que trabalhamos com clones
-        // Em uma implementação real com JPA, seria um merge/update
-        for (Compra compra : compras.values()) {
-            for (int i = 0; i < compra.getIngressos().size(); i++) {
-                if (compra.getIngressos().get(i).getIngressoId().equals(ingresso.getIngressoId())) {
-                    // Atualiza o ingresso na compra
-                    compra.getIngressos().set(i, ingresso);
-                    return;
-                }
-            }
-        }
+        ingressos.put(ingresso.getIngressoId(), ingresso);
     }
 
     @Override
     public List<Ingresso> buscarIngressosAtivos() {
-        return compras.values().stream()
-                .flatMap(c -> c.getIngressos().stream())
+        return ingressos.values().stream()
                 .filter(i -> i.getStatus() == StatusIngresso.VALIDO)
                 .map(Ingresso::clone)
                 .collect(Collectors.toList());
@@ -88,7 +77,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     @Override
     public Sessao salvar(Sessao sessao) {
         if (sessao == null) throw new IllegalArgumentException("A sessão não pode ser nula");
-        
+
         // Se a sessão não tem ID, gera um novo (simulando auto-increment)
         Sessao sessaoSalvar = sessao;
         if (sessao.getSessaoId() == null) {
@@ -101,12 +90,10 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 sessao.getFilmeId(),
                 sessao.getHorario(),
                 sessao.getStatus(),
-                sessao.getMapaAssentosDisponiveis(),
-                sessao.getSala(),
-                sessao.getCapacidade()
+                sessao.getMapaAssentosDisponiveis()
             );
         }
-        
+
         sessoes.put(sessaoSalvar.getSessaoId(), sessaoSalvar);
         return sessaoSalvar;
     }
@@ -138,7 +125,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     @Override
     public Filme salvar(Filme filme) {
         if (filme == null) throw new IllegalArgumentException("O filme não pode ser nulo");
-        
+
         // Se o filme não tem ID, gera um novo (simulando auto-increment)
         Filme filmeSalvar = filme;
         if (filme.getFilmeId() == null) {
@@ -156,7 +143,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 filme.getStatus()
             );
         }
-        
+
         filmes.put(filmeSalvar.getFilmeId(), filmeSalvar);
         return filmeSalvar;
     }

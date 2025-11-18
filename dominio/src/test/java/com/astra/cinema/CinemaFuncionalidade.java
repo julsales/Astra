@@ -11,7 +11,7 @@ import com.astra.cinema.infraestrutura.persistencia.RepositorioMemoria;
 
 public class CinemaFuncionalidade {
     protected RepositorioMemoria repositorio;
-    
+
     protected CompraService compraService;
     protected SessaoService sessaoService;
     protected FilmeService filmeService;
@@ -23,7 +23,7 @@ public class CinemaFuncionalidade {
 
     public CinemaFuncionalidade() {
         repositorio = new RepositorioMemoria();
-        
+
         compraService = new CompraService(repositorio, repositorio, repositorio);
         sessaoService = new SessaoService(repositorio, repositorio);
         filmeService = new FilmeService(repositorio, repositorio);
