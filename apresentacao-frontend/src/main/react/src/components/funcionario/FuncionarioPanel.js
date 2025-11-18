@@ -1,31 +1,169 @@
-﻿import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, AlertCircle, QrCode as QrIcon, History, RefreshCw, ShoppingCart } from 'lucide-react';
-import '../Dashboard.css';
-import './FuncionarioPanel.css';
+import React, { useState, useEffect } from 'react';
+import {
+  CheckCircle,
+  XCircle,
+  QrCode as QrIcon,
+  History,
+  RefreshCw,
+  ShoppingCart,
+  Home,
+  Clock,
+  Users,
+  TrendingUp,
+  Film,
+  AlertTriangle,
+  Check,
+  X,
+  Calendar,
+  Package,
+  LogOut,
+  Scan,
+  Plus,
+  Minus,
+  Search
+} from 'lucide-react';
+import Modal from '../shared/Modal';
+import StatusBadge from '../shared/StatusBadge';
+import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
+import './FuncionarioNovo.css';
 
 const FuncionarioPanel = () => {
-  const [abaAtiva, setAbaAtiva] = useState('validar');
-  const [qrCode, setQrCode] = useState('');
-  const [resultado, setResultado] = useState(null);
+  // Estados principais
+  const [telaAtiva, setTelaAtiva] = useState('home');
   const [carregando, setCarregando] = useState(false);
 
-  // Estado para histórico
+  // Estados para Dashboard/Home
+  const [proximaSessao, setProximaSessao] = useState(null);
+  const [estatisticasHoje, setEstatisticasHoje] = useState({
+    validacoes: 0,
+    vendas: 0,
+    totalVendas: 0
+  });
+
+  // Estados para Validação
+  const [qrCode, setQrCode] = useState('');
+  const [resultadoValidacao, setResultadoValidacao] = useState(null);
+
+  // Estados para Histórico
   const [historico, setHistorico] = useState([]);
+  const [filtroHistorico, setFiltroHistorico] = useState('todos');
 
-  // Estado para remarcar
+  // Estados para Remarcação
   const [ingressosAtivos, setIngressosAtivos] = useState([]);
+  const [ingressoSelecionado, setIngressoSelecionado] = useState(null);
+  const [sessoesDisponiveis, setSessoesDisponiveis] = useState([]);
+  const [modalRemarcar, setModalRemarcar] = useState(false);
+  const [motivoTecnico, setMotivoTecnico] = useState('');
 
-  // Estado para bomboniere
-  const [carrinhoBomb, setCarrinhoBomb] = useState([]);
+  // Estados para Bomboniere
   const [produtos, setProdutos] = useState([]);
+  const [carrinho, setCarrinho] = useState([]);
+  const [filtroCategoria, setFiltroCategoria] = useState('todos');
 
-  // Carregar dados ao montar o componente
+  // Carregar dados iniciais
   useEffect(() => {
+    carregarDashboard();
     carregarHistorico();
     carregarIngressosAtivos();
     carregarProdutos();
   }, []);
 
+  // ==========================================
+  // DASHBOARD - Próxima Sessão e Estatísticas
+  // ==========================================
+  const carregarDashboard = async () => {
+    try {
+      // Buscar próxima sessão
+      const resSessoes = await fetch('/api/sessoes');
+      if (resSessoes.ok) {
+        const sessoes = await resSessoes.json();
+        const agora = new Date();
+        const proxima = sessoes
+          .filter(s => new Date(s.horario) > agora)
+          .sort((a, b) => new Date(a.horario) - new Date(b.horario))[0];
+
+        if (proxima) {
+          const resFilme = await fetch(`/api/filmes/${proxima.filmeId}`);
+          const filme = await resFilme.json();
+          setProximaSessao({ ...proxima, filmeTitulo: filme.titulo });
+        }
+      }
+
+      // Estatísticas do dia (simuladas - você pode criar endpoints específicos)
+      setEstatisticasHoje({
+        validacoes: historico.length,
+        vendas: 0,
+        totalVendas: 0
+      });
+    } catch (error) {
+      console.error('Erro ao carregar dashboard:', error);
+    }
+  };
+
+  // ==========================================
+  // VALIDAÇÃO DE INGRESSOS
+  // ==========================================
+  const validarIngresso = async () => {
+    if (!qrCode.trim()) return;
+
+    setCarregando(true);
+    setResultadoValidacao(null);
+
+    try {
+      const response = await fetch('/api/funcionario/ingressos/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrCode: qrCode.trim() })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setResultadoValidacao({
+          valido: data.valido,
+          mensagem: data.mensagem,
+          ingresso: data.ingresso,
+          sessao: data.sessao
+        });
+
+        // Recarregar histórico
+        carregarHistorico();
+
+        // Limpar QR code após 3 segundos se válido
+        if (data.valido) {
+          setTimeout(() => {
+            setQrCode('');
+            setResultadoValidacao(null);
+          }, 3000);
+        }
+      } else {
+        setResultadoValidacao({
+          valido: false,
+          mensagem: data.erro || 'Erro ao validar ingresso',
+          ingresso: null,
+          sessao: null
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao validar ingresso:', error);
+      setResultadoValidacao({
+        valido: false,
+        mensagem: 'Erro de conexão com o servidor',
+        ingresso: null,
+        sessao: null
+      });
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const ativarScanner = () => {
+    alert('Scanner de QR Code ativado!\n\n(Funcionalidade de câmera seria implementada aqui com uma biblioteca como react-qr-scanner)');
+  };
+
+  // ==========================================
+  // HISTÓRICO
+  // ==========================================
   const carregarHistorico = async () => {
     try {
       const response = await fetch('/api/funcionario/ingressos/historico');
@@ -38,6 +176,18 @@ const FuncionarioPanel = () => {
     }
   };
 
+  const filtrarHistorico = () => {
+    if (filtroHistorico === 'todos') return historico;
+    return historico.filter(item => {
+      if (filtroHistorico === 'sucesso') return item.sucesso;
+      if (filtroHistorico === 'falha') return !item.sucesso;
+      return true;
+    });
+  };
+
+  // ==========================================
+  // REMARCAÇÃO
+  // ==========================================
   const carregarIngressosAtivos = async () => {
     try {
       const response = await fetch('/api/funcionario/ingressos/ativos');
@@ -50,9 +200,69 @@ const FuncionarioPanel = () => {
     }
   };
 
+  const abrirModalRemarcar = async (ingresso) => {
+    setIngressoSelecionado(ingresso);
+
+    // Buscar sessões disponíveis
+    try {
+      const response = await fetch('/api/sessoes');
+      if (response.ok) {
+        const sessoes = await response.json();
+        // Filtrar sessões futuras, excluindo a sessão atual do ingresso
+        const agora = new Date();
+        const disponiveis = sessoes.filter(s =>
+          new Date(s.horario) > agora && s.id !== ingresso.sessaoId
+        );
+        setSessoesDisponiveis(disponiveis);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error);
+    }
+
+    setModalRemarcar(true);
+  };
+
+  const remarcarIngresso = async (novaSessaoId) => {
+    if (!motivoTecnico.trim()) {
+      alert('Por favor, informe o motivo técnico da remarcação');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/funcionario/ingressos/remarcar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingressoId: ingressoSelecionado.id,
+          novaSessaoId: novaSessaoId,
+          novoAssentoId: ingressoSelecionado.assento, // Mantém o mesmo assento
+          motivoTecnico: motivoTecnico
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Ingresso remarcado com sucesso!');
+        setModalRemarcar(false);
+        setMotivoTecnico('');
+        setIngressoSelecionado(null);
+        carregarIngressosAtivos();
+      } else {
+        alert(`Erro: ${data.erro}`);
+      }
+    } catch (error) {
+      console.error('Erro ao remarcar ingresso:', error);
+      alert('Erro de conexão com o servidor');
+    }
+  };
+
+  // ==========================================
+  // BOMBONIERE (PDV)
+  // ==========================================
   const carregarProdutos = async () => {
     try {
-      const response = await fetch('/api/funcionario/bomboniere/produtos');
+      const response = await fetch('/api/produtos');
       if (response.ok) {
         const data = await response.json();
         setProdutos(data);
@@ -62,214 +272,17 @@ const FuncionarioPanel = () => {
     }
   };
 
-  const validarIngresso = async () => {
-    if (!qrCode.trim()) return;
-
-    setCarregando(true);
-    
-    try {
-      const response = await fetch('/api/funcionario/ingressos/validar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ qrCode: qrCode.trim() })
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        setResultado({
-          valido: data.valido,
-          mensagem: data.mensagem,
-          filme: data.sessao ? `Sessão ${data.sessao.id}` : '',
-          sessao: data.sessao ? `${data.sessao.horario} - Sala ${data.sessao.sala}` : '',
-          assento: data.ingresso ? data.ingresso.assento : '',
-          cliente: 'Cliente'
-        });
-        carregarHistorico();
-        carregarIngressosAtivos();
-      } else {
-        setResultado({
-          valido: false,
-          mensagem: data.erro || 'Erro ao validar ingresso',
-          filme: '',
-          sessao: ''
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao validar ingresso:', error);
-      setResultado({
-        valido: false,
-        mensagem: 'Erro de conexão com o servidor',
-        filme: '',
-        sessao: ''
-      });
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  const ativarScanner = () => {
-    alert('Scanner de QR Code ativado! (Funcionalidade de câmera seria implementada aqui)');
-  };
-
-  const renderValidarEntrada = () => (
-    <div className="validar-container">
-      <div className="validar-header">
-        <QrIcon size={32} />
-        <div>
-          <h2>Validar Entrada de Cliente</h2>
-          <p>Escaneie o QR Code ou digite o código do ingresso</p>
-        </div>
-      </div>
-
-      <div className="validar-input-section">
-        <div className="input-with-button">
-          <input
-            type="text"
-            value={qrCode}
-            onChange={(e) => setQrCode(e.target.value)}
-            placeholder="Digite o código (ex: ASTRA001)"
-            className="qr-input"
-            onKeyPress={(e) => e.key === 'Enter' && validarIngresso()}
-          />
-          <button 
-            className="btn-scanner"
-            onClick={ativarScanner}
-            title="Ativar Scanner de QR Code"
-          >
-            <QrIcon size={20} />
-            Ativar Scanner
-          </button>
-        </div>
-
-        <button 
-          className="btn-validar"
-          onClick={validarIngresso}
-          disabled={!qrCode.trim() || carregando}
-        >
-          {carregando ? 'Validando...' : 'Validar'}
-        </button>
-      </div>
-
-      <p className="help-text">
-        💡 Clique em "Ativar Scanner" para validar ingressos usando a câmera do dispositivo.
-      </p>
-
-      {resultado && (
-        <div className={`resultado-validacao ${resultado.valido ? 'valido' : 'invalido'}`}>
-          <div className="resultado-icon">
-            {resultado.valido ? <CheckCircle size={48} /> : <XCircle size={48} />}
-          </div>
-          <h3>{resultado.mensagem}</h3>
-          <div className="resultado-detalhes">
-            <p><strong>Filme:</strong> {resultado.filme}</p>
-            <p><strong>Sessão:</strong> {resultado.sessao}</p>
-            {resultado.assento && <p><strong>Assento:</strong> {resultado.assento}</p>}
-            {resultado.cliente && <p><strong>Cliente:</strong> {resultado.cliente}</p>}
-          </div>
-        </div>
-      )}
-
-      <div className="codigos-teste">
-        <h3>Códigos de teste disponíveis:</h3>
-        <div className="codigos-lista">
-          <span className="codigo-badge">ASTRA001</span>
-          <span className="codigo-badge">ASTRA002</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderRemarcarIngressos = () => (
-    <div className="remarcar-container">
-      <div className="remarcar-header">
-        <RefreshCw size={32} />
-        <div>
-          <h2>Remarcar Ingressos</h2>
-          <p>Mover cliente para outra sessão em caso de problemas técnicos</p>
-        </div>
-      </div>
-
-      <div className="ingressos-list">
-        {ingressosAtivos.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '20px' }}>Nenhum ingresso ativo no momento</p>
-        ) : (
-          ingressosAtivos.map((ingresso) => (
-            <div key={ingresso.id} className="ingresso-card">
-              <div className="ingresso-info">
-                <h4>QR Code: {ingresso.qrCode}</h4>
-                <p><strong>Sessão:</strong> {ingresso.sessaoId}</p>
-                <p><strong>Assento:</strong> {ingresso.assento}</p>
-                <p><strong>Tipo:</strong> {ingresso.tipo}</p>
-              </div>
-              <button className="btn-remarcar">Selecionar</button>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-
-  const renderHistorico = () => (
-    <div className="historico-container">
-      <div className="historico-header">
-        <History size={32} />
-        <div>
-          <h2>Histórico de Validações</h2>
-          <p>Todos os ingressos processados</p>
-        </div>
-      </div>
-
-      <div className="historico-table">
-        <table>
-          <thead>
-            <tr>
-              <th>QR Code</th>
-              <th>Sessão</th>
-              <th>Assento</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {historico.length === 0 ? (
-              <tr>
-                <td colSpan="4" style={{ textAlign: 'center' }}>Nenhum ingresso processado ainda</td>
-              </tr>
-            ) : (
-              historico.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.qrCode}</td>
-                  <td>Sessão {item.sessaoId}</td>
-                  <td>{item.assento}</td>
-                  <td>
-                    <span className={`status-badge ${item.status.toLowerCase()}`}>
-                      {item.status === 'VALIDO' && '⏱ Válido'}
-                      {item.status === 'UTILIZADO' && '✅ Utilizado'}
-                      {item.status === 'CANCELADO' && '❌ Cancelado'}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
   const adicionarAoCarrinho = (produto) => {
-    const itemExistente = carrinhoBomb.find(item => item.produtoId === produto.id);
-    
+    const itemExistente = carrinho.find(item => item.produtoId === produto.id);
+
     if (itemExistente) {
-      setCarrinhoBomb(carrinhoBomb.map(item =>
+      setCarrinho(carrinho.map(item =>
         item.produtoId === produto.id
           ? { ...item, quantidade: item.quantidade + 1 }
           : item
       ));
     } else {
-      setCarrinhoBomb([...carrinhoBomb, {
+      setCarrinho([...carrinho, {
         produtoId: produto.id,
         nome: produto.nome,
         preco: produto.preco,
@@ -279,7 +292,7 @@ const FuncionarioPanel = () => {
   };
 
   const removerDoCarrinho = (produtoId) => {
-    setCarrinhoBomb(carrinhoBomb.filter(item => item.produtoId !== produtoId));
+    setCarrinho(carrinho.filter(item => item.produtoId !== produtoId));
   };
 
   const alterarQuantidade = (produtoId, novaQuantidade) => {
@@ -287,8 +300,8 @@ const FuncionarioPanel = () => {
       removerDoCarrinho(produtoId);
       return;
     }
-    
-    setCarrinhoBomb(carrinhoBomb.map(item =>
+
+    setCarrinho(carrinho.map(item =>
       item.produtoId === produtoId
         ? { ...item, quantidade: novaQuantidade }
         : item
@@ -296,20 +309,18 @@ const FuncionarioPanel = () => {
   };
 
   const calcularTotal = () => {
-    return carrinhoBomb.reduce((total, item) => total + (item.preco * item.quantidade), 0);
+    return carrinho.reduce((total, item) => total + (item.preco * item.quantidade), 0);
   };
 
   const finalizarVenda = async () => {
-    if (carrinhoBomb.length === 0) return;
+    if (carrinho.length === 0) return;
 
     try {
       const response = await fetch('/api/funcionario/bomboniere/venda', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          itens: carrinhoBomb.map(item => ({
+          itens: carrinho.map(item => ({
             produtoId: item.produtoId,
             quantidade: item.quantidade
           }))
@@ -319,8 +330,9 @@ const FuncionarioPanel = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(`Venda finalizada com sucesso! Total: R$ ${data.valorTotal.toFixed(2)}`);
-        setCarrinhoBomb([]);
+        alert(`Venda finalizada com sucesso!\nTotal: ${formatarMoeda(data.valorTotal)}`);
+        setCarrinho([]);
+        carregarDashboard(); // Atualizar estatísticas
       } else {
         alert(`Erro: ${data.erro}`);
       }
@@ -330,141 +342,644 @@ const FuncionarioPanel = () => {
     }
   };
 
-  const renderBomboniere = () => (
-    <div className="bomboniere-container">
-      <div className="bomboniere-header">
-        <ShoppingCart size={32} />
-        <div>
-          <h2>Operar Bomboniere</h2>
-          <p>Registrar vendas de produtos</p>
+  const categoriasProdutos = () => {
+    const cats = new Set(produtos.map(p => p.categoria));
+    return ['todos', ...Array.from(cats)];
+  };
+
+  const produtosFiltrados = () => {
+    if (filtroCategoria === 'todos') return produtos;
+    return produtos.filter(p => p.categoria === filtroCategoria);
+  };
+
+  // ==========================================
+  // RENDERIZAÇÃO DAS TELAS
+  // ==========================================
+
+  const renderHome = () => (
+    <div className="func-home-container">
+      {/* Hero Section */}
+      <div className="func-hero">
+        <div className="func-hero-content">
+          <h1 className="func-hero-title">Painel do Funcionário</h1>
+          <p className="func-hero-subtitle">Gerencie operações do cinema em tempo real</p>
         </div>
       </div>
 
-      <div className="bomboniere-content">
-        <div className="produtos-grid">
-          {produtos.map((produto) => (
-            <div key={produto.id} className="produto-card">
-              <h4>{produto.nome}</h4>
-              <p className="produto-preco">R$ {produto.preco.toFixed(2)}</p>
-              <button 
-                className="btn-adicionar"
-                onClick={() => adicionarAoCarrinho(produto)}
-              >
-                Adicionar
-              </button>
-            </div>
-          ))}
+      {/* Estatísticas */}
+      <div className="func-stats-grid">
+        <div className="func-stat-card purple">
+          <div className="func-stat-icon">
+            <CheckCircle size={32} />
+          </div>
+          <div className="func-stat-info">
+            <h3>{estatisticasHoje.validacoes}</h3>
+            <p>Validações Hoje</p>
+          </div>
         </div>
 
-        <div className="carrinho-bomboniere">
-          <h3>Carrinho</h3>
-          {carrinhoBomb.length === 0 ? (
-            <p className="carrinho-vazio">Nenhum item adicionado</p>
-          ) : (
-            <div className="carrinho-itens">
-              {carrinhoBomb.map((item) => (
-                <div key={item.produtoId} className="carrinho-item">
-                  <div className="item-info">
-                    <strong>{item.nome}</strong>
-                    <span>R$ {item.preco.toFixed(2)}</span>
-                  </div>
-                  <div className="item-quantidade">
-                    <button onClick={() => alterarQuantidade(item.produtoId, item.quantidade - 1)}>-</button>
-                    <span>{item.quantidade}</span>
-                    <button onClick={() => alterarQuantidade(item.produtoId, item.quantidade + 1)}>+</button>
-                  </div>
-                  <div className="item-subtotal">
-                    R$ {(item.preco * item.quantidade).toFixed(2)}
-                  </div>
-                  <button 
-                    className="btn-remover"
-                    onClick={() => removerDoCarrinho(item.produtoId)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="carrinho-total">
-            <strong>Total:</strong>
-            <span>R$ {calcularTotal().toFixed(2)}</span>
+        <div className="func-stat-card blue">
+          <div className="func-stat-icon">
+            <ShoppingCart size={32} />
           </div>
-          <button 
-            className="btn-finalizar" 
-            disabled={carrinhoBomb.length === 0}
-            onClick={finalizarVenda}
-          >
-            Finalizar Venda
+          <div className="func-stat-info">
+            <h3>{estatisticasHoje.vendas}</h3>
+            <p>Vendas Hoje</p>
+          </div>
+        </div>
+
+        <div className="func-stat-card green">
+          <div className="func-stat-icon">
+            <TrendingUp size={32} />
+          </div>
+          <div className="func-stat-info">
+            <h3>{formatarMoeda(estatisticasHoje.totalVendas)}</h3>
+            <p>Total Vendas</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Próxima Sessão */}
+      {proximaSessao && (
+        <div className="func-proxima-sessao">
+          <div className="func-card-header">
+            <Film size={24} />
+            <h3>Próxima Sessão</h3>
+          </div>
+          <div className="func-sessao-content">
+            <div className="func-sessao-info">
+              <h2>{proximaSessao.filmeTitulo}</h2>
+              <div className="func-sessao-detalhes">
+                <div className="func-detalhe-item">
+                  <Calendar size={18} />
+                  <span>{formatarDataHora(proximaSessao.horario)}</span>
+                </div>
+                <div className="func-detalhe-item">
+                  <Film size={18} />
+                  <span>{proximaSessao.sala}</span>
+                </div>
+                <div className="func-detalhe-item">
+                  <Users size={18} />
+                  <span>{proximaSessao.assentosReservados || 0}/{proximaSessao.capacidade} ocupados</span>
+                </div>
+              </div>
+              <div className="func-progress-bar">
+                <div
+                  className="func-progress-fill"
+                  style={{ width: `${((proximaSessao.assentosReservados || 0) / proximaSessao.capacidade) * 100}%` }}
+                />
+              </div>
+            </div>
+            <button
+              className="func-btn-primary"
+              onClick={() => setTelaAtiva('validar')}
+            >
+              <QrIcon size={20} />
+              Ir para Validação
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Atalhos Rápidos */}
+      <div className="func-atalhos-section">
+        <h3>Atalhos Rápidos</h3>
+        <div className="func-atalhos-grid">
+          <button className="func-atalho-card" onClick={() => setTelaAtiva('validar')}>
+            <div className="func-atalho-icon purple">
+              <QrIcon size={32} />
+            </div>
+            <span>Validar Ingresso</span>
+          </button>
+          <button className="func-atalho-card" onClick={() => setTelaAtiva('bomboniere')}>
+            <div className="func-atalho-icon blue">
+              <ShoppingCart size={32} />
+            </div>
+            <span>Abrir PDV</span>
+          </button>
+          <button className="func-atalho-card" onClick={() => setTelaAtiva('historico')}>
+            <div className="func-atalho-icon amber">
+              <History size={32} />
+            </div>
+            <span>Ver Histórico</span>
+          </button>
+          <button className="func-atalho-card" onClick={() => setTelaAtiva('remarcar')}>
+            <div className="func-atalho-icon green">
+              <RefreshCw size={32} />
+            </div>
+            <span>Remarcar Ingresso</span>
           </button>
         </div>
       </div>
     </div>
   );
 
-  return (
-    <div className="funcionario-panel">
-      {/* Header com Logo e Info do Usuário */}
-      <header className="funcionario-header">
-        <div className="header-left">
-          <div className="logo-funcionario">
-            <img src="/logo.png" alt="Astra Cinemas" className="logo-header-image" />
+  const renderValidar = () => (
+    <div className="func-validar-container">
+      <div className="func-section-header">
+        <div className="func-header-icon purple">
+          <QrIcon size={40} />
+        </div>
+        <div className="func-header-text">
+          <h2>Validar Entrada de Cliente</h2>
+          <p>Escaneie o QR Code ou digite o código do ingresso</p>
+        </div>
+      </div>
+
+      <div className="func-validar-input-area">
+        <div className="func-input-group">
+          <div className="func-qr-input-wrapper">
+            <input
+              type="text"
+              value={qrCode}
+              onChange={(e) => setQrCode(e.target.value.toUpperCase())}
+              placeholder="Digite o código (ex: ASTRA001)"
+              className="func-qr-input"
+              onKeyPress={(e) => e.key === 'Enter' && validarIngresso()}
+              autoFocus
+            />
+            <button
+              className="func-btn-scanner"
+              onClick={ativarScanner}
+              title="Ativar Scanner"
+            >
+              <Scan size={24} />
+            </button>
           </div>
-          <div className="funcionario-badge">Funcionário</div>
+
+          <button
+            className="func-btn-validar"
+            onClick={validarIngresso}
+            disabled={!qrCode.trim() || carregando}
+          >
+            {carregando ? (
+              <>
+                <div className="func-spinner"></div>
+                Validando...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={20} />
+                Validar
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="header-right">
-          <div className="user-info">
+        <p className="func-help-text">
+          Clique no ícone de scanner para usar a câmera do dispositivo
+        </p>
+      </div>
+
+      {resultadoValidacao && (
+        <div className={`func-resultado-card ${resultadoValidacao.valido ? 'sucesso' : 'erro'}`}>
+          <div className="func-resultado-icon">
+            {resultadoValidacao.valido ? (
+              <CheckCircle size={64} strokeWidth={2.5} />
+            ) : (
+              <XCircle size={64} strokeWidth={2.5} />
+            )}
+          </div>
+
+          <h2 className="func-resultado-titulo">{resultadoValidacao.mensagem}</h2>
+
+          {resultadoValidacao.ingresso && (
+            <div className="func-resultado-detalhes">
+              <div className="func-detalhe-row">
+                <span className="label">Assento(s):</span>
+                <span className="valor destaque">{resultadoValidacao.ingresso.assento}</span>
+              </div>
+              <div className="func-detalhe-row">
+                <span className="label">Tipo:</span>
+                <span className="valor">{resultadoValidacao.ingresso.tipo}</span>
+              </div>
+              <div className="func-detalhe-row">
+                <span className="label">QR Code:</span>
+                <span className="valor codigo">{resultadoValidacao.ingresso.qrCode}</span>
+              </div>
+            </div>
+          )}
+
+          {resultadoValidacao.sessao && (
+            <div className="func-sessao-info-box">
+              <h4>Informações da Sessão</h4>
+              <p><strong>Sala:</strong> {resultadoValidacao.sessao.sala}</p>
+              <p><strong>Horário:</strong> {formatarDataHora(resultadoValidacao.sessao.horario)}</p>
+            </div>
+          )}
+
+          <button
+            className="func-btn-secondary"
+            onClick={() => {
+              setQrCode('');
+              setResultadoValidacao(null);
+            }}
+          >
+            Nova Validação
+          </button>
+        </div>
+      )}
+
+      <div className="func-codigos-teste">
+        <h3>Códigos de Teste</h3>
+        <div className="func-codigos-badges">
+          <span className="func-codigo-badge" onClick={() => setQrCode('ASTRA001')}>
+            ASTRA001
+          </span>
+          <span className="func-codigo-badge" onClick={() => setQrCode('ASTRA002')}>
+            ASTRA002
+          </span>
+        </div>
+        <p className="func-help-text-small">Clique em um código para preencher automaticamente</p>
+      </div>
+    </div>
+  );
+
+  const renderHistorico = () => (
+    <div className="func-historico-container">
+      <div className="func-section-header">
+        <div className="func-header-icon amber">
+          <History size={40} />
+        </div>
+        <div className="func-header-text">
+          <h2>Histórico de Validações</h2>
+          <p>Todos os ingressos processados</p>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="func-filtros">
+        <button
+          className={`func-filtro-btn ${filtroHistorico === 'todos' ? 'active' : ''}`}
+          onClick={() => setFiltroHistorico('todos')}
+        >
+          Todos
+        </button>
+        <button
+          className={`func-filtro-btn ${filtroHistorico === 'sucesso' ? 'active' : ''}`}
+          onClick={() => setFiltroHistorico('sucesso')}
+        >
+          Sucesso
+        </button>
+        <button
+          className={`func-filtro-btn ${filtroHistorico === 'falha' ? 'active' : ''}`}
+          onClick={() => setFiltroHistorico('falha')}
+        >
+          Falha
+        </button>
+      </div>
+
+      {filtrarHistorico().length === 0 ? (
+        <div className="func-empty-state">
+          <History size={64} />
+          <h3>Nenhum registro encontrado</h3>
+          <p>Ainda não há validações no histórico</p>
+        </div>
+      ) : (
+        <div className="func-historico-lista">
+          {filtrarHistorico().map((item) => (
+            <div key={item.id} className="func-historico-item">
+              <div className="func-historico-info">
+                <div className="func-historico-qr">
+                  <QrIcon size={20} />
+                  <span className="codigo">{item.qrCode}</span>
+                </div>
+                <div className="func-historico-detalhes">
+                  <p><strong>Assento:</strong> {item.assento}</p>
+                  <p><strong>Sessão:</strong> #{item.sessaoId}</p>
+                  <p><strong>Data:</strong> {formatarDataHora(item.dataHora)}</p>
+                </div>
+              </div>
+              <div className="func-historico-status">
+                {item.sucesso ? (
+                  <StatusBadge status="ATIVO" type="ingresso" customLabel="Sucesso" />
+                ) : (
+                  <StatusBadge status="CANCELADO" type="ingresso" customLabel="Falha" />
+                )}
+                <p className="func-historico-msg">{item.mensagem}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderRemarcar = () => (
+    <div className="func-remarcar-container">
+      <div className="func-section-header">
+        <div className="func-header-icon green">
+          <RefreshCw size={40} />
+        </div>
+        <div className="func-header-text">
+          <h2>Remarcar Ingressos</h2>
+          <p>Mover cliente para outra sessão em caso de problemas técnicos</p>
+        </div>
+      </div>
+
+      {ingressosAtivos.length === 0 ? (
+        <div className="func-empty-state">
+          <AlertTriangle size={64} />
+          <h3>Nenhum ingresso ativo</h3>
+          <p>Não há ingressos disponíveis para remarcação no momento</p>
+        </div>
+      ) : (
+        <div className="func-ingressos-grid">
+          {ingressosAtivos.map((ingresso) => (
+            <div key={ingresso.id} className="func-ingresso-card">
+              <div className="func-ingresso-header">
+                <span className="func-qr-badge">{ingresso.qrCode}</span>
+                <StatusBadge status={ingresso.status} type="ingresso" />
+              </div>
+              <div className="func-ingresso-body">
+                <div className="func-ingresso-info-item">
+                  <Film size={18} />
+                  <span>{ingresso.sala}</span>
+                </div>
+                <div className="func-ingresso-info-item">
+                  <Calendar size={18} />
+                  <span>{formatarDataHora(ingresso.horario)}</span>
+                </div>
+                <div className="func-ingresso-info-item">
+                  <Users size={18} />
+                  <span>Assento {ingresso.assento}</span>
+                </div>
+                <div className="func-ingresso-info-item">
+                  <Package size={18} />
+                  <span>{ingresso.tipo}</span>
+                </div>
+              </div>
+              <button
+                className="func-btn-remarcar"
+                onClick={() => abrirModalRemarcar(ingresso)}
+              >
+                <RefreshCw size={16} />
+                Remarcar Sessão
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Remarcação */}
+      <Modal
+        isOpen={modalRemarcar}
+        onClose={() => {
+          setModalRemarcar(false);
+          setMotivoTecnico('');
+          setIngressoSelecionado(null);
+        }}
+        title="Remarcar Ingresso"
+        size="lg"
+      >
+        {ingressoSelecionado && (
+          <div className="func-modal-remarcar">
+            <div className="func-ingresso-atual">
+              <h4>Ingresso Atual</h4>
+              <p><strong>QR Code:</strong> {ingressoSelecionado.qrCode}</p>
+              <p><strong>Sessão:</strong> {ingressoSelecionado.sala} - {formatarDataHora(ingressoSelecionado.horario)}</p>
+              <p><strong>Assento:</strong> {ingressoSelecionado.assento}</p>
+            </div>
+
+            <div className="func-motivo-section">
+              <label>Motivo Técnico *</label>
+              <textarea
+                value={motivoTecnico}
+                onChange={(e) => setMotivoTecnico(e.target.value)}
+                placeholder="Descreva o motivo da remarcação (ex: problema técnico na sala, cancelamento da sessão, etc.)"
+                rows={3}
+                className="func-textarea"
+              />
+            </div>
+
+            <div className="func-sessoes-disponiveis">
+              <h4>Selecione a Nova Sessão</h4>
+              {sessoesDisponiveis.length === 0 ? (
+                <p>Nenhuma sessão disponível no momento</p>
+              ) : (
+                <div className="func-sessoes-lista">
+                  {sessoesDisponiveis.map((sessao) => (
+                    <button
+                      key={sessao.id}
+                      className="func-sessao-option"
+                      onClick={() => remarcarIngresso(sessao.id)}
+                    >
+                      <div className="func-sessao-option-info">
+                        <strong>{sessao.sala}</strong>
+                        <span>{formatarDataHora(sessao.horario)}</span>
+                      </div>
+                      <div className="func-sessao-option-disponibilidade">
+                        <span>{sessao.assentosReservados || 0}/{sessao.capacidade}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+
+  const renderBomboniere = () => (
+    <div className="func-bomboniere-container">
+      <div className="func-section-header">
+        <div className="func-header-icon blue">
+          <ShoppingCart size={40} />
+        </div>
+        <div className="func-header-text">
+          <h2>Bomboniere - PDV</h2>
+          <p>Registrar vendas de produtos</p>
+        </div>
+      </div>
+
+      <div className="func-pdv-layout">
+        {/* Produtos */}
+        <div className="func-produtos-section">
+          {/* Filtros de Categoria */}
+          <div className="func-categoria-filtros">
+            {categoriasProdutos().map(cat => (
+              <button
+                key={cat}
+                className={`func-categoria-btn ${filtroCategoria === cat ? 'active' : ''}`}
+                onClick={() => setFiltroCategoria(cat)}
+              >
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="func-produtos-grid">
+            {produtosFiltrados().map((produto) => (
+              <div
+                key={produto.id}
+                className={`func-produto-card ${!produto.disponivel ? 'indisponivel' : ''}`}
+              >
+                <div className="func-produto-info">
+                  <h4>{produto.nome}</h4>
+                  <p className="func-produto-categoria">{produto.categoria}</p>
+                  <p className="func-produto-preco">{formatarMoeda(produto.preco)}</p>
+                </div>
+                {produto.disponivel ? (
+                  <button
+                    className="func-btn-adicionar"
+                    onClick={() => adicionarAoCarrinho(produto)}
+                  >
+                    <Plus size={18} />
+                    Adicionar
+                  </button>
+                ) : (
+                  <span className="func-badge-indisponivel">Indisponível</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Carrinho */}
+        <div className="func-carrinho-section">
+          <div className="func-carrinho-header">
+            <h3>Carrinho</h3>
+            {carrinho.length > 0 && (
+              <span className="func-carrinho-badge">{carrinho.length}</span>
+            )}
+          </div>
+
+          {carrinho.length === 0 ? (
+            <div className="func-carrinho-vazio">
+              <ShoppingCart size={64} />
+              <p>Carrinho vazio</p>
+              <small>Adicione produtos para iniciar a venda</small>
+            </div>
+          ) : (
+            <>
+              <div className="func-carrinho-itens">
+                {carrinho.map((item) => (
+                  <div key={item.produtoId} className="func-carrinho-item">
+                    <div className="func-item-info">
+                      <h4>{item.nome}</h4>
+                      <p>{formatarMoeda(item.preco)}</p>
+                    </div>
+                    <div className="func-item-controles">
+                      <div className="func-qty-controls">
+                        <button
+                          className="func-qty-btn"
+                          onClick={() => alterarQuantidade(item.produtoId, item.quantidade - 1)}
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="func-qty-valor">{item.quantidade}</span>
+                        <button
+                          className="func-qty-btn"
+                          onClick={() => alterarQuantidade(item.produtoId, item.quantidade + 1)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                      <p className="func-item-subtotal">{formatarMoeda(item.preco * item.quantidade)}</p>
+                      <button
+                        className="func-btn-remover"
+                        onClick={() => removerDoCarrinho(item.produtoId)}
+                        title="Remover item"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="func-carrinho-footer">
+                <div className="func-total-section">
+                  <span className="func-total-label">Total:</span>
+                  <span className="func-total-valor">{formatarMoeda(calcularTotal())}</span>
+                </div>
+                <button
+                  className="func-btn-finalizar"
+                  onClick={finalizarVenda}
+                >
+                  <Check size={20} />
+                  Finalizar Venda
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ==========================================
+  // RENDER PRINCIPAL
+  // ==========================================
+  return (
+    <div className="func-panel">
+      {/* Header */}
+      <header className="func-header">
+        <div className="func-header-left">
+          <img src="/logo.png" alt="Astra Cinemas" className="func-logo" />
+          <div className="func-badge">Funcionário</div>
+        </div>
+
+        <div className="func-header-right">
+          <div className="func-user-info">
             <span>Conta Demo</span>
           </div>
-          <button className="logout-btn" onClick={() => window.location.reload()}>
+          <button className="func-logout-btn" onClick={() => window.location.reload()}>
+            <LogOut size={20} />
             Sair
           </button>
         </div>
       </header>
 
-      <div className="panel-header">
-        <h1>Painel do Funcionário</h1>
-        <p>Validar ingressos e gerenciar sessões</p>
-      </div>
-
-      <div className="panel-tabs">
-        <button 
-          className={`tab ${abaAtiva === 'validar' ? 'active' : ''}`}
-          onClick={() => setAbaAtiva('validar')}
+      {/* Navigation Tabs */}
+      <nav className="func-nav">
+        <button
+          className={`func-nav-tab ${telaAtiva === 'home' ? 'active' : ''}`}
+          onClick={() => setTelaAtiva('home')}
+        >
+          <Home size={20} />
+          <span>Home</span>
+        </button>
+        <button
+          className={`func-nav-tab ${telaAtiva === 'validar' ? 'active' : ''}`}
+          onClick={() => setTelaAtiva('validar')}
         >
           <QrIcon size={20} />
-          Validar Entrada
+          <span>Validar</span>
         </button>
-        <button 
-          className={`tab ${abaAtiva === 'remarcar' ? 'active' : ''}`}
-          onClick={() => setAbaAtiva('remarcar')}
-        >
-          <RefreshCw size={20} />
-          Remarcar Ingressos
-        </button>
-        <button 
-          className={`tab ${abaAtiva === 'historico' ? 'active' : ''}`}
-          onClick={() => setAbaAtiva('historico')}
-        >
-          <History size={20} />
-          Histórico
-        </button>
-        <button 
-          className={`tab ${abaAtiva === 'bomboniere' ? 'active' : ''}`}
-          onClick={() => setAbaAtiva('bomboniere')}
+        <button
+          className={`func-nav-tab ${telaAtiva === 'bomboniere' ? 'active' : ''}`}
+          onClick={() => setTelaAtiva('bomboniere')}
         >
           <ShoppingCart size={20} />
-          Operar Bomboniere
+          <span>Bomboniere</span>
         </button>
-      </div>
+        <button
+          className={`func-nav-tab ${telaAtiva === 'historico' ? 'active' : ''}`}
+          onClick={() => setTelaAtiva('historico')}
+        >
+          <History size={20} />
+          <span>Histórico</span>
+        </button>
+        <button
+          className={`func-nav-tab ${telaAtiva === 'remarcar' ? 'active' : ''}`}
+          onClick={() => setTelaAtiva('remarcar')}
+        >
+          <RefreshCw size={20} />
+          <span>Remarcar</span>
+        </button>
+      </nav>
 
-      <div className="panel-content">
-        {abaAtiva === 'validar' && renderValidarEntrada()}
-        {abaAtiva === 'remarcar' && renderRemarcarIngressos()}
-        {abaAtiva === 'historico' && renderHistorico()}
-        {abaAtiva === 'bomboniere' && renderBomboniere()}
-      </div>
+      {/* Content */}
+      <main className="func-content">
+        {telaAtiva === 'home' && renderHome()}
+        {telaAtiva === 'validar' && renderValidar()}
+        {telaAtiva === 'historico' && renderHistorico()}
+        {telaAtiva === 'remarcar' && renderRemarcar()}
+        {telaAtiva === 'bomboniere' && renderBomboniere()}
+      </main>
     </div>
   );
 };

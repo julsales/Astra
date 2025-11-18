@@ -60,6 +60,33 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     }
 
     @Override
+    public Ingresso buscarIngressoPorId(IngressoId ingressoId) {
+        if (ingressoId == null) throw new IllegalArgumentException("O ID do ingresso não pode ser nulo");
+        return Optional.ofNullable(ingressos.get(ingressoId))
+                .map(Ingresso::clone)
+                .orElse(null);
+    }
+
+    @Override
+    public Compra buscarCompraPorQrCode(String qrCode) {
+        if (qrCode == null || qrCode.isEmpty()) throw new IllegalArgumentException("O QR Code não pode ser nulo ou vazio");
+
+        // Buscar o ingresso pelo QR code
+        Ingresso ingresso = buscarIngressoPorQrCode(qrCode);
+        if (ingresso == null) {
+            return null;
+        }
+
+        // Encontrar a compra que contém este ingresso
+        return compras.values().stream()
+                .filter(compra -> compra.getIngressos().stream()
+                        .anyMatch(i -> i.getQrCode() != null && i.getQrCode().equals(qrCode)))
+                .findFirst()
+                .map(Compra::clone)
+                .orElse(null);
+    }
+
+    @Override
     public void atualizarIngresso(Ingresso ingresso) {
         if (ingresso == null) throw new IllegalArgumentException("O ingresso não pode ser nulo");
         ingressos.put(ingresso.getIngressoId(), ingresso);

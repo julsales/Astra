@@ -37,6 +37,8 @@ public class BomboniereController {
                     map.put("nome", p.getNome());
                     map.put("preco", p.getPreco());
                     map.put("estoque", p.getEstoque());
+                    map.put("disponivel", p.getEstoque() > 0);
+                    map.put("categoria", categorizarProduto(p.getNome()));
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -156,5 +158,36 @@ public class BomboniereController {
         public void setVendaId(int vendaId) {
             this.vendaId = vendaId;
         }
+    }
+
+    /**
+     * Categoriza um produto baseado no seu nome
+     */
+    private String categorizarProduto(String nome) {
+        if (nome == null) return "outros";
+
+        String nomeLower = nome.toLowerCase();
+
+        // Bebidas
+        if (nomeLower.contains("refrigerante") || nomeLower.contains("coca") ||
+            nomeLower.contains("pepsi") || nomeLower.contains("guaraná") ||
+            nomeLower.contains("suco") || nomeLower.contains("água") ||
+            nomeLower.contains("sprite") || nomeLower.contains("fanta")) {
+            return "bebidas";
+        }
+
+        // Comidas
+        if (nomeLower.contains("pipoca") || nomeLower.contains("nachos") ||
+            nomeLower.contains("cachorro-quente") || nomeLower.contains("hot dog") ||
+            nomeLower.contains("batata") || nomeLower.contains("doce")) {
+            return "comidas";
+        }
+
+        // Combos
+        if (nomeLower.contains("combo") || nomeLower.contains("kit")) {
+            return "combos";
+        }
+
+        return "outros";
     }
 }

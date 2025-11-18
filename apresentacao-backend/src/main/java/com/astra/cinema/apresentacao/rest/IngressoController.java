@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/funcionario/ingressos")
+@RequestMapping("/api/ingressos")
 @CrossOrigin(origins = "*")
 public class IngressoController {
 
@@ -36,21 +36,34 @@ public class IngressoController {
     public ResponseEntity<?> validarIngresso(@RequestBody ValidarRequest request) {
         try {
             var resultado = validarIngressoUseCase.executar(request.getQrCode());
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("valido", resultado.isValido());
             response.put("mensagem", resultado.getMensagem());
-            
+
             if (resultado.getIngresso() != null) {
+                Ingresso ingressoValidado = resultado.getIngresso();
+
+                // Buscar a compra completa para obter TODOS os assentos
+                var compra = compraRepositorio.buscarCompraPorQrCode(request.getQrCode());
+
+                // Coletar todos os assentos da compra
+                String todosAssentos = compra != null && compra.getIngressos() != null
+                    ? compra.getIngressos().stream()
+                        .map(i -> i.getAssentoId().getValor())
+                        .collect(Collectors.joining(", "))
+                    : ingressoValidado.getAssentoId().getValor();
+
                 response.put("ingresso", Map.of(
-                    "id", resultado.getIngresso().getIngressoId().getId(),
-                    "qrCode", resultado.getIngresso().getQrCode(),
-                    "tipo", resultado.getIngresso().getTipo().name(),
-                    "status", resultado.getIngresso().getStatus().name(),
-                    "assento", resultado.getIngresso().getAssentoId().getValor()
+                    "id", ingressoValidado.getIngressoId().getId(),
+                    "qrCode", ingressoValidado.getQrCode(),
+                    "tipo", ingressoValidado.getTipo().name(),
+                    "status", ingressoValidado.getStatus().name(),
+                    "assento", todosAssentos,  // TODOS os assentos da compra
+                    "assentoIndividual", ingressoValidado.getAssentoId().getValor()  // Assento deste ingresso específico
                 ));
             }
-            
+
             if (resultado.getSessao() != null) {
                 response.put("sessao", Map.of(
                     "id", resultado.getSessao().getSessaoId().getId(),
@@ -58,7 +71,7 @@ public class IngressoController {
                     "sala", resultado.getSessao().getSala()
                 ));
             }
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()

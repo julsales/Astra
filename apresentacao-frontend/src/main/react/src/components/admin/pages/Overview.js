@@ -70,9 +70,9 @@ const Overview = ({ usuario }) => {
 
       // Atualizar métricas
       setMetricas([
-        { label: 'Filmes em Cartaz', valor: filmes.length, icone: '🎬' },
-        { label: 'Sessões Programadas', valor: todasSessoes.length, icone: '🎞️' },
-        { label: 'Usuários Cadastrados', valor: clientes.length + funcionarios.length, icone: '👥' }
+        { label: 'Filmes em Cartaz', valor: filmes.length, icone: '' },
+        { label: 'Sessões Programadas', valor: todasSessoes.length, icone: '' },
+        { label: 'Usuários Cadastrados', valor: clientes.length + funcionarios.length, icone: '' }
       ]);
 
       // Calcular estatísticas REAIS e ÚTEIS
@@ -132,7 +132,6 @@ const Overview = ({ usuario }) => {
       <div className="page-header">
         <div className="page-title-section">
           <h1 className="page-title">
-            <span className="page-icon">⚙️</span>
             Painel Administrativo
           </h1>
           <p className="page-subtitle">
@@ -169,7 +168,7 @@ const Overview = ({ usuario }) => {
       <div className="stats-grid-main">
         <div className="stat-card vendas">
           <div className="stat-header">
-            <span className="stat-label">🎬 Filmes em Cartaz</span>
+            <span className="stat-label">Filmes em Cartaz</span>
             <div className="stat-icon-circle purple"></div>
           </div>
           <div className="stat-value">{estatisticas.filmesAtivos.valor}</div>
@@ -180,7 +179,7 @@ const Overview = ({ usuario }) => {
 
         <div className="stat-card ingressos">
           <div className="stat-header">
-            <span className="stat-label">🎞️ Sessões Programadas</span>
+            <span className="stat-label">Sessões Programadas</span>
             <div className="stat-icon-circle blue"></div>
           </div>
           <div className="stat-value">{estatisticas.sessoesAtivas.valor}</div>
@@ -191,7 +190,7 @@ const Overview = ({ usuario }) => {
 
         <div className="stat-card ocupacao">
           <div className="stat-header">
-            <span className="stat-label">🪑 Taxa de Ocupação</span>
+            <span className="stat-label">Taxa de Ocupação</span>
             <div className="stat-icon-circle orange"></div>
           </div>
           <div className="stat-value">{estatisticas.ocupacao.valor}%</div>
@@ -202,7 +201,7 @@ const Overview = ({ usuario }) => {
 
         <div className="stat-card ticket">
           <div className="stat-header">
-            <span className="stat-label">🍿 Valor em Estoque</span>
+            <span className="stat-label">Valor em Estoque</span>
             <div className="stat-icon-circle green"></div>
           </div>
           <div className="stat-value">R$ {estatisticas.bomboniere.valor.toFixed(2)}</div>

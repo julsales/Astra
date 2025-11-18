@@ -134,11 +134,41 @@ public class CompraRepositorioJpa implements CompraRepositorio {
 
         // Remove espaços e converte para maiúsculo
         String codigoLimpo = qrCode.trim().toUpperCase();
-        
+
         // Busca direta por QR Code no banco (solução definitiva)
         return ingressoJpaRepository.findByQrCode(codigoLimpo)
                 .map(mapeador::mapearParaIngresso)
                 .orElse(null);
+    }
+
+    @Override
+    public Ingresso buscarIngressoPorId(IngressoId ingressoId) {
+        if (ingressoId == null) {
+            throw new IllegalArgumentException("O ID do ingresso não pode ser nulo");
+        }
+
+        return ingressoJpaRepository.findById(ingressoId.getId())
+                .map(mapeador::mapearParaIngresso)
+                .orElse(null);
+    }
+
+    @Override
+    public Compra buscarCompraPorQrCode(String qrCode) {
+        if (qrCode == null || qrCode.isEmpty()) {
+            throw new IllegalArgumentException("O QR Code não pode ser nulo ou vazio");
+        }
+
+        // Remove espaços e converte para maiúsculo
+        String codigoLimpo = qrCode.trim().toUpperCase();
+
+        // Busca o ingresso pelo QR Code
+        IngressoJpa ingressoJpa = ingressoJpaRepository.findByQrCode(codigoLimpo).orElse(null);
+        if (ingressoJpa == null) {
+            return null;
+        }
+
+        // Usa o compraId do ingresso para buscar a compra completa
+        return obterPorId(new CompraId(ingressoJpa.getCompraId()));
     }
 
     @Override

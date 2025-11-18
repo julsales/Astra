@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
 import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
+import { StatusBadge } from '../../shared/StatusBadge';
+import { formatarDuracao, truncarTexto } from '../../../utils/formatters';
 
 const statusOpcoes = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -338,15 +340,13 @@ const Filmes = ({ usuario }) => {
                     <td>
                       <strong style={{ color: 'white' }}>{filme.titulo}</strong>
                       <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
-                        {filme.sinopse?.substring(0, 60)}...
+                        {truncarTexto(filme.sinopse, 60)}
                       </div>
                     </td>
                     <td>{filme.classificacaoEtaria}</td>
-                    <td>{filme.duracao} min</td>
+                    <td>{formatarDuracao(filme.duracao)}</td>
                     <td>
-                      <span className={`badge ${filme.status === 'EM_CARTAZ' ? 'ativa' : filme.status === 'EM_BREVE' ? 'pendente' : 'inativa'}`}>
-                        {filme.status}
-                      </span>
+                      <StatusBadge status={filme.status} type="filme" />
                     </td>
                     <td>
                       <button 

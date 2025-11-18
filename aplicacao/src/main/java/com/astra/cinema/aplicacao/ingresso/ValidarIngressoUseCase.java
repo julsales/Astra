@@ -49,20 +49,8 @@ public class ValidarIngressoUseCase {
             return new ResultadoValidacao(false, "Ingresso já foi utilizado", ingresso, sessao);
         }
 
-        // Verificar horário da sessão (permitir entrada de 30 min antes até 30 min após início)
-        Date horaInicio = sessao.getHorario();
-        LocalDateTime horarioSessao = Instant.ofEpochMilli(horaInicio.getTime())
-            .atZone(ZoneId.systemDefault())
-            .toLocalDateTime();
-        LocalDateTime agora = LocalDateTime.now();
-
-        if (agora.isBefore(horarioSessao.minusMinutes(30))) {
-            return new ResultadoValidacao(false, "Muito cedo para esta sessão", ingresso, sessao);
-        }
-
-        if (agora.isAfter(horarioSessao.plusHours(3))) { // Assume duração máxima de 3h
-            return new ResultadoValidacao(false, "Sessão já encerrada", ingresso, sessao);
-        }
+        // Validação liberada para qualquer horário (modo cinema flexível)
+        // Em produção real, você pode adicionar validações de horário conforme necessário
 
         // Validar ingresso
         ingresso.utilizar();

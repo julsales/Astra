@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Film, Ticket, Popcorn, DollarSign, Smartphone, Home } from 'lucide-react';
 import './PagesStyles.css';
 
 const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos }) => {
@@ -42,7 +43,7 @@ const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos })
 
         <div className="sucesso-detalhes">
           <div className="detalhe-item">
-            <span className="detalhe-icon">🎬</span>
+            <span className="detalhe-icon"><Film size={24} /></span>
             <div>
               <strong>{dados.filme?.titulo}</strong>
               <p>{new Date(dados.sessao?.horario).toLocaleString('pt-BR')}</p>
@@ -51,7 +52,7 @@ const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos })
           </div>
 
           <div className="detalhe-item">
-            <span className="detalhe-icon">🎫</span>
+            <span className="detalhe-icon"><Ticket size={24} /></span>
             <div>
               <strong>Ingressos</strong>
               <p>Assentos: {dados.assentos?.join(', ')}</p>
@@ -60,7 +61,7 @@ const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos })
 
           {dados.produtos?.length > 0 && (
             <div className="detalhe-item">
-              <span className="detalhe-icon">🍿</span>
+              <span className="detalhe-icon"><Popcorn size={24} /></span>
               <div>
                 <strong>Bomboniere</strong>
                 {dados.produtos.map((item, idx) => (
@@ -71,7 +72,7 @@ const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos })
           )}
 
           <div className="detalhe-item total-item">
-            <span className="detalhe-icon">💰</span>
+            <span className="detalhe-icon"><DollarSign size={24} /></span>
             <div>
               <strong>Total Pago</strong>
               <p className="valor-total">R$ {totalPago.toFixed(2)}</p>
@@ -80,20 +81,20 @@ const Sucesso = ({ compra, fallbackCarrinho, onVoltarInicio, onAbrirIngressos })
         </div>
 
         <div className="sucesso-instrucoes">
-          <h3>📱 Próximos Passos</h3>
+          <h3><Smartphone size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Próximos Passos</h3>
           <ul>
-            <li>✓ Apresente este código na bilheteria ou balcão de retirada</li>
-            <li>✓ Chegue 15 minutos antes do horário da sessão</li>
-            <li>✓ Seus ingressos e produtos estarão reservados</li>
+            <li>Apresente este código na bilheteria ou balcão de retirada</li>
+            <li>Chegue 15 minutos antes do horário da sessão</li>
+            <li>Seus ingressos e produtos estarão reservados</li>
           </ul>
         </div>
 
         <div className="sucesso-acoes">
           <button className="btn-secundario" onClick={onAbrirIngressos}>
-            🎟️ Ver Meus Ingressos
+            <Ticket size={18} style={{ marginRight: '6px' }} />Ver Meus Ingressos
           </button>
           <button className="btn-voltar-inicio" onClick={onVoltarInicio}>
-            🏠 Voltar ao Início
+            <Home size={18} style={{ marginRight: '6px' }} />Voltar ao Início
           </button>
         </div>
       </div>

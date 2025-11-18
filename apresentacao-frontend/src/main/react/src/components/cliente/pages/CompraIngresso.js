@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { generateSeatMap } from '../../../utils/assentos';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { gerarQrCodeDataUrl } from '../../../utils/qr';
 import { useMeusIngressos } from '../../../hooks/useMeusIngressos';
+import { useFetch } from '../../../hooks/useFetch';
+import { formatarData, formatarHora, formatarMoeda } from '../../../utils/formatters';
 
 const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
   const [etapa, setEtapa] = useState(1); // 1=assentos, 2=tipos, 3=bomboniere, 4=pagamento
@@ -14,8 +15,11 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
   const [produtos, setProdutos] = useState([]);
   const [itensBomboniere, setItensBomboniere] = useState({});
   const [carregandoProdutos, setCarregandoProdutos] = useState(false);
-  
+
   const { registrarCompra } = useMeusIngressos(usuario);
+
+  // Buscar preços dinâmicos do backend
+  const { data: precos } = useFetch('/api/precos');
 
   const carregarAssentos = useCallback(async () => {
     if (!sessao?.id) {
@@ -31,7 +35,6 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       if (!res.ok) throw new Error('Falha ao buscar assentos do backend');
       
       const data = await res.json();
-      console.log('🎬 Assentos do BACKEND:', data);
       
       // O backend retorna { sessaoId, capacidade, assentos: { "A01": true, "A02": false, ... } }
       // true = disponível, false = ocupado
@@ -51,15 +54,10 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
         return a.numero - b.numero;
       });
       
-      console.log('✅ Assentos processados:', assentosArray);
-      
-      // DEBUG: Mostrar assentos ocupados
-      const ocupados = assentosArray.filter(a => !a.disponivel);
-      console.log('🔴 Assentos OCUPADOS:', ocupados.map(a => a.id));
       
       setAssentos(assentosArray);
     } catch (e) {
-      console.error('❌ Erro ao carregar assentos do backend:', e);
+      console.error('Erro ao carregar assentos do backend:', e);
       alert('Erro ao carregar disponibilidade de assentos. Tente novamente.');
       setAssentos([]);
     } finally {
@@ -134,10 +132,14 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
     }
   };
 
-  const calcularPreco = () => {
-    const precoBase = tipoIngresso === 'inteira' ? 35.0 : 17.5;
+  // Preço dos ingressos (otimizado com useMemo)
+  const precoIngressos = useMemo(() => {
+    if (!precos) return 0;
+    const precoBase = tipoIngresso === 'inteira'
+      ? (precos.ingressoInteiro || 35.0)
+      : (precos.ingressoMeia || 17.5);
     return assentosSelecionados.length * precoBase;
-  };
+  }, [assentosSelecionados.length, tipoIngresso, precos]);
 
   const atualizarQuantidadeProduto = (produtoId, delta, limite = Infinity) => {
     setItensBomboniere((prev) => {
@@ -155,15 +157,19 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
     });
   };
 
-  const calcularTotalBomboniere = () => {
+  // Total da bomboniere (otimizado com useMemo)
+  const totalBomboniere = useMemo(() => {
     return Object.entries(itensBomboniere).reduce((total, [id, quantidade]) => {
       const produto = produtos.find((p) => String(p.id) === String(id));
       if (!produto) return total;
       return total + (produto.preco || 0) * quantidade;
     }, 0);
-  };
+  }, [itensBomboniere, produtos]);
 
-  const totalGeral = () => calcularPreco() + calcularTotalBomboniere();
+  // Total geral (otimizado com useMemo)
+  const totalGeral = useMemo(() => {
+    return precoIngressos + totalBomboniere;
+  }, [precoIngressos, totalBomboniere]);
 
   const obterQuantidadeProduto = (produtoId) => itensBomboniere[produtoId] || 0;
 
@@ -177,20 +183,6 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
         subtotal: (produto.preco || 0) * quantidade
       };
     });
-
-  const formatarData = (iso) => {
-    const data = new Date(iso);
-    return data.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
-    }).replace('.', '');
-  };
-
-  const formatarHora = (iso) => {
-    const data = new Date(iso);
-    return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  };
 
   const finalizarCompra = async () => {
     if (!metodoPagamento) {
@@ -250,8 +242,8 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
         })
       );
 
-      const totalBomboniere = calcularTotalBomboniere();
-      const totalIngressos = calcularPreco();
+      const totalBomboniereCompra = totalBomboniere;
+      const totalIngressosCompra = precoIngressos;
       
       // Usa o primeiro QR Code para compatibilidade (ou pode mostrar todos)
       const primeiroIngresso = ingressosComQrCode[0];
@@ -262,9 +254,9 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
         sessao,
         assentos: assentosSelecionados,
         produtos: itensBomboniereSelecionados,
-        totalIngressos,
-        totalBomboniere,
-        total: totalIngressos + totalBomboniere,
+        totalIngressos: totalIngressosCompra,
+        totalBomboniere: totalBomboniereCompra,
+        total: totalIngressosCompra + totalBomboniereCompra,
         metodoPagamento,
         status: compraBackend.status || 'CONFIRMADO',
         qrCode: primeiroIngresso.qrCodeDataUrl,
@@ -354,7 +346,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
 
               <div className="resumo-total">
                 <span>Total ingressos:</span>
-                <span className="preco-destaque">R$ {calcularPreco().toFixed(2)}</span>
+                <span className="preco-destaque">{formatarMoeda(precoIngressos)}</span>
               </div>
             </>
           )}
@@ -372,7 +364,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
               </ul>
               <div className="resumo-total">
                 <span>Total combos:</span>
-                <span className="preco-destaque">R$ {calcularTotalBomboniere().toFixed(2)}</span>
+                <span className="preco-destaque">{formatarMoeda(totalBomboniere)}</span>
               </div>
             </div>
           )}
@@ -380,15 +372,15 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
           <div className="resumo-geral">
             <div className="resumo-geral-linha">
               <span>Ingressos</span>
-              <span>R$ {calcularPreco().toFixed(2)}</span>
+              <span>{formatarMoeda(precoIngressos)}</span>
             </div>
             <div className="resumo-geral-linha">
               <span>Bomboniere</span>
-              <span>R$ {calcularTotalBomboniere().toFixed(2)}</span>
+              <span>{formatarMoeda(totalBomboniere)}</span>
             </div>
             <div className="resumo-geral-total">
               <span>Total geral</span>
-              <strong>R$ {totalGeral().toFixed(2)}</strong>
+              <strong>{formatarMoeda(totalGeral)}</strong>
             </div>
           </div>
         </aside>
@@ -473,11 +465,11 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
                     </svg>
                   </div>
                   <h3>Inteira</h3>
-                  <p className="tipo-preco">R$ 35,00</p>
+                  <p className="tipo-preco">{formatarMoeda(precos?.ingressoInteiro || 35.0)}</p>
                   <p className="tipo-desc">Por assento</p>
                 </button>
 
-                <button 
+                <button
                   className={`tipo-card ${tipoIngresso === 'meia' ? 'selecionado' : ''}`}
                   onClick={() => setTipoIngresso('meia')}
                 >
@@ -489,7 +481,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
                     </svg>
                   </div>
                   <h3>Meia-entrada</h3>
-                  <p className="tipo-preco">R$ 17,50</p>
+                  <p className="tipo-preco">{formatarMoeda(precos?.ingressoMeia || 17.5)}</p>
                   <p className="tipo-desc">Por assento</p>
                   <span className="tipo-badge">50% OFF</span>
                 </button>
@@ -534,7 +526,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
                 </div>
                 <div className="bomboniere-total-hero">
                   <span>Total combos</span>
-                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                  <strong>{formatarMoeda(totalBomboniere)}</strong>
                 </div>
               </div>
 
@@ -611,7 +603,7 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
 
                 <div className="bomboniere-carrinho-total">
                   <span>Total combos</span>
-                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                  <strong>{formatarMoeda(totalBomboniere)}</strong>
                 </div>
               </div>
 
@@ -684,15 +676,15 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
               <div className="pagamento-resumo">
                 <div>
                   <span>Ingressos</span>
-                  <strong>R$ {calcularPreco().toFixed(2)}</strong>
+                  <strong>{formatarMoeda(precoIngressos)}</strong>
                 </div>
                 <div>
                   <span>Bomboniere</span>
-                  <strong>R$ {calcularTotalBomboniere().toFixed(2)}</strong>
+                  <strong>{formatarMoeda(totalBomboniere)}</strong>
                 </div>
                 <div className="pagamento-total-geral">
                   <span>Total a pagar</span>
-                  <strong>R$ {totalGeral().toFixed(2)}</strong>
+                  <strong>{formatarMoeda(totalGeral)}</strong>
                 </div>
               </div>
 
