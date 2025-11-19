@@ -8,14 +8,23 @@ import Stars from './components/Stars';
 import CosmicNebula from './components/CosmicNebula';
 
 function App() {
-  const [usuarioLogado, setUsuarioLogado] = useState(null);
+  const [usuarioLogado, setUsuarioLogado] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem('usuarioLogado');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  });
 
   const handleLogin = (usuario) => {
     setUsuarioLogado(usuario);
+    try { window.localStorage.setItem('usuarioLogado', JSON.stringify(usuario)); } catch (e) { /* ignore */ }
   };
 
   const handleLogout = () => {
     setUsuarioLogado(null);
+    try { window.localStorage.removeItem('usuarioLogado'); } catch (e) { /* ignore */ }
   };
 
   // Se usuário está logado, decide qual painel mostrar

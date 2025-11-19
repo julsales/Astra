@@ -30,10 +30,9 @@ public class RemarcarIngressosSessaoUseCase {
     }
 
     public RemarcacaoResultado executar(
-            SessaoId sessaoId,
-            Date novoHorario,
-            EstrategiaRemarcacao estrategia,
-            List<String> assentosAfetados) {
+        SessaoId sessaoId,
+        Date novoHorario,
+        List<String> assentosAfetados) {
 
         if (sessaoId == null) {
             throw new IllegalArgumentException("O ID da sessão não pode ser nulo");
@@ -41,9 +40,7 @@ public class RemarcarIngressosSessaoUseCase {
         if (novoHorario == null) {
             throw new IllegalArgumentException("O novo horário não pode ser nulo");
         }
-        if (estrategia == null) {
-            throw new IllegalArgumentException("A estratégia de remarcação é obrigatória");
-        }
+        // Estratégia inferida: se assentosAfetados vazio -> massa; senão -> individual
 
         Sessao sessao = sessaoRepositorio.obterPorId(sessaoId);
         if (sessao == null) {
@@ -65,13 +62,10 @@ public class RemarcarIngressosSessaoUseCase {
                 .count();
 
         int ingressosRemarcados;
-        if (estrategia == EstrategiaRemarcacao.MASSA) {
+        if (assentosAfetados == null || assentosAfetados.isEmpty()) {
+            // mass remarcation
             ingressosRemarcados = reservasAtivas;
         } else {
-            if (assentosAfetados == null || assentosAfetados.isEmpty()) {
-                throw new IllegalArgumentException("Informe os assentos que serão remarcados individualmente");
-            }
-
             Set<AssentoId> idsSolicitados = converterAssentos(assentosAfetados);
             for (AssentoId assentoId : idsSolicitados) {
                 if (!mapaAssentos.containsKey(assentoId)) {
@@ -96,7 +90,9 @@ public class RemarcarIngressosSessaoUseCase {
 
         sessaoRepositorio.salvar(sessaoAtualizada);
 
-        return new RemarcacaoResultado(ingressosRemarcados, reservasAtivas, novoHorario, estrategia);
+        // Define estrategia para resposta para compatibilidade
+        EstrategiaRemarcacao estrategiaResposta = (assentosAfetados == null || assentosAfetados.isEmpty()) ? EstrategiaRemarcacao.MASSA : EstrategiaRemarcacao.INDIVIDUAL;
+        return new RemarcacaoResultado(ingressosRemarcados, reservasAtivas, novoHorario, estrategiaResposta);
     }
 
     private Set<AssentoId> converterAssentos(List<String> assentos) {

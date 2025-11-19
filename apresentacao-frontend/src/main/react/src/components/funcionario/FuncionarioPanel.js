@@ -26,8 +26,9 @@ import Modal from '../shared/Modal';
 import StatusBadge from '../shared/StatusBadge';
 import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
 import './FuncionarioNovo.css';
+import CosmicNebula from '../CosmicNebula';
 
-const FuncionarioPanel = () => {
+const FuncionarioPanel = ({ onLogout }) => {
   // Estados principais
   const [telaAtiva, setTelaAtiva] = useState('home');
   const [carregando, setCarregando] = useState(false);
@@ -48,8 +49,8 @@ const FuncionarioPanel = () => {
   const [historico, setHistorico] = useState([]);
   const [filtroHistorico, setFiltroHistorico] = useState('todos');
 
-  // Estados para Remarcação
-  const [ingressosAtivos, setIngressosAtivos] = useState([]);
+  // Estados para Remarcação (agora carregamos TODOS os ingressos para remarcação)
+  const [ingressos, setIngressos] = useState([]);
   const [ingressoSelecionado, setIngressoSelecionado] = useState(null);
   const [sessoesDisponiveis, setSessoesDisponiveis] = useState([]);
   const [modalRemarcar, setModalRemarcar] = useState(false);
@@ -64,7 +65,7 @@ const FuncionarioPanel = () => {
   useEffect(() => {
     carregarDashboard();
     carregarHistorico();
-    carregarIngressosAtivos();
+  carregarIngressos();
     carregarProdutos();
   }, []);
 
@@ -188,15 +189,18 @@ const FuncionarioPanel = () => {
   // ==========================================
   // REMARCAÇÃO
   // ==========================================
-  const carregarIngressosAtivos = async () => {
+  // Carrega TODOS os ingressos (não apenas os validados) para permitir remarcação por titular
+  const carregarIngressos = async () => {
     try {
-      const response = await fetch('/api/funcionario/ingressos/ativos');
+      // Assumimos que há um endpoint público para listar ingressos: /api/ingressos
+      // Se o seu backend usar outro path, ajuste aqui.
+      const response = await fetch('/api/ingressos');
       if (response.ok) {
         const data = await response.json();
-        setIngressosAtivos(data);
+        setIngressos(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar ingressos ativos:', error);
+      console.error('Erro ao carregar ingressos:', error);
     }
   };
 
@@ -242,12 +246,12 @@ const FuncionarioPanel = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
+        if (response.ok) {
         alert('Ingresso remarcado com sucesso!');
         setModalRemarcar(false);
         setMotivoTecnico('');
         setIngressoSelecionado(null);
-        carregarIngressosAtivos();
+        carregarIngressos();
       } else {
         alert(`Erro: ${data.erro}`);
       }
@@ -332,6 +336,7 @@ const FuncionarioPanel = () => {
       if (response.ok) {
         alert(`Venda finalizada com sucesso!\nTotal: ${formatarMoeda(data.valorTotal)}`);
         setCarrinho([]);
+        carregarProdutos(); // Atualizar estoque dos produtos
         carregarDashboard(); // Atualizar estatísticas
       } else {
         alert(`Erro: ${data.erro}`);
@@ -343,7 +348,7 @@ const FuncionarioPanel = () => {
   };
 
   const categoriasProdutos = () => {
-    const cats = new Set(produtos.map(p => p.categoria));
+    const cats = new Set(produtos.map(p => p.categoria).filter(Boolean));
     return ['todos', ...Array.from(cats)];
   };
 
@@ -580,18 +585,7 @@ const FuncionarioPanel = () => {
         </div>
       )}
 
-      <div className="func-codigos-teste">
-        <h3>Códigos de Teste</h3>
-        <div className="func-codigos-badges">
-          <span className="func-codigo-badge" onClick={() => setQrCode('ASTRA001')}>
-            ASTRA001
-          </span>
-          <span className="func-codigo-badge" onClick={() => setQrCode('ASTRA002')}>
-            ASTRA002
-          </span>
-        </div>
-        <p className="func-help-text-small">Clique em um código para preencher automaticamente</p>
-      </div>
+      {/* Test codes removed: no longer show test QR codes in production UI */}
     </div>
   );
 
@@ -677,18 +671,23 @@ const FuncionarioPanel = () => {
         </div>
       </div>
 
-      {ingressosAtivos.length === 0 ? (
+      {ingressos.length === 0 ? (
         <div className="func-empty-state">
           <AlertTriangle size={64} />
-          <h3>Nenhum ingresso ativo</h3>
-          <p>Não há ingressos disponíveis para remarcação no momento</p>
+          <h3>Nenhum ingresso encontrado</h3>
+          <p>Não há ingressos registrados no momento</p>
         </div>
       ) : (
         <div className="func-ingressos-grid">
-          {ingressosAtivos.map((ingresso) => (
+          {ingressos.map((ingresso) => (
             <div key={ingresso.id} className="func-ingresso-card">
               <div className="func-ingresso-header">
                 <span className="func-qr-badge">{ingresso.qrCode}</span>
+                {/* Mostrar titular/comprador quando disponível */}
+                <div className="func-ingresso-owner">
+                  <small>Titular:</small>
+                  <strong>{ingresso.clienteNome || ingresso.titular || (ingresso.usuario && ingresso.usuario.nome) || '—'}</strong>
+                </div>
                 <StatusBadge status={ingresso.status} type="ingresso" />
               </div>
               <div className="func-ingresso-body">
@@ -709,13 +708,13 @@ const FuncionarioPanel = () => {
                   <span>{ingresso.tipo}</span>
                 </div>
               </div>
-              <button
-                className="func-btn-remarcar"
-                onClick={() => abrirModalRemarcar(ingresso)}
-              >
-                <RefreshCw size={16} />
-                Remarcar Sessão
-              </button>
+                <button
+                  className="func-btn-remarcar"
+                  onClick={() => abrirModalRemarcar(ingresso)}
+                >
+                  <RefreshCw size={16} />
+                  Remarcar Sessão
+                </button>
             </div>
           ))}
         </div>
@@ -805,7 +804,9 @@ const FuncionarioPanel = () => {
                 className={`func-categoria-btn ${filtroCategoria === cat ? 'active' : ''}`}
                 onClick={() => setFiltroCategoria(cat)}
               >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {typeof cat === 'string' && cat.length > 0
+                  ? cat.charAt(0).toUpperCase() + cat.slice(1)
+                  : String(cat)}
               </button>
             ))}
           </div>
@@ -820,6 +821,9 @@ const FuncionarioPanel = () => {
                   <h4>{produto.nome}</h4>
                   <p className="func-produto-categoria">{produto.categoria}</p>
                   <p className="func-produto-preco">{formatarMoeda(produto.preco)}</p>
+                  <p className="func-produto-estoque">
+                    Estoque: <span className={produto.estoque < 10 ? 'estoque-baixo' : ''}>{produto.estoque}</span>
+                  </p>
                 </div>
                 {produto.disponivel ? (
                   <button
@@ -915,6 +919,8 @@ const FuncionarioPanel = () => {
   // ==========================================
   return (
     <div className="func-panel">
+      <CosmicNebula />
+      <div className="diamond-star"></div>
       {/* Header */}
       <header className="func-header">
         <div className="func-header-left">
@@ -926,7 +932,7 @@ const FuncionarioPanel = () => {
           <div className="func-user-info">
             <span>Conta Demo</span>
           </div>
-          <button className="func-logout-btn" onClick={() => window.location.reload()}>
+          <button className="func-logout-btn" onClick={() => onLogout && onLogout()}>
             <LogOut size={20} />
             Sair
           </button>

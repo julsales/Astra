@@ -40,7 +40,7 @@ public class CancelarCompraFuncionalidade extends CinemaFuncionalidade {
         
         // Cria ingresso válido
         var ingresso = new Ingresso(new IngressoId(1), sessaoId, new AssentoId("C1"),
-                                   TipoIngresso.INTEIRA, StatusIngresso.VALIDO, "QR1");
+                                   TipoIngresso.INTEIRA, StatusIngresso.VALIDADO, "QR1");
         
         // Cria pagamento
         var pagamento = new Pagamento(pagamentoId, 50.0, StatusPagamento.SUCESSO, new Date());
@@ -91,7 +91,7 @@ public class CancelarCompraFuncionalidade extends CinemaFuncionalidade {
         
         // Cria ingresso UTILIZADO
         var ingresso = new Ingresso(new IngressoId(1), sessaoId, new AssentoId("C1"),
-                                   TipoIngresso.INTEIRA, StatusIngresso.UTILIZADO, "QR1");
+                                   TipoIngresso.INTEIRA, StatusIngresso.VALIDADO, "QR1");
         
         // Cria pagamento
         var pagamento = new Pagamento(pagamentoId, 50.0, StatusPagamento.SUCESSO, new Date());

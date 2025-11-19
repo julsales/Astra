@@ -15,11 +15,15 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
   const [carregando, setCarregando] = useState(true);
   const [ingressoQrAberto, setIngressoQrAberto] = useState(null);
   
-  const { ingressos } = useMeusIngressos(usuario);
+  const { ingressos, sincronizarComBackend } = useMeusIngressos(usuario);
 
   useEffect(() => {
     carregarFilmesESessoes();
-  }, []);
+    // tentar sincronizar ingressos com backend quando usuário estiver logado
+    if (usuario && usuario.id) {
+      sincronizarComBackend();
+    }
+  }, [sincronizarComBackend, usuario]);
 
   const carregarFilmesESessoes = async () => {
     setCarregando(true);
@@ -211,8 +215,12 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                       <h3>{ingresso.filme?.titulo || 'Filme'}</h3>
                       <p className="ingresso-codigo-pequeno">Código: {ingresso.codigo}</p>
                     </div>
-                    <span className={`badge-status ${ingresso.status?.toLowerCase()}`}>
-                      {ingresso.status === 'CONFIRMADO' ? '✓ Ativo' : ingresso.status}
+                    <span className={`badge-status ${ingresso.status === 'VALIDADO' ? 'validado' : ingresso.status?.toLowerCase()}`}>
+                      {ingresso.status === 'VALIDADO' ? 'VALIDADO' :
+                        ingresso.status === 'VALIDADO' ? 'VALIDADO' :
+                        ingresso.status === 'CONFIRMADO' ? '✓ Ativo' :
+                        ingresso.status === 'PENDENTE' ? 'Pendente' :
+                        ingresso.status}
                     </span>
                   </div>
 

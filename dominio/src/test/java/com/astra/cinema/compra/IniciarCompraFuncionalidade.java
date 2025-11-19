@@ -48,9 +48,9 @@ public class IniciarCompraFuncionalidade extends CinemaFuncionalidade {
     public void o_cliente_seleciona_os_assentos_a1_e_a2_e_inicia_a_compra() {
         try {
             var ingresso1 = new Ingresso(new IngressoId(1), sessaoId, assentoA1, 
-                                        TipoIngresso.INTEIRA, StatusIngresso.VALIDO, "QR1");
+                                        TipoIngresso.INTEIRA, StatusIngresso.VALIDADO, "QR1");
             var ingresso2 = new Ingresso(new IngressoId(2), sessaoId, assentoA2, 
-                                        TipoIngresso.MEIA, StatusIngresso.VALIDO, "QR2");
+                                        TipoIngresso.MEIA, StatusIngresso.VALIDADO, "QR2");
             
             compraRealizada = compraService.iniciarCompra(clienteId, Arrays.asList(ingresso1, ingresso2));
         } catch (RuntimeException e) {
@@ -93,7 +93,7 @@ public class IniciarCompraFuncionalidade extends CinemaFuncionalidade {
     public void o_cliente_tenta_iniciar_uma_compra_incluindo_o_assento_a1() {
         try {
             var ingresso1 = new Ingresso(new IngressoId(1), sessaoId, assentoA1, 
-                                        TipoIngresso.INTEIRA, StatusIngresso.VALIDO, "QR1");
+                                        TipoIngresso.INTEIRA, StatusIngresso.VALIDADO, "QR1");
             
             compraRealizada = compraService.iniciarCompra(clienteId, Arrays.asList(ingresso1));
         } catch (RuntimeException e) {

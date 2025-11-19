@@ -12,6 +12,7 @@ import java.util.List;
 public interface IngressoJpaRepository extends JpaRepository<IngressoJpa, Integer> {
     List<IngressoJpa> findByCompraId(Integer compraId);
     List<IngressoJpa> findByStatus(String status);
+    List<IngressoJpa> findByStatusIn(java.util.List<String> statuses);
     java.util.Optional<IngressoJpa> findByQrCode(String qrCode);
 }
 

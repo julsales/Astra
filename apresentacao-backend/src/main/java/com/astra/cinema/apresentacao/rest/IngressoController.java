@@ -7,6 +7,10 @@ import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.compra.StatusIngresso;
+import com.astra.cinema.dominio.sessao.Sessao;
+import com.astra.cinema.dominio.sessao.SessaoRepositorio;
+import com.astra.cinema.dominio.filme.Filme;
+import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,13 +27,19 @@ public class IngressoController {
     private final ValidarIngressoUseCase validarIngressoUseCase;
     private final RemarcarIngressoUseCase remarcarIngressoUseCase;
     private final CompraRepositorio compraRepositorio;
+    private final SessaoRepositorio sessaoRepositorio;
+    private final FilmeRepositorio filmeRepositorio;
 
     public IngressoController(ValidarIngressoUseCase validarIngressoUseCase,
                              RemarcarIngressoUseCase remarcarIngressoUseCase,
-                             CompraRepositorio compraRepositorio) {
+                             CompraRepositorio compraRepositorio,
+                             SessaoRepositorio sessaoRepositorio,
+                             FilmeRepositorio filmeRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
+        this.sessaoRepositorio = sessaoRepositorio;
+        this.filmeRepositorio = filmeRepositorio;
     }
 
     @PostMapping("/validar")
@@ -54,13 +64,17 @@ public class IngressoController {
                         .collect(Collectors.joining(", "))
                     : ingressoValidado.getAssentoId().getValor();
 
+                // Verifica se o ingresso foi validado por funcionário (status == VALIDADO)
+                boolean foiValidado = ingressoValidado.getStatus() == StatusIngresso.VALIDADO;
+
                 response.put("ingresso", Map.of(
                     "id", ingressoValidado.getIngressoId().getId(),
                     "qrCode", ingressoValidado.getQrCode(),
                     "tipo", ingressoValidado.getTipo().name(),
                     "status", ingressoValidado.getStatus().name(),
                     "assento", todosAssentos,  // TODOS os assentos da compra
-                    "assentoIndividual", ingressoValidado.getAssentoId().getValor()  // Assento deste ingresso específico
+                    "assentoIndividual", ingressoValidado.getAssentoId().getValor(),  // Assento deste ingresso específico
+                    "foiValidado", foiValidado
                 ));
             }
 
@@ -102,20 +116,68 @@ public class IngressoController {
     public ResponseEntity<?> buscarIngressosAtivos() {
         try {
             List<Ingresso> ingressos = compraRepositorio.buscarIngressosAtivos();
-            
+
             List<Map<String, Object>> response = ingressos.stream()
                 .map(i -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", i.getIngressoId().getId());
                     map.put("qrCode", i.getQrCode());
                     map.put("sessaoId", i.getSessaoId().getId());
-                    map.put("assento", i.getAssentoId().getValor());
+
+                    // Buscar TODOS os assentos da compra (não apenas deste ingresso)
+                    try {
+                        var compra = compraRepositorio.buscarCompraPorQrCode(i.getQrCode());
+                        if (compra != null && compra.getIngressos() != null) {
+                            String todosAssentos = compra.getIngressos().stream()
+                                .map(ing -> ing.getAssentoId().getValor())
+                                .collect(Collectors.joining(", "));
+                            map.put("assento", todosAssentos);  // TODOS os assentos
+                        } else {
+                            map.put("assento", i.getAssentoId().getValor());  // Fallback
+                        }
+                    } catch (Exception e) {
+                        map.put("assento", i.getAssentoId().getValor());  // Fallback
+                    }
+
+                    map.put("assentoIndividual", i.getAssentoId().getValor());  // Assento individual
                     map.put("tipo", i.getTipo().name());
                     map.put("status", i.getStatus().name());
+
+                    // Adicionar flag foiValidado (true se status é VALIDADO)
+                    boolean foiValidado = i.getStatus() == StatusIngresso.VALIDADO;
+                    map.put("foiValidado", foiValidado);
+
+                    // Buscar informações da sessão
+                    try {
+                        Sessao sessao = sessaoRepositorio.obterPorId(i.getSessaoId());
+                        if (sessao != null) {
+                            map.put("horario", sessao.getHorario().toString());
+                            map.put("sala", sessao.getSala());
+
+                            // Buscar informações do filme
+                            try {
+                                Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
+                                if (filme != null) {
+                                    Map<String, Object> filmeMap = new HashMap<>();
+                                    filmeMap.put("id", filme.getFilmeId().getId());
+                                    filmeMap.put("titulo", filme.getTitulo());
+                                    filmeMap.put("sinopse", filme.getSinopse());
+                                    filmeMap.put("classificacaoEtaria", filme.getClassificacaoEtaria());
+                                    filmeMap.put("duracao", filme.getDuracao());
+                                    map.put("filme", filmeMap);
+                                }
+                            } catch (Exception e) {
+                                // Se não encontrar filme, continua sem adicionar
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Se não encontrar sessão, continua sem adicionar
+                    }
+
                     return map;
                 })
                 .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()

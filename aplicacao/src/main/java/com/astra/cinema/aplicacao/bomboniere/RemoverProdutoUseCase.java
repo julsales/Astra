@@ -37,17 +37,8 @@ public class RemoverProdutoUseCase {
             throw new IllegalArgumentException("Produto não encontrado");
         }
 
-        // Remove o produto (implementação depende do repositório)
-        // Aqui podemos criar um produto com estoque zero e preço zero como "removido"
-        // Ou o repositório pode ter um método específico de remoção
-        Produto produtoRemovido = new Produto(
-            produto.getProdutoId(),
-            produto.getNome() + " [REMOVIDO]",
-            0.0,
-            0
-        );
-
-        produtoRepositorio.salvar(produtoRemovido);
+        // Delegar remoção ao repositório
+        produtoRepositorio.remover(produtoId);
     }
 
     /**

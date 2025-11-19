@@ -94,10 +94,10 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
 
     @Override
     public List<Ingresso> buscarIngressosAtivos() {
-        return ingressos.values().stream()
-                .filter(i -> i.getStatus() == StatusIngresso.VALIDO)
-                .map(Ingresso::clone)
-                .collect(Collectors.toList());
+    return ingressos.values().stream()
+        .filter(i -> i.getStatus() == StatusIngresso.VALIDADO)
+        .map(Ingresso::clone)
+        .collect(Collectors.toList());
     }
 
     // SessaoRepositorio

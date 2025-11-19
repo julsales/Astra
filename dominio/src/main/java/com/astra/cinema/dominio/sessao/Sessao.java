@@ -87,10 +87,21 @@ public class Sessao implements Cloneable {
     public void reservarAssento(AssentoId assentoId) {
         exigirEstado(assentoDisponivel(assentoId), "O assento não está disponível");
         mapaAssentosDisponiveis.put(assentoId, false);
-        
+
         // Verifica se todos os assentos foram reservados
         if (mapaAssentosDisponiveis.values().stream().noneMatch(disponivel -> disponivel)) {
             marcarComoEsgotada();
+        }
+    }
+
+    public void liberarAssento(AssentoId assentoId) {
+        exigirNaoNulo(assentoId, "O assento não pode ser nulo");
+        // Libera o assento, marcando como disponível
+        mapaAssentosDisponiveis.put(assentoId, true);
+
+        // Se estava esgotada e agora tem assento disponível, volta para DISPONIVEL
+        if (this.status == StatusSessao.ESGOTADA) {
+            this.status = StatusSessao.DISPONIVEL;
         }
     }
 

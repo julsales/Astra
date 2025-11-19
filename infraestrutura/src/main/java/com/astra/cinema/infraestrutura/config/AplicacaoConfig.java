@@ -142,6 +142,22 @@ public class AplicacaoConfig {
         return new RemoverProdutoUseCase(produtoRepositorio);
     }
 
+    /**
+     * Bean para registrar entradas de estoque
+     */
+    @Bean
+    public com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase entradaEstoqueUseCase(ProdutoRepositorio produtoRepositorio) {
+        return new com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase(produtoRepositorio);
+    }
+
+    /**
+     * Bean para ajustar estoque (perdas/divergências)
+     */
+    @Bean
+    public com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase ajusteEstoqueUseCase(ProdutoRepositorio produtoRepositorio) {
+        return new com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase(produtoRepositorio);
+    }
+
     // ==================== COMPRAS ====================
 
     /**

@@ -211,22 +211,36 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       await carregarAssentos();
 
       // Chama o backend para criar a compra (gera QR Codes automaticamente)
+      const payload = {
+        clienteId: usuario.id,
+        sessaoId: sessao.id,
+        assentos: assentosSelecionados,
+        tipoIngresso: 'INTEIRA' // Pode ser ajustado depois
+      };
+
+
       const response = await fetch('/api/compras', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          clienteId: usuario.id,
-          sessaoId: sessao.id,
-          assentos: assentosSelecionados,
-          tipoIngresso: 'INTEIRA' // Pode ser ajustado depois
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.erro || 'Erro ao criar compra');
+        // Tenta ler o corpo como JSON, se falhar lê como texto para mensagens mais claras
+        let errBody;
+        try {
+          errBody = await response.json();
+        } catch (e) {
+          try {
+            errBody = await response.text();
+          } catch (e2) {
+            errBody = '<não foi possível ler corpo de erro>';
+          }
+        }
+        const mensagem = errBody && errBody.erro ? errBody.erro : (typeof errBody === 'string' ? errBody : 'Erro ao criar compra');
+        throw new Error(mensagem);
       }
 
       const compraBackend = await response.json();

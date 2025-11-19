@@ -213,7 +213,6 @@ const Filmes = ({ usuario }) => {
           <p className="page-subtitle">
             Gerencie o catálogo de filmes do cinema • {filmes.length} resultados
           </p>
-                  <th>Poster</th>
         </div>
         <button className="btn-primary" onClick={() => abrirModal()}>
           <AddIcon size={18} /> Adicionar Filme
@@ -315,6 +314,7 @@ const Filmes = ({ usuario }) => {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th>Poster</th>
                   <th>ID</th>
                   <th>Título</th>
                   <th>Classificação</th>
@@ -323,7 +323,6 @@ const Filmes = ({ usuario }) => {
                   <th>Ações</th>
                 </tr>
               </thead>
-                  <th>ID</th>
               <tbody>
                 {filmes.map((filme) => (
                   <tr key={filme.id}>

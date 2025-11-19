@@ -28,14 +28,33 @@ public class ProdutoRepositorioJpa implements ProdutoRepositorio {
             throw new IllegalArgumentException("O produto não pode ser nulo");
         }
 
-        ProdutoJpa produtoJpa = new ProdutoJpa(
-            produto.getProdutoId().getId(),
-            produto.getNome(),
-            produto.getPreco(),
-            produto.getEstoque()
-        );
+        // Verifica se o produto já existe (update) ou é novo (insert)
+        ProdutoJpa produtoJpa;
+        if (produtoJpaRepository.existsById(produto.getProdutoId().getId())) {
+            // Update - usa o ID existente
+            produtoJpa = new ProdutoJpa(
+                produto.getProdutoId().getId(),
+                produto.getNome(),
+                produto.getPreco(),
+                produto.getEstoque()
+            );
+        } else {
+            // Insert - deixa o banco gerar o ID (SERIAL)
+            produtoJpa = new ProdutoJpa(
+                null,  // ID será gerado pelo banco
+                produto.getNome(),
+                produto.getPreco(),
+                produto.getEstoque()
+            );
+        }
 
         produtoJpaRepository.save(produtoJpa);
+    }
+
+    @Override
+    public void remover(ProdutoId produtoId) {
+        if (produtoId == null) throw new IllegalArgumentException("O ID do produto não pode ser nulo");
+        produtoJpaRepository.deleteById(produtoId.getId());
     }
 
     @Override

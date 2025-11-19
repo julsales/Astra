@@ -1,7 +1,9 @@
 package com.astra.cinema.dominio.compra;
 
+/**
+ * Status do ingresso simplificado: apenas ATIVO e VALIDADO.
+ */
 public enum StatusIngresso {
-    VALIDO,
-    CANCELADO,
-    UTILIZADO
+    ATIVO,       // Ingresso comprado mas não validado ainda (ativo para uso)
+    VALIDADO     // Ingresso validado pelo funcionário (já foi usado)
 }

@@ -41,22 +41,22 @@ public class ValidarIngressoUseCase {
         exigirNaoNulo(sessao, "Sessão não encontrada");
 
         // Validações
-        if (ingresso.getStatus() == StatusIngresso.CANCELADO) {
-            return new ResultadoValidacao(false, "Ingresso cancelado", ingresso, sessao);
-        }
-
-        if (ingresso.getStatus() == StatusIngresso.UTILIZADO) {
-            return new ResultadoValidacao(false, "Ingresso já foi utilizado", ingresso, sessao);
+        // Apenas dois estados: PENDENTE e VALIDADO
+        if (ingresso.getStatus() != StatusIngresso.ATIVO && ingresso.getStatus() != StatusIngresso.VALIDADO) {
+            return new ResultadoValidacao(false, "Status do ingresso inválido", ingresso, sessao);
         }
 
         // Validação liberada para qualquer horário (modo cinema flexível)
-        // Em produção real, você pode adicionar validações de horário conforme necessário
 
-        // Validar ingresso
-        ingresso.utilizar();
-        compraRepositorio.atualizarIngresso(ingresso);
-
-        return new ResultadoValidacao(true, "Ingresso válido - Entrada autorizada", ingresso, sessao);
+        // Ação: PENDENTE -> VALIDADO
+        if (ingresso.getStatus() == StatusIngresso.ATIVO) {
+            ingresso.setStatus(StatusIngresso.VALIDADO);
+            compraRepositorio.atualizarIngresso(ingresso);
+            return new ResultadoValidacao(true, "Ingresso validado - Pronto para uso", ingresso, sessao);
+        } else {
+            // Já está VALIDADO
+            return new ResultadoValidacao(true, "Ingresso já foi validado anteriormente", ingresso, sessao);
+        }
     }
 
     public static class ResultadoValidacao {

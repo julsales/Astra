@@ -1,11 +1,13 @@
 ﻿import React, { useState } from 'react';
 import './AdminPanel.css';
+import CosmicNebula from '../CosmicNebula';
 import Overview from './pages/Overview';
 import Sessoes from './pages/Sessoes';
 import Filmes from './pages/Filmes';
 import Promocoes from './pages/Promocoes';
 import Relatorios from './pages/Relatorios';
 import Usuarios from './pages/Usuarios';
+import Bomboniere from './pages/Bomboniere';
 import {
   OverviewIcon,
   FilmeIcon,
@@ -22,25 +24,22 @@ const AdminPanel = ({ usuario, onLogout }) => {
     { id: 'overview', nome: 'Overview', icone: <OverviewIcon size={20} /> },
     { id: 'filmes', nome: 'Filmes', icone: <FilmeIcon size={20} /> },
     { id: 'sessoes', nome: 'Sessões', icone: <SessaoIcon size={20} /> },
-    { id: 'promocoes', nome: 'Bomboniere', icone: <BomboniereIcon size={20} /> },
+    { id: 'bomboniere', nome: 'Bomboniere', icone: <BomboniereIcon size={20} /> },
     { id: 'relatorios', nome: 'Relatórios', icone: <RelatorioIcon size={20} /> },
-    { id: 'usuarios', nome: 'Usuários', icone: <UsuarioIcon size={20} /> },
   ];
 
   const renderizarPagina = () => {
     switch (paginaAtiva) {
       case 'overview':
         return <Overview usuario={usuario} />;
-      case 'sessoes':
-        return <Sessoes usuario={usuario} />;
       case 'filmes':
         return <Filmes usuario={usuario} />;
-      case 'promocoes':
-        return <Promocoes usuario={usuario} />;
+      case 'sessoes':
+        return <Sessoes usuario={usuario} />;
+      case 'bomboniere':
+        return <Bomboniere />;
       case 'relatorios':
         return <Relatorios usuario={usuario} />;
-      case 'usuarios':
-        return <Usuarios usuario={usuario} />;
       default:
         return <Overview usuario={usuario} />;
     }
@@ -48,6 +47,8 @@ const AdminPanel = ({ usuario, onLogout }) => {
 
   return (
     <div className="admin-panel">
+      <CosmicNebula />
+      <div className="diamond-star"></div>
       {/* Header Superior */}
       <header className="admin-header">
         <div className="header-left">

@@ -73,6 +73,52 @@ export const useMeusIngressos = (usuario) => {
     [persistir]
   );
 
+    // Sincronizar com backend (quando houver um usuário autenticado)
+    const sincronizarComBackend = useCallback(async () => {
+      if (!usuario || !usuario.id) return;
+      try {
+        const res = await fetch('/api/ingressos/ativos');
+        if (!res.ok) return;
+        const dados = await res.json();
+        // Mapear para o formato interno usado pelo frontend
+        const compras = dados.map((i) => {
+          // Converter string "A1, A2, A3" em array ["A1", "A2", "A3"]
+          let assentos = [];
+          if (i.assento) {
+            if (typeof i.assento === 'string') {
+              assentos = i.assento.split(',').map(a => a.trim()).filter(Boolean);
+            } else if (Array.isArray(i.assento)) {
+              assentos = i.assento;
+            }
+          } else if (i.assentoIndividual) {
+            assentos = [i.assentoIndividual];
+          }
+
+          return {
+            id: i.id || `ing-${i.qrCode}`,
+            codigo: i.qrCode || '',
+            dataCompra: new Date().toISOString(),
+            filme: { titulo: i.filme?.titulo || '' },
+            sessao: { id: i.sessaoId, horario: i.horario || new Date().toISOString(), sala: i.sala || 'Sala 1' },
+            assentos: assentos,
+            produtos: [],
+            total: i.total ?? 0,
+            metodoPagamento: 'NAO_INFORMADO',
+            status: i.status === 'UTILIZADO' ? 'VALIDADO' : (i.status ?? 'PENDENTE'),
+            qrCode: i.qrCode || '',
+          };
+        });
+
+        persistir((listaAtual) => {
+          // Substitui ingressos que tenham mesmo qrCode/id
+          const restantes = listaAtual.filter((c) => !compras.some((n) => n.id === c.id || n.codigo === c.codigo));
+          return [...compras, ...restantes];
+        });
+      } catch (err) {
+        console.error('Falha ao sincronizar ingressos com backend:', err);
+      }
+    }, [usuario, persistir]);
+
   const removerCompra = useCallback(
     (id) => {
       persistir((listaAtual) => listaAtual.filter((compra) => compra.id !== id));
@@ -89,5 +135,6 @@ export const useMeusIngressos = (usuario) => {
     registrarCompra,
     removerCompra,
     limparHistorico,
+    sincronizarComBackend,
   };
 };

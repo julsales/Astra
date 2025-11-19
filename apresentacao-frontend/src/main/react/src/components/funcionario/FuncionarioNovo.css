@@ -24,7 +24,8 @@
     radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
   animation: nebula-flow 15s ease-in-out infinite alternate;
   pointer-events: none;
-  z-index: 0;
+  /* keep this behind UI but below the cosmic nebula which uses z-index: -1 */
+  z-index: -2;
 }
 
 @keyframes nebula-flow {
@@ -1227,6 +1228,28 @@
   font-size: 1.3rem;
   font-weight: 700;
   margin: 0.75rem 0 0 0;
+}
+
+.func-produto-estoque {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+  font-weight: 500;
+}
+
+.func-produto-estoque span {
+  font-weight: 700;
+  color: var(--purple-primary);
+}
+
+.func-produto-estoque .estoque-baixo {
+  color: #ff4444;
+  animation: pulse-estoque 2s ease-in-out infinite;
+}
+
+@keyframes pulse-estoque {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .func-btn-adicionar {

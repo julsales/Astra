@@ -53,17 +53,17 @@ public class Compra implements Cloneable {
         exigirEstado(pagamentoId != null, "A compra deve ter um pagamento associado");
         this.status = StatusCompra.CONFIRMADA;
         for (Ingresso ingresso : ingressos) {
-            ingresso.setStatus(StatusIngresso.VALIDO);
+            ingresso.setStatus(StatusIngresso.VALIDADO);
         }
     }
 
     public void cancelar() {
         exigirEstado(status != StatusCompra.CANCELADA, "A compra já está cancelada");
         
-        // Verifica se algum ingresso já foi utilizado
+        // Verifica se algum ingresso já foi validado
         for (Ingresso ingresso : ingressos) {
-            exigirEstado(ingresso.getStatus() != StatusIngresso.UTILIZADO,
-                "Não é possível cancelar uma compra com ingresso já utilizado");
+            exigirEstado(ingresso.getStatus() != StatusIngresso.VALIDADO,
+                "Não é possível cancelar uma compra com ingresso já validado");
         }
         
         this.status = StatusCompra.CANCELADA;

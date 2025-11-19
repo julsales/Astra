@@ -3,6 +3,9 @@ package com.astra.cinema.apresentacao.rest;
 import com.astra.cinema.aplicacao.compra.IniciarCompraUseCase;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.*;
+import com.astra.cinema.dominio.compra.StatusIngresso;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +20,8 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class CompraController {
 
+    private static final Logger log = LoggerFactory.getLogger(CompraController.class);
+
     private final IniciarCompraUseCase iniciarCompraUseCase;
     private final CompraRepositorio compraRepositorio;
 
@@ -28,6 +33,13 @@ public class CompraController {
 
     @PostMapping
     public ResponseEntity<?> criarCompra(@RequestBody CriarCompraRequest request) {
+        // Log incoming request for debugging
+        try {
+            log.info("Recebendo POST /api/compras - clienteId={} sessaoId={} assentos={} tipoIngresso={}",
+                request.getClienteId(), request.getSessaoId(), request.getAssentos(), request.getTipoIngresso());
+        } catch (Exception e) {
+            log.warn("Erro ao logar request de criarCompra", e);
+        }
         try {
             // Validações
             if (request.getClienteId() == null || request.getClienteId() <= 0) {
@@ -62,11 +74,18 @@ public class CompraController {
                         new SessaoId(request.getSessaoId()),
                         new AssentoId(assento),
                         tipo,
-                        StatusIngresso.VALIDO,
+                        StatusIngresso.ATIVO,  // Inicia como ATIVO, muda para VALIDADO após scan do QR
                         null // QR Code será gerado pelo backend ao salvar
                     );
                 })
                 .collect(Collectors.toList());
+
+            // DEBUG: log ingressos construídos antes de chamar o use case
+            try {
+                log.info("Ingressos construídos (count={}): {}", ingressos.size(), ingressos);
+            } catch (Exception e) {
+                log.warn("Erro ao logar ingressos construídos", e);
+            }
 
             // Salva a compra (gera QR Codes automaticamente)
             Compra compra = iniciarCompraUseCase.executar(
@@ -101,9 +120,11 @@ public class CompraController {
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.warn("IllegalArgumentException ao criar compra: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                 .body(Map.of("erro", e.getMessage()));
         } catch (IllegalStateException e) {
+            log.warn("IllegalStateException ao criar compra: {}", e.getMessage(), e);
             return ResponseEntity.badRequest()
                 .body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {

@@ -37,13 +37,27 @@ const Overview = ({ usuario }) => {
         todasSessoes.push(...sessoes);
       }
 
-      // Carregar clientes
-      const resClientes = await fetch('/api/clientes');
-      const clientes = await resClientes.json();
+      // Carregar clientes (com tratamento de erro)
+      let clientes = [];
+      try {
+        const resClientes = await fetch('/api/clientes');
+        if (resClientes.ok) {
+          clientes = await resClientes.json();
+        }
+      } catch (e) {
+        console.warn('Endpoint /api/clientes não disponível');
+      }
 
-      // Carregar funcionários
-      const resFuncionarios = await fetch('/api/funcionarios');
-      const funcionarios = await resFuncionarios.json();
+      // Carregar funcionários (com tratamento de erro)
+      let funcionarios = [];
+      try {
+        const resFuncionarios = await fetch('/api/funcionarios');
+        if (resFuncionarios.ok) {
+          funcionarios = await resFuncionarios.json();
+        }
+      } catch (e) {
+        console.warn('Endpoint /api/funcionarios não disponível');
+      }
 
       // Carregar produtos
       const resProdutos = await fetch('/api/produtos');
@@ -68,11 +82,16 @@ const Overview = ({ usuario }) => {
       // Calcular valor total em estoque de produtos
       const valorEstoque = produtos.reduce((acc, p) => acc + (p.preco * p.estoque), 0);
 
+      // Calcular total de usuários (garantindo que sejam arrays)
+      const totalClientes = Array.isArray(clientes) ? clientes.length : 0;
+      const totalFuncionarios = Array.isArray(funcionarios) ? funcionarios.length : 0;
+      const totalUsuarios = totalClientes + totalFuncionarios;
+
       // Atualizar métricas
       setMetricas([
         { label: 'Filmes em Cartaz', valor: filmes.length, icone: '' },
         { label: 'Sessões Programadas', valor: todasSessoes.length, icone: '' },
-        { label: 'Usuários Cadastrados', valor: clientes.length + funcionarios.length, icone: '' }
+        { label: 'Usuários Cadastrados', valor: totalUsuarios, icone: '' }
       ]);
 
       // Calcular estatísticas REAIS e ÚTEIS
@@ -108,12 +127,7 @@ const Overview = ({ usuario }) => {
     }
   };
 
-  const acoesRapidas = [
-    { titulo: 'Nova Sessão', descricao: 'Programar horários', icone: '' },
-    { titulo: 'Criar Promoção', descricao: 'Descontos especiais', icone: '' },
-    { titulo: 'Ver Relatórios', descricao: 'Análises detalhadas', icone: '' },
-    { titulo: 'Gerenciar Usuários', descricao: 'Permissões e acessos', icone: '' }
-  ];
+  // Todas as tabs de navegação e ações rápidas removidas conforme solicitado
 
   if (loading) {
     return (
@@ -131,37 +145,9 @@ const Overview = ({ usuario }) => {
       {/* Cabeçalho da Página */}
       <div className="page-header">
         <div className="page-title-section">
-          <h1 className="page-title">
-            Painel Administrativo
-          </h1>
-          <p className="page-subtitle">
-            Gerencie o cinema, sessões, promoções e análise de vendas
-          </p>
+          <h1 className="page-title">Painel Administrativo</h1>
+          <p className="page-subtitle">Gerencie o cinema, sessões, promoções e análise de vendas</p>
         </div>
-      </div>
-
-      {/* Tabs de Navegação */}
-      <div className="tabs-container">
-        <button className="tab active">
-          <span className="tab-icon"></span>
-          Overview
-        </button>
-        <button className="tab">
-          <span className="tab-icon"></span>
-          Sessões
-        </button>
-        <button className="tab">
-          <span className="tab-icon"></span>
-          Promoções
-        </button>
-        <button className="tab">
-          <span className="tab-icon"></span>
-          Relatórios
-        </button>
-        <button className="tab">
-          <span className="tab-icon"></span>
-          Usuários
-        </button>
       </div>
 
       {/* Grid de Estatísticas Principais */}
@@ -176,7 +162,6 @@ const Overview = ({ usuario }) => {
             <span>{estatisticas.filmesAtivos.descricao}</span>
           </div>
         </div>
-
         <div className="stat-card ingressos">
           <div className="stat-header">
             <span className="stat-label">Sessões Programadas</span>
@@ -187,7 +172,6 @@ const Overview = ({ usuario }) => {
             <span>{estatisticas.sessoesAtivas.descricao}</span>
           </div>
         </div>
-
         <div className="stat-card ocupacao">
           <div className="stat-header">
             <span className="stat-label">Taxa de Ocupação</span>
@@ -198,7 +182,6 @@ const Overview = ({ usuario }) => {
             <span>{estatisticas.ocupacao.variacao}</span>
           </div>
         </div>
-
         <div className="stat-card ticket">
           <div className="stat-header">
             <span className="stat-label">Valor em Estoque</span>
@@ -222,23 +205,6 @@ const Overview = ({ usuario }) => {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Ações Rápidas */}
-      <div className="section-container">
-        <h2 className="section-title">Ações Rápidas</h2>
-        
-        <div className="actions-grid">
-          {acoesRapidas.map((acao, index) => (
-            <button key={index} className="action-card">
-              <div className="action-icon">{acao.icone}</div>
-              <div className="action-content">
-                <h3 className="action-title">{acao.titulo}</h3>
-                <p className="action-desc">{acao.descricao}</p>
-              </div>
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );

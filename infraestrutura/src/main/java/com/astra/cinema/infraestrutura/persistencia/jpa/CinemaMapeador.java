@@ -240,6 +240,8 @@ public class CinemaMapeador {
             return null;
         }
 
+        // ...código original sem debug...
+
         CompraId compraId = new CompraId(compraJpa.getId());
         ClienteId clienteId = new ClienteId(compraJpa.getClienteId());
         PagamentoId pagamentoId = compraJpa.getPagamentoId() != null 

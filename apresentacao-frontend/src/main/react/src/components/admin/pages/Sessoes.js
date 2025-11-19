@@ -9,10 +9,7 @@ const statusOptions = [
   { label: 'Canceladas', value: 'CANCELADA' }
 ];
 
-const estrategiasRemarcacao = [
-  { label: 'Remarcar todos os ingressos', value: 'MASSA' },
-  { label: 'Selecionar assentos', value: 'INDIVIDUAL' }
-];
+// Estrategia de remarcação removida — a API agora decide: se enviar assentos, remarca individual; caso contrário, remarca em massa.
 
 const Sessoes = ({ usuario }) => {
   const cargoUsuario = useMemo(() => (
@@ -42,7 +39,6 @@ const Sessoes = ({ usuario }) => {
   });
   const [remarcacaoForm, setRemarcacaoForm] = useState({
     novoHorario: '',
-    estrategia: 'MASSA',
     assentos: ''
   });
   const [filtros, setFiltros] = useState({
@@ -150,8 +146,8 @@ const Sessoes = ({ usuario }) => {
     e.preventDefault();
     
     try {
-      // Validar se o horário foi preenchido
-      if (!formData.horario) {
+      // Validar se o horário foi preenchido (apenas ao criar)
+      if (!editando && !formData.horario) {
         alert('Por favor, preencha a data e horário');
         return;
       }
@@ -161,17 +157,20 @@ const Sessoes = ({ usuario }) => {
         ? new Date(formData.horario).toISOString()
         : new Date(formData.horario + ':00').toISOString();
 
+      const capacidadeValor = parseInt(formData.capacidadeSala, 10) || 100;
+
       const payload = editando
         ? {
-            novoHorario: horarioISO,
-            novaSala: formData.sala,
+            horario: horarioISO,
+            sala: formData.sala,
+            capacidade: capacidadeValor,
             funcionario: getFuncionarioPayload()
           }
         : {
             filmeId: parseInt(formData.filmeId),
             horario: horarioISO,
             sala: formData.sala,
-            capacidadeSala: parseInt(formData.capacidadeSala, 10) || 100,
+            capacidade: capacidadeValor,
             funcionario: getFuncionarioPayload()
           };
 
@@ -229,6 +228,7 @@ const Sessoes = ({ usuario }) => {
     if (!sessaoSelecionada) return;
 
     try {
+
       if (!remarcacaoForm.novoHorario) {
         alert('Informe o novo horário');
         return;
@@ -236,8 +236,7 @@ const Sessoes = ({ usuario }) => {
 
       const payload = {
         novoHorario: new Date(remarcacaoForm.novoHorario).toISOString(),
-        estrategia: remarcacaoForm.estrategia,
-        assentos: remarcacaoForm.assentos
+        assentosAfetados: remarcacaoForm.assentos
           ? remarcacaoForm.assentos.split(',').map(a => a.trim()).filter(Boolean)
           : [],
         funcionario: getFuncionarioPayload()
@@ -409,7 +408,7 @@ const Sessoes = ({ usuario }) => {
                     <td>#{sessao.id}</td>
                     <td>
                       <strong style={{ color: 'white' }}>
-                        {sessao.filmeTitulo || 'Filme não encontrado'}
+                        {sessao.filme?.titulo || sessao.filmeTitulo || 'Filme não encontrado'}
                       </strong>
                     </td>
                     <td>{sessao.sala}</td>
@@ -475,35 +474,33 @@ const Sessoes = ({ usuario }) => {
             
             <form onSubmit={handleSubmit}>
               {!editando && (
-                <>
-                  <div className="form-group">
-                    <label>Filme *</label>
-                    <select
-                      value={formData.filmeId}
-                      onChange={(e) => setFormData({...formData, filmeId: e.target.value})}
-                      required
-                    >
-                      <option value="">Selecione um filme</option>
-                      {filmes.map(filme => (
-                        <option key={filme.id} value={filme.id}>
-                          {filme.titulo} ({filme.duracao} min)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Capacidade da Sala *</label>
-                    <input
-                      type="number"
-                      min="10"
-                      value={formData.capacidadeSala}
-                      onChange={(e) => setFormData({...formData, capacidadeSala: e.target.value})}
-                      required
-                    />
-                  </div>
-                </>
+                <div className="form-group">
+                  <label>Filme *</label>
+                  <select
+                    value={formData.filmeId}
+                    onChange={(e) => setFormData({...formData, filmeId: e.target.value})}
+                    required
+                  >
+                    <option value="">Selecione um filme</option>
+                    {filmes.map(filme => (
+                      <option key={filme.id} value={filme.id}>
+                        {filme.titulo} ({filme.duracao} min)
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
+
+              <div className="form-group">
+                <label>Capacidade da Sala *</label>
+                <input
+                  type="number"
+                  min="10"
+                  value={formData.capacidadeSala}
+                  onChange={(e) => setFormData({...formData, capacidadeSala: e.target.value})}
+                  required
+                />
+              </div>
 
               <div className="form-group">
                 <label>Data e Horário *</label>
@@ -563,27 +560,13 @@ const Sessoes = ({ usuario }) => {
               </div>
 
               <div className="form-group">
-                <label>Estrategia de Remarcação *</label>
-                <select
-                  value={remarcacaoForm.estrategia}
-                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, estrategia: e.target.value })}
-                >
-                  {estrategiasRemarcacao.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                <label>Assentos (opcional — separados por vírgula)</label>
+                <textarea
+                  placeholder="A1, A2, B3"
+                  value={remarcacaoForm.assentos}
+                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, assentos: e.target.value })}
+                />
               </div>
-
-              {remarcacaoForm.estrategia === 'INDIVIDUAL' && (
-                <div className="form-group">
-                  <label>Assentos (separados por vírgula)</label>
-                  <textarea
-                    placeholder="A1, A2, B3"
-                    value={remarcacaoForm.assentos}
-                    onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, assentos: e.target.value })}
-                  />
-                </div>
-              )}
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setShowRemarcarModal(false)}>

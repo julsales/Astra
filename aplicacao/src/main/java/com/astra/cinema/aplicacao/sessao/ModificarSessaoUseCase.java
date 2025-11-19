@@ -31,12 +31,9 @@ public class ModificarSessaoUseCase {
      * @return Sessão modificada
      * @throws IllegalStateException se a sessão já passou ou está cancelada
      */
-    public Sessao executar(SessaoId sessaoId, Date novoHorario, String novaSala) {
+    public Sessao executar(SessaoId sessaoId, Date novoHorario, String novaSala, Integer novaCapacidade) {
         if (sessaoId == null) {
             throw new IllegalArgumentException("O ID da sessão não pode ser nulo");
-        }
-        if (novoHorario == null) {
-            throw new IllegalArgumentException("O novo horário não pode ser nulo");
         }
 
         // Busca a sessão
@@ -50,23 +47,22 @@ public class ModificarSessaoUseCase {
             throw new IllegalStateException("Não é possível modificar uma sessão cancelada");
         }
 
-        // Verifica se o novo horário é no futuro
-        Date agora = new Date();
-        if (novoHorario.before(agora)) {
-            throw new IllegalArgumentException("O novo horário deve ser no futuro");
-        }
+        // Apenas verifica se o novo horário não é nulo (permite modificar para qualquer horário)
+        // A validação de horário passado será feita apenas no momento da criação
 
-        // Cria sessão modificada
+        // Determina valores atualizados (aceita nulls --> mantém o valor atual)
+        Date horarioAtualizado = (novoHorario != null) ? novoHorario : sessao.getHorario();
         String salaAtualizada = (novaSala != null && !novaSala.isBlank()) ? novaSala : sessao.getSala();
+        int capacidadeAtualizada = (novaCapacidade != null && novaCapacidade > 0) ? novaCapacidade : sessao.getCapacidade();
 
         Sessao sessaoModificada = new Sessao(
             sessao.getSessaoId(),
             sessao.getFilmeId(),
-            novoHorario,
+            horarioAtualizado,
             sessao.getStatus(),
             sessao.getMapaAssentosDisponiveis(),
             salaAtualizada,
-            sessao.getCapacidade()
+            capacidadeAtualizada
         );
 
         // Persiste

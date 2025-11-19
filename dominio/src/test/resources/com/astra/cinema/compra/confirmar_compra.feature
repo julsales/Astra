@@ -7,7 +7,7 @@ Funcionalidade: Confirmar Compra
     Dado que existe uma compra pendente associada a um pagamento com status "SUCESSO"
     Quando o cliente confirma a compra
     Então o status da compra é atualizado para "CONFIRMADA"
-    E os ingressos passam a ter status "VALIDO"
+  E os ingressos passam a ter status "VALIDADO"
 
   Cenário: Tentativa de confirmar compra sem pagamento aprovado
     Dado que existe uma compra pendente associada a um pagamento com status "FALHA"

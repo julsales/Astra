@@ -51,24 +51,30 @@ public class Ingresso implements Cloneable {
         return qrCode;
     }
 
+
     public void utilizar() {
-        exigirEstado(status != StatusIngresso.UTILIZADO, "O ingresso já foi utilizado");
-        exigirEstado(status != StatusIngresso.CANCELADO, "O ingresso está cancelado");
-        this.status = StatusIngresso.UTILIZADO;
+        // Método de compatibilidade removido: utilizar é equivalente a marcar VALIDADO
+        exigirEstado(status != StatusIngresso.VALIDADO, "O ingresso já foi validado");
+        this.status = StatusIngresso.VALIDADO;
+    }
+
+    public void validar() {
+        exigirEstado(status != StatusIngresso.VALIDADO, "O ingresso já foi validado");
+        this.status = StatusIngresso.VALIDADO;
     }
 
     public void cancelar() {
-        exigirEstado(status != StatusIngresso.UTILIZADO,
-            "Não é possível cancelar um ingresso já utilizado");
-        this.status = StatusIngresso.CANCELADO;
+        // Em modelo simplificado: cancelar retorna o ingresso para ATIVO
+        exigirEstado(status != StatusIngresso.VALIDADO,
+            "Não é possível cancelar um ingresso já validado");
+        this.status = StatusIngresso.ATIVO;
     }
 
     public void remarcarSessao(SessaoId novaSessaoId, AssentoId novoAssentoId) {
         exigirNaoNulo(novaSessaoId, "A nova sessão não pode ser nula");
         exigirNaoNulo(novoAssentoId, "O novo assento não pode ser nulo");
-        exigirEstado(status != StatusIngresso.UTILIZADO, "Não é possível remarcar um ingresso já utilizado");
-        exigirEstado(status != StatusIngresso.CANCELADO, "Não é possível remarcar um ingresso cancelado");
-        
+        // Permite remarcar ingressos em qualquer status (ATIVO ou VALIDADO)
+
         this.sessaoId = novaSessaoId;
         this.assentoId = novoAssentoId;
     }

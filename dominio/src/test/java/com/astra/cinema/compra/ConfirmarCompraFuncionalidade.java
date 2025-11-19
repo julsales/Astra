@@ -40,7 +40,7 @@ public class ConfirmarCompraFuncionalidade extends CinemaFuncionalidade {
         
         // Cria ingresso
         var ingresso = new Ingresso(new IngressoId(1), sessaoId, new AssentoId("B1"),
-                                   TipoIngresso.INTEIRA, StatusIngresso.VALIDO, "QR1");
+                                        TipoIngresso.INTEIRA, StatusIngresso.VALIDADO, "QR1");
         
         // Cria compra
         var compra = new Compra(compraId, clienteId, Arrays.asList(ingresso), null, StatusCompra.PENDENTE);

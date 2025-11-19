@@ -61,35 +61,39 @@ public class BomboniereController {
                 Produto produto = produtoRepositorio.obterPorId(
                     new ProdutoId(item.getProdutoId())
                 );
-                
+
                 if (produto == null) {
                     throw new RuntimeException("Produto não encontrado: " + item.getProdutoId());
                 }
-                
+
+                // Reduzir estoque do produto
+                produto.reduzirEstoque(item.getQuantidade());
+                produtoRepositorio.salvar(produto);
+
                 double subtotal = produto.getPreco() * item.getQuantidade();
                 valorTotal += subtotal;
-                
+
                 // Adicionar produto à lista (repetir pela quantidade)
                 for (int i = 0; i < item.getQuantidade(); i++) {
                     produtosVendidos.add(produto);
                 }
             }
             
-            // Criar venda
+            // Criar venda com ID temporário (será substituído pelo banco)
+            // O repositório JPA vai ignorar este ID e gerar um novo com SERIAL
             Venda venda = new Venda(
-                new com.astra.cinema.dominio.comum.VendaId(
-                    (int) System.currentTimeMillis()
-                ),
+                new com.astra.cinema.dominio.comum.VendaId(1),  // ID temporário válido, banco vai gerar o real
                 produtosVendidos,
                 null, // pagamentoId será definido depois
                 com.astra.cinema.dominio.bomboniere.StatusVenda.PENDENTE
             );
-            
+
+            // Salva no banco (JPA gera ID automaticamente)
             vendaRepositorio.salvar(venda);
-            
+
+            // Retorna sucesso (o ID real está no banco)
             return ResponseEntity.ok(Map.of(
                 "sucesso", true,
-                "vendaId", venda.getVendaId().getId(),
                 "valorTotal", valorTotal,
                 "mensagem", "Venda realizada com sucesso"
             ));

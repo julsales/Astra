@@ -4,6 +4,8 @@ import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCa
 import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
 import com.astra.cinema.dominio.comum.*;
+import com.astra.cinema.dominio.compra.Compra;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.sessao.Sessao;
 import org.springframework.http.HttpStatus;
@@ -31,14 +33,17 @@ public class FuncionarioOperacoesController {
     private final ValidarIngressoFuncionarioUseCase validarIngressoUseCase;
     private final ConsultarHistoricoFuncionarioUseCase consultarHistoricoUseCase;
     private final RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase;
+    private final CompraRepositorio compraRepositorio;
 
     public FuncionarioOperacoesController(
             ValidarIngressoFuncionarioUseCase validarIngressoUseCase,
             ConsultarHistoricoFuncionarioUseCase consultarHistoricoUseCase,
-            RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase) {
+            RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase,
+            CompraRepositorio compraRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.consultarHistoricoUseCase = consultarHistoricoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
+        this.compraRepositorio = compraRepositorio;
     }
 
     /**
@@ -59,7 +64,7 @@ public class FuncionarioOperacoesController {
             response.put("mensagem", resultado.getMensagem());
 
             if (resultado.getIngresso() != null) {
-                response.put("ingresso", mapearIngresso(resultado.getIngresso()));
+                response.put("ingresso", mapearIngressoComTodosAssentos(resultado.getIngresso(), request.qrCode));
             }
 
             if (resultado.getSessao() != null) {
@@ -172,6 +177,33 @@ public class FuncionarioOperacoesController {
     }
 
     // Métodos auxiliares de mapeamento
+
+    private Map<String, Object> mapearIngressoComTodosAssentos(Ingresso ingresso, String qrCode) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", ingresso.getIngressoId().getId());
+        map.put("qrCode", ingresso.getQrCode());
+        map.put("tipo", ingresso.getTipo().toString());
+        map.put("status", ingresso.getStatus().toString());
+        map.put("sessaoId", ingresso.getSessaoId().getId());
+
+        // Buscar todos os assentos da compra
+        try {
+            Compra compra = compraRepositorio.buscarCompraPorQrCode(qrCode);
+            if (compra != null && compra.getIngressos() != null) {
+                String todosAssentos = compra.getIngressos().stream()
+                    .map(i -> i.getAssentoId().getValor())
+                    .collect(Collectors.joining(", "));
+                map.put("assento", todosAssentos);
+            } else {
+                map.put("assento", ingresso.getAssentoId().getValor());
+            }
+        } catch (Exception e) {
+            // Se falhar ao buscar compra, usa apenas o assento do ingresso
+            map.put("assento", ingresso.getAssentoId().getValor());
+        }
+
+        return map;
+    }
 
     private Map<String, Object> mapearIngresso(Ingresso ingresso) {
         Map<String, Object> map = new HashMap<>();

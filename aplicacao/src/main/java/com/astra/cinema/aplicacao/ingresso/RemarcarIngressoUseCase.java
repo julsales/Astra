@@ -38,13 +38,14 @@ public class RemarcarIngressoUseCase {
         exigirEstado(sessaoAntiga.getFilmeId().equals(novaSessao.getFilmeId()),
             "As sessões devem ser do mesmo filme");
 
+        // Liberar assento da sessão antiga PRIMEIRO
+        AssentoId assentoAntigo = ingresso.getAssentoId();
+        sessaoAntiga.liberarAssento(assentoAntigo);
+        sessaoRepositorio.salvar(sessaoAntiga);
+
         // Verificar disponibilidade do assento na nova sessão
         exigirEstado(novaSessao.assentoDisponivel(novoAssentoId),
             "O assento não está disponível na nova sessão");
-
-        // Liberar assento da sessão antiga
-        AssentoId assentoAntigo = ingresso.getAssentoId();
-        // Note: seria bom ter um método para liberar assento, mas vamos apenas reservar o novo
 
         // Reservar assento na nova sessão
         novaSessao.reservarAssento(novoAssentoId);
