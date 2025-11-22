@@ -55,16 +55,23 @@ public class CompraService {
         return compra;
     }
 
+    /**
+     * Confirma uma compra pendente.
+     * RN2: A compra só pode ser confirmada se o pagamento associado for autorizado (SUCESSO).
+     *
+     * @param compraId ID da compra a confirmar
+     * @param pagamentoId ID do pagamento associado
+     */
     public void confirmarCompra(CompraId compraId, PagamentoId pagamentoId) {
         exigirNaoNulo(compraId, "O id da compra não pode ser nulo");
         exigirNaoNulo(pagamentoId, "O id do pagamento não pode ser nulo");
 
         var compra = exigirNaoNulo(compraRepositorio.obterPorId(compraId), "Compra não encontrada");
         var pagamento = exigirNaoNulo(pagamentoRepositorio.obterPorId(pagamentoId), "Pagamento não encontrado");
-        exigirEstado(pagamento.getStatus() == StatusPagamento.SUCESSO, "O pagamento não foi autorizado");
 
         compra.setPagamentoId(pagamentoId);
-        compra.confirmar();
+        // RN2: Passa o status do pagamento para validação no domínio
+        compra.confirmar(pagamento.getStatus());
         compraRepositorio.salvar(compra);
     }
 

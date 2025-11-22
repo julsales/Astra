@@ -1,10 +1,13 @@
-package com.astra.cinema.config;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            package com.astra.cinema.config;
 
 import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
+import com.astra.cinema.aplicacao.compra.CancelarCompraUseCase;
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
+import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
@@ -36,11 +39,13 @@ public class UseCaseConfiguration {
     public ConsultarHistoricoFuncionarioUseCase consultarHistoricoFuncionarioUseCase(
             ValidacaoIngressoRepositorio validacaoIngressoRepositorio,
             CompraRepositorio compraRepositorio,
-            SessaoRepositorio sessaoRepositorio) {
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio) {
         return new ConsultarHistoricoFuncionarioUseCase(
             validacaoIngressoRepositorio,
             compraRepositorio,
-            sessaoRepositorio
+            sessaoRepositorio,
+            filmeRepositorio
         );
     }
 
@@ -54,5 +59,12 @@ public class UseCaseConfiguration {
             sessaoRepositorio,
             remarcacaoSessaoRepositorio
         );
+    }
+
+    @Bean
+    public CancelarCompraUseCase cancelarCompraUseCase(
+            CompraRepositorio compraRepositorio,
+            PagamentoRepositorio pagamentoRepositorio) {
+        return new CancelarCompraUseCase(compraRepositorio, pagamentoRepositorio);
     }
 }

@@ -6,6 +6,7 @@ import com.astra.cinema.CinemaFuncionalidade;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.filme.*;
 import com.astra.cinema.dominio.sessao.*;
+import com.astra.cinema.dominio.usuario.*;
 import io.cucumber.java.pt.*;
 
 import java.util.*;
@@ -13,6 +14,7 @@ import java.util.*;
 public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
     private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private FilmeId filmeId = new FilmeId(1);
+    private Funcionario gerente = new Funcionario(new FuncionarioId(1), "Gerente Teste", Cargo.GERENTE);
     private RuntimeException excecao;
 
     @Dado("que o filme {string} não possui sessões agendadas")
@@ -26,7 +28,7 @@ public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
     @Quando("o gerente remove o filme")
     public void o_gerente_remove_o_filme() {
         try {
-            filmeService.removerFilme(filmeId);
+            filmeService.removerFilme(gerente, filmeId);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -60,7 +62,7 @@ public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
     @Quando("o gerente tenta remover o filme")
     public void o_gerente_tenta_remover_o_filme() {
         try {
-            filmeService.removerFilme(filmeId);
+            filmeService.removerFilme(gerente, filmeId);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -73,7 +75,7 @@ public class RemoverFilmeFuncionalidade extends CinemaFuncionalidade {
 
     @Então("exibe mensagem informando que há sessões ativas")
     public void exibe_mensagem_informando_que_ha_sessoes_ativas() {
-        assertTrue(excecao.getMessage().contains("sessões ativas") || 
-                  excecao.getMessage().contains("há sessões"));
+        assertTrue(excecao.getMessage().contains("sessões futuras") ||
+                  excecao.getMessage().contains("sessões ativas"));
     }
 }

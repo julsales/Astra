@@ -8,6 +8,7 @@ import Promocoes from './pages/Promocoes';
 import Relatorios from './pages/Relatorios';
 import Usuarios from './pages/Usuarios';
 import Bomboniere from './pages/Bomboniere';
+import Programacao from './pages/Programacao';
 import {
   OverviewIcon,
   FilmeIcon,
@@ -15,6 +16,7 @@ import {
   BomboniereIcon,
   RelatorioIcon,
   UsuarioIcon,
+  CalendarIcon,
 } from './Icons';
 
 const AdminPanel = ({ usuario, onLogout }) => {
@@ -24,7 +26,9 @@ const AdminPanel = ({ usuario, onLogout }) => {
     { id: 'overview', nome: 'Overview', icone: <OverviewIcon size={20} /> },
     { id: 'filmes', nome: 'Filmes', icone: <FilmeIcon size={20} /> },
     { id: 'sessoes', nome: 'Sessões', icone: <SessaoIcon size={20} /> },
+    { id: 'programacao', nome: 'Programação', icone: <CalendarIcon size={20} /> },
     { id: 'bomboniere', nome: 'Bomboniere', icone: <BomboniereIcon size={20} /> },
+    { id: 'usuarios', nome: 'Usuários', icone: <UsuarioIcon size={20} /> },
     { id: 'relatorios', nome: 'Relatórios', icone: <RelatorioIcon size={20} /> },
   ];
 
@@ -36,8 +40,12 @@ const AdminPanel = ({ usuario, onLogout }) => {
         return <Filmes usuario={usuario} />;
       case 'sessoes':
         return <Sessoes usuario={usuario} />;
+      case 'programacao':
+        return <Programacao usuario={usuario} />;
       case 'bomboniere':
         return <Bomboniere />;
+      case 'usuarios':
+        return <Usuarios usuario={usuario} />;
       case 'relatorios':
         return <Relatorios usuario={usuario} />;
       default:

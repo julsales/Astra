@@ -1,12 +1,10 @@
 package com.astra.cinema.dominio.bomboniere;
 
-import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirEstado;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirPositivo;
 
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
-import com.astra.cinema.dominio.pagamento.StatusPagamento;
 
 public class VendaService {
     private final VendaRepositorio vendaRepositorio;
@@ -21,17 +19,23 @@ public class VendaService {
         this.pagamentoRepositorio = exigirNaoNulo(pagamentoRepositorio, "O repositório de pagamentos não pode ser nulo");
     }
 
+    /**
+     * Confirma uma venda pendente.
+     * RN7: Uma venda na bomboniere só é confirmada após pagamento aprovado (SUCESSO).
+     *
+     * @param vendaId ID da venda a confirmar
+     * @param pagamentoId ID do pagamento associado
+     */
     public void confirmarVenda(VendaId vendaId, PagamentoId pagamentoId) {
         exigirNaoNulo(vendaId, "O id da venda não pode ser nulo");
         exigirNaoNulo(pagamentoId, "O id do pagamento não pode ser nulo");
-        
+
         var venda = exigirNaoNulo(vendaRepositorio.obterPorId(vendaId), "Venda não encontrada");
         var pagamento = exigirNaoNulo(pagamentoRepositorio.obterPorId(pagamentoId), "Pagamento não encontrado");
-        
-        exigirEstado(pagamento.getStatus() == StatusPagamento.SUCESSO, "O pagamento não foi aprovado");
-        
+
         venda.setPagamentoId(pagamentoId);
-        venda.confirmar();
+        // RN7: Passa o status do pagamento para validação no domínio
+        venda.confirmar(pagamento.getStatus());
         vendaRepositorio.salvar(venda);
     }
 

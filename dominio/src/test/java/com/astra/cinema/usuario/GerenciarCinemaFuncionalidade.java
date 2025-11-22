@@ -25,20 +25,16 @@ public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
     @Quando("ele cria uma nova sessão")
     public void ele_cria_uma_nova_sessao() {
         try {
-            if (!funcionario.isGerente()) {
-                throw new IllegalStateException("Acesso negado: apenas gerentes podem criar sessões");
-            }
-            
             // Cria filme
             var filmeId = new FilmeId(1);
             var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
             filmeService.salvar(filme);
-            
-            // Cria sessão
+
+            // Cria sessão - RN11: o service valida se é gerente
             Map<AssentoId, Boolean> assentos = new HashMap<>();
             assentos.put(new AssentoId("A1"), true);
-            
-            sessaoCriada = sessaoService.criarSessao(filmeId, new Date(), assentos);
+
+            sessaoCriada = sessaoService.criarSessao(funcionario, filmeId, new Date(), assentos);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -58,18 +54,15 @@ public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
     @Quando("ele tenta criar uma sessão")
     public void ele_tenta_criar_uma_sessao() {
         try {
-            if (!funcionario.isGerente()) {
-                throw new IllegalStateException("Acesso negado: apenas gerentes podem criar sessões");
-            }
-            
             var filmeId = new FilmeId(1);
             var filme = new Filme(filmeId, "Inception", "Sinopse", "14", 148, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
             filmeService.salvar(filme);
-            
+
             Map<AssentoId, Boolean> assentos = new HashMap<>();
             assentos.put(new AssentoId("A1"), true);
-            
-            sessaoCriada = sessaoService.criarSessao(filmeId, new Date(), assentos);
+
+            // RN11: o service valida se é gerente e rejeita se não for
+            sessaoCriada = sessaoService.criarSessao(funcionario, filmeId, new Date(), assentos);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -83,7 +76,7 @@ public class GerenciarCinemaFuncionalidade extends CinemaFuncionalidade {
 
     @Então("exibe mensagem de acesso negado")
     public void exibe_mensagem_de_acesso_negado() {
-        assertTrue(excecao.getMessage().contains("Acesso negado") || 
-                  excecao.getMessage().contains("negado"));
+        assertTrue(excecao.getMessage().contains("gerentes") ||
+                  excecao.getMessage().contains("Acesso negado"));
     }
 }

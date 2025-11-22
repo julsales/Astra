@@ -34,16 +34,19 @@ public class FuncionarioOperacoesController {
     private final ConsultarHistoricoFuncionarioUseCase consultarHistoricoUseCase;
     private final RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase;
     private final CompraRepositorio compraRepositorio;
+    private final com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio;
 
     public FuncionarioOperacoesController(
             ValidarIngressoFuncionarioUseCase validarIngressoUseCase,
             ConsultarHistoricoFuncionarioUseCase consultarHistoricoUseCase,
             RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase,
-            CompraRepositorio compraRepositorio) {
+            CompraRepositorio compraRepositorio,
+            com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.consultarHistoricoUseCase = consultarHistoricoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
+        this.filmeRepositorio = filmeRepositorio;
     }
 
     /**
@@ -126,6 +129,93 @@ public class FuncionarioOperacoesController {
         } catch (Exception e) {
             Map<String, Object> erro = new HashMap<>();
             erro.put("erro", "Erro ao carregar ingressos ativos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        }
+    }
+
+    /**
+     * Lista sessões agrupadas por filme para remarcação inteligente.
+     * Retorna apenas sessões com status DISPONIVEL ou PROBLEMA_TECNICO.
+     */
+    @GetMapping("/sessoes/para-remarcacao")
+    public ResponseEntity<?> listarSessoesParaRemarcacao() {
+        try {
+            List<ConsultarHistoricoFuncionarioUseCase.IngressoAtivo> ingressos =
+                consultarHistoricoUseCase.listarIngressosAtivos();
+
+            // Agrupar ingressos por sessão e filme
+            Map<String, Object> response = new HashMap<>();
+
+            // Criar estrutura: filme -> sessões -> ingressos
+            Map<Integer, Map<String, Object>> filmes = new HashMap<>();
+
+            for (ConsultarHistoricoFuncionarioUseCase.IngressoAtivo ingresso : ingressos) {
+                Integer filmeId = ingresso.getFilmeId();
+                Integer sessaoId = ingresso.getSessaoId();
+
+                // Inicializar filme se não existir
+                if (!filmes.containsKey(filmeId)) {
+                    Map<String, Object> filme = new HashMap<>();
+                    filme.put("filmeId", filmeId);
+                    filme.put("filmeTitulo", ingresso.getFilmeTitulo());
+                    filme.put("sessoes", new HashMap<Integer, Map<String, Object>>());
+                    filmes.put(filmeId, filme);
+                }
+
+                Map<String, Object> filme = filmes.get(filmeId);
+                @SuppressWarnings("unchecked")
+                Map<Integer, Map<String, Object>> sessoes =
+                    (Map<Integer, Map<String, Object>>) filme.get("sessoes");
+
+                // Inicializar sessão se não existir
+                if (!sessoes.containsKey(sessaoId)) {
+                    Map<String, Object> sessao = new HashMap<>();
+                    sessao.put("sessaoId", sessaoId);
+                    sessao.put("sala", ingresso.getSala());
+                    sessao.put("horario", ingresso.getHorario());
+                    sessao.put("statusSessao", ingresso.getStatusSessao());
+                    sessao.put("ingressos", new java.util.ArrayList<Map<String, Object>>());
+                    sessao.put("totalIngressos", 0);
+                    sessoes.put(sessaoId, sessao);
+                }
+
+                Map<String, Object> sessao = sessoes.get(sessaoId);
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> ingressosList =
+                    (List<Map<String, Object>>) sessao.get("ingressos");
+
+                ingressosList.add(mapearIngressoAtivo(ingresso));
+                sessao.put("totalIngressos", ingressosList.size());
+            }
+
+            // Converter para lista e buscar títulos dos filmes
+            List<Map<String, Object>> filmesLista = new java.util.ArrayList<>();
+            for (Map<String, Object> filme : filmes.values()) {
+                // Buscar título do filme diretamente
+                Integer filmeId = (Integer) filme.get("filmeId");
+                try {
+                    com.astra.cinema.dominio.filme.Filme filmeEntidade =
+                        filmeRepositorio.obterPorId(new com.astra.cinema.dominio.comum.FilmeId(filmeId));
+                    if (filmeEntidade != null && filmeEntidade.getTitulo() != null) {
+                        filme.put("filmeTitulo", filmeEntidade.getTitulo());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erro ao buscar título do filme " + filmeId + ": " + e.getMessage());
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<Integer, Map<String, Object>> sessoesMap =
+                    (Map<Integer, Map<String, Object>>) filme.get("sessoes");
+                filme.put("sessoes", new java.util.ArrayList<>(sessoesMap.values()));
+                filmesLista.add(filme);
+            }
+
+            response.put("filmes", filmesLista);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> erro = new HashMap<>();
+            erro.put("erro", "Erro ao carregar sessões para remarcação: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
         }
     }
@@ -250,6 +340,61 @@ public class FuncionarioOperacoesController {
         map.put("sala", ingresso.getSala());
         map.put("horario", ingresso.getHorario());
         return map;
+    }
+
+    /**
+     * Retorna estatísticas do funcionário para o dashboard.
+     */
+    @GetMapping("/estatisticas")
+    public ResponseEntity<?> obterEstatisticas() {
+        try {
+            // Contadores reais
+            List<ConsultarHistoricoFuncionarioUseCase.ItemHistorico> historico =
+                consultarHistoricoUseCase.listarTodasValidacoes();
+
+            List<ConsultarHistoricoFuncionarioUseCase.IngressoAtivo> ingressosAtivos =
+                consultarHistoricoUseCase.listarIngressosAtivos();
+
+            // Calcular estatísticas
+            long totalValidacoes = historico.size();
+            long validacoesHoje = historico.stream()
+                .filter(h -> {
+                    if (h.getDataHora() == null) return false;
+                    java.time.LocalDate dataValidacao = h.getDataHora().toInstant()
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate();
+                    return dataValidacao.equals(java.time.LocalDate.now());
+                })
+                .count();
+
+            long validacoesSucesso = historico.stream()
+                .filter(ConsultarHistoricoFuncionarioUseCase.ItemHistorico::isSucesso)
+                .count();
+
+            long ingressosPendentes = ingressosAtivos.stream()
+                .filter(i -> "ATIVO".equals(i.getStatus()) || "PENDENTE".equals(i.getStatus()))
+                .count();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("totalValidacoes", totalValidacoes);
+            response.put("validacoesHoje", validacoesHoje);
+            response.put("validacoesSucesso", validacoesSucesso);
+            response.put("ingressosPendentes", ingressosPendentes);
+            response.put("ingressosAtivos", ingressosAtivos.size());
+
+            // Taxa de sucesso
+            double taxaSucesso = totalValidacoes > 0
+                ? (validacoesSucesso * 100.0 / totalValidacoes)
+                : 0;
+            response.put("taxaSucesso", Math.round(taxaSucesso * 10) / 10.0);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> erro = new HashMap<>();
+            erro.put("erro", "Erro ao carregar estatísticas: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        }
     }
 
     // DTOs para requests

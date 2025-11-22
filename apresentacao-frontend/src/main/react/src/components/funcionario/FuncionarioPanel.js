@@ -26,7 +26,7 @@ import Modal from '../shared/Modal';
 import StatusBadge from '../shared/StatusBadge';
 import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
 import './FuncionarioNovo.css';
-import CosmicNebula from '../CosmicNebula';
+import RemarcarNovo from './RemarcarNovo';
 
 const FuncionarioPanel = ({ onLogout }) => {
   // Estados principais
@@ -90,12 +90,17 @@ const FuncionarioPanel = ({ onLogout }) => {
         }
       }
 
-      // Estatísticas do dia (simuladas - você pode criar endpoints específicos)
-      setEstatisticasHoje({
-        validacoes: historico.length,
-        vendas: 0,
-        totalVendas: 0
-      });
+      // Buscar estatísticas reais do backend
+      const resEstatisticas = await fetch('/api/funcionario/estatisticas');
+      if (resEstatisticas.ok) {
+        const stats = await resEstatisticas.json();
+        setEstatisticasHoje({
+          validacoes: stats.validacoesHoje || 0,
+          totalValidacoes: stats.totalValidacoes || 0,
+          taxaSucesso: stats.taxaSucesso || 0,
+          ingressosPendentes: stats.ingressosPendentes || 0
+        });
+      }
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
     }
@@ -660,125 +665,7 @@ const FuncionarioPanel = ({ onLogout }) => {
   );
 
   const renderRemarcar = () => (
-    <div className="func-remarcar-container">
-      <div className="func-section-header">
-        <div className="func-header-icon green">
-          <RefreshCw size={40} />
-        </div>
-        <div className="func-header-text">
-          <h2>Remarcar Ingressos</h2>
-          <p>Mover cliente para outra sessão em caso de problemas técnicos</p>
-        </div>
-      </div>
-
-      {ingressos.length === 0 ? (
-        <div className="func-empty-state">
-          <AlertTriangle size={64} />
-          <h3>Nenhum ingresso encontrado</h3>
-          <p>Não há ingressos registrados no momento</p>
-        </div>
-      ) : (
-        <div className="func-ingressos-grid">
-          {ingressos.map((ingresso) => (
-            <div key={ingresso.id} className="func-ingresso-card">
-              <div className="func-ingresso-header">
-                <span className="func-qr-badge">{ingresso.qrCode}</span>
-                {/* Mostrar titular/comprador quando disponível */}
-                <div className="func-ingresso-owner">
-                  <small>Titular:</small>
-                  <strong>{ingresso.clienteNome || ingresso.titular || (ingresso.usuario && ingresso.usuario.nome) || '—'}</strong>
-                </div>
-                <StatusBadge status={ingresso.status} type="ingresso" />
-              </div>
-              <div className="func-ingresso-body">
-                <div className="func-ingresso-info-item">
-                  <Film size={18} />
-                  <span>{ingresso.sala}</span>
-                </div>
-                <div className="func-ingresso-info-item">
-                  <Calendar size={18} />
-                  <span>{formatarDataHora(ingresso.horario)}</span>
-                </div>
-                <div className="func-ingresso-info-item">
-                  <Users size={18} />
-                  <span>Assento {ingresso.assento}</span>
-                </div>
-                <div className="func-ingresso-info-item">
-                  <Package size={18} />
-                  <span>{ingresso.tipo}</span>
-                </div>
-              </div>
-                <button
-                  className="func-btn-remarcar"
-                  onClick={() => abrirModalRemarcar(ingresso)}
-                >
-                  <RefreshCw size={16} />
-                  Remarcar Sessão
-                </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Modal de Remarcação */}
-      <Modal
-        isOpen={modalRemarcar}
-        onClose={() => {
-          setModalRemarcar(false);
-          setMotivoTecnico('');
-          setIngressoSelecionado(null);
-        }}
-        title="Remarcar Ingresso"
-        size="lg"
-      >
-        {ingressoSelecionado && (
-          <div className="func-modal-remarcar">
-            <div className="func-ingresso-atual">
-              <h4>Ingresso Atual</h4>
-              <p><strong>QR Code:</strong> {ingressoSelecionado.qrCode}</p>
-              <p><strong>Sessão:</strong> {ingressoSelecionado.sala} - {formatarDataHora(ingressoSelecionado.horario)}</p>
-              <p><strong>Assento:</strong> {ingressoSelecionado.assento}</p>
-            </div>
-
-            <div className="func-motivo-section">
-              <label>Motivo Técnico *</label>
-              <textarea
-                value={motivoTecnico}
-                onChange={(e) => setMotivoTecnico(e.target.value)}
-                placeholder="Descreva o motivo da remarcação (ex: problema técnico na sala, cancelamento da sessão, etc.)"
-                rows={3}
-                className="func-textarea"
-              />
-            </div>
-
-            <div className="func-sessoes-disponiveis">
-              <h4>Selecione a Nova Sessão</h4>
-              {sessoesDisponiveis.length === 0 ? (
-                <p>Nenhuma sessão disponível no momento</p>
-              ) : (
-                <div className="func-sessoes-lista">
-                  {sessoesDisponiveis.map((sessao) => (
-                    <button
-                      key={sessao.id}
-                      className="func-sessao-option"
-                      onClick={() => remarcarIngresso(sessao.id)}
-                    >
-                      <div className="func-sessao-option-info">
-                        <strong>{sessao.sala}</strong>
-                        <span>{formatarDataHora(sessao.horario)}</span>
-                      </div>
-                      <div className="func-sessao-option-disponibilidade">
-                        <span>{sessao.assentosReservados || 0}/{sessao.capacidade}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
+    <RemarcarNovo />
   );
 
   const renderBomboniere = () => (
@@ -919,8 +806,6 @@ const FuncionarioPanel = ({ onLogout }) => {
   // ==========================================
   return (
     <div className="func-panel">
-      <CosmicNebula />
-      <div className="diamond-star"></div>
       {/* Header */}
       <header className="func-header">
         <div className="func-header-left">

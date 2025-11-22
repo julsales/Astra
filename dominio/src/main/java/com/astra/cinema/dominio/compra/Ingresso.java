@@ -12,8 +12,9 @@ public class Ingresso implements Cloneable {
     private TipoIngresso tipo;
     private StatusIngresso status;
     private String qrCode;
+    private boolean utilizado;
 
-    public Ingresso(IngressoId ingressoId, SessaoId sessaoId, AssentoId assentoId, 
+    public Ingresso(IngressoId ingressoId, SessaoId sessaoId, AssentoId assentoId,
                    TipoIngresso tipo, StatusIngresso status, String qrCode) {
         this.ingressoId = exigirNaoNulo(ingressoId, "O id do ingresso não pode ser nulo");
         this.sessaoId = exigirNaoNulo(sessaoId, "O id da sessão não pode ser nulo");
@@ -21,6 +22,7 @@ public class Ingresso implements Cloneable {
         this.tipo = exigirNaoNulo(tipo, "O tipo do ingresso não pode ser nulo");
         this.status = exigirNaoNulo(status, "O status do ingresso não pode ser nulo");
         this.qrCode = qrCode;
+        this.utilizado = false;
     }
 
     public IngressoId getIngressoId() {
@@ -51,11 +53,14 @@ public class Ingresso implements Cloneable {
         return qrCode;
     }
 
+    public boolean isUtilizado() {
+        return utilizado;
+    }
 
     public void utilizar() {
-        // Método de compatibilidade removido: utilizar é equivalente a marcar VALIDADO
-        exigirEstado(status != StatusIngresso.VALIDADO, "O ingresso já foi validado");
-        this.status = StatusIngresso.VALIDADO;
+        exigirEstado(!utilizado, "O ingresso já foi utilizado");
+        exigirEstado(status == StatusIngresso.VALIDADO, "O ingresso precisa estar validado para ser utilizado");
+        this.utilizado = true;
     }
 
     public void validar() {
@@ -64,9 +69,7 @@ public class Ingresso implements Cloneable {
     }
 
     public void cancelar() {
-        // Em modelo simplificado: cancelar retorna o ingresso para ATIVO
-        exigirEstado(status != StatusIngresso.VALIDADO,
-            "Não é possível cancelar um ingresso já validado");
+        exigirEstado(!utilizado, "Não é possível cancelar um ingresso já utilizado");
         this.status = StatusIngresso.ATIVO;
     }
 

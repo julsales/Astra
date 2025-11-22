@@ -7,6 +7,7 @@ import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.sessao.StatusSessao;
+import com.astra.cinema.dominio.usuario.Funcionario;
 import java.util.Date;
 import java.util.List;
 
@@ -25,16 +26,33 @@ public class ProgramacaoService {
         this.sessaoRepositorio = exigirNaoNulo(sessaoRepositorio, "O repositório de sessões não pode ser nulo");
     }
 
-    public Programacao criarProgramacao(Date periodoInicio, Date periodoFim, List<SessaoId> sessoes) {
+    /**
+     * Cria uma nova programação semanal.
+     * RN11: Apenas funcionários com cargo de GERENTE podem criar programações.
+     * RN12: A programação só pode conter sessões com status "DISPONIVEL".
+     *
+     * @param funcionario Funcionário que está criando a programação (deve ser GERENTE)
+     * @param periodoInicio Data de início da programação
+     * @param periodoFim Data de fim da programação
+     * @param sessoes Lista de IDs das sessões a incluir
+     * @return Programação criada
+     */
+    public Programacao criarProgramacao(Funcionario funcionario, Date periodoInicio, Date periodoFim, List<SessaoId> sessoes) {
+        // RN11: Verifica permissão de gerente
+        exigirNaoNulo(funcionario, "O funcionário não pode ser nulo");
+        exigirEstado(funcionario.isGerente(), "Apenas gerentes podem criar programações");
+
         Date inicio = exigirNaoNulo(periodoInicio, "Período inicial não pode ser nulo");
         Date fim = exigirNaoNulo(periodoFim, "Período final não pode ser nulo");
         exigirEstado(!inicio.after(fim), "Data inicial não pode ser posterior à final");
 
         var sessoesRequisitadas = exigirColecaoNaoVazia(sessoes, "A programação deve ter sessões");
+
+        // RN12: Verifica se todas as sessões estão DISPONIVEL
         sessoesRequisitadas.forEach(sessaoId -> {
             var sessao = exigirNaoNulo(sessaoRepositorio.obterPorId(sessaoId), "Sessão inválida: " + sessaoId);
             exigirEstado(sessao.getStatus() == StatusSessao.DISPONIVEL,
-                "Sessão indisponível para programação: " + sessaoId);
+                "Apenas sessões com status DISPONIVEL podem ser incluídas na programação: " + sessaoId);
         });
 
         var programacao = new Programacao(new ProgramacaoId(), inicio, fim, sessoesRequisitadas);

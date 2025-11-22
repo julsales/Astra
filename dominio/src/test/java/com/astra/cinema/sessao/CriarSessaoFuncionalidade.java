@@ -6,6 +6,7 @@ import com.astra.cinema.CinemaFuncionalidade;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.filme.*;
 import com.astra.cinema.dominio.sessao.*;
+import com.astra.cinema.dominio.usuario.*;
 import io.cucumber.java.pt.*;
 
 import java.util.*;
@@ -13,7 +14,8 @@ import java.util.*;
 public class CriarSessaoFuncionalidade extends CinemaFuncionalidade {
     private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private FilmeId filmeId = new FilmeId(1);
-    
+    private Funcionario gerente = new Funcionario(new FuncionarioId(1), "Gerente Teste", Cargo.GERENTE);
+
     private Sessao sessaoCriada;
     private RuntimeException excecao;
 
@@ -30,8 +32,8 @@ public class CriarSessaoFuncionalidade extends CinemaFuncionalidade {
             Map<AssentoId, Boolean> assentos = new HashMap<>();
             assentos.put(new AssentoId("A1"), true);
             assentos.put(new AssentoId("A2"), true);
-            
-            sessaoCriada = sessaoService.criarSessao(filmeId, new Date(), assentos);
+
+            sessaoCriada = sessaoService.criarSessao(gerente, filmeId, new Date(), assentos);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -48,8 +50,8 @@ public class CriarSessaoFuncionalidade extends CinemaFuncionalidade {
         try {
             Map<AssentoId, Boolean> assentos = new HashMap<>();
             assentos.put(new AssentoId("A1"), true);
-            
-            sessaoCriada = sessaoService.criarSessao(filmeId, new Date(), assentos);
+
+            sessaoCriada = sessaoService.criarSessao(gerente, filmeId, new Date(), assentos);
         } catch (RuntimeException e) {
             excecao = e;
         }

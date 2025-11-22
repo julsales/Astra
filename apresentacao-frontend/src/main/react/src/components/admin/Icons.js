@@ -228,6 +228,15 @@ export const CancelIcon = ({ size = 24 }) => (
   </IconBase>
 );
 
+export const CalendarIcon = ({ size = 24 }) => (
+  <IconBase size={size}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="url(#purpleGradient)" />
+    <path d="M16 2v4M8 2v4M3 10h18" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    <rect x="7" y="14" width="3" height="3" rx="0.5" fill="rgba(255,255,255,0.8)" />
+    <rect x="14" y="14" width="3" height="3" rx="0.5" fill="rgba(255,255,255,0.5)" />
+  </IconBase>
+);
+
 export default {
   OverviewIcon,
   FilmeIcon,
@@ -242,4 +251,5 @@ export default {
   SearchIcon,
   SaveIcon,
   CancelIcon,
+  CalendarIcon,
 };

@@ -602,6 +602,50 @@
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
 
+.ingresso-acoes-novo {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ingresso-acoes-novo .btn-qr-code-novo {
+  flex: 1;
+}
+
+.btn-cancelar-ingresso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancelar-ingresso:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+}
+
+.btn-cancelar-ingresso:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-pequeno {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 .btn-primary-novo {
   display: flex;
   align-items: center;

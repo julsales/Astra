@@ -31,6 +31,7 @@ function App() {
   if (usuarioLogado) {
     return (
       <div className="App">
+        <Stars />
         <CosmicNebula />
         <div className="diamond-star"></div>
         {usuarioLogado.tipo === 'ADMIN' && (

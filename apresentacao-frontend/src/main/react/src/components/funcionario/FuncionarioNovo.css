@@ -6,37 +6,10 @@
 /* ===== LAYOUT PRINCIPAL ===== */
 .func-panel {
   min-height: 100vh;
-  background: var(--bg-primary);
+  /* keep panel transparent so the App background (gradient + stars) shows through */
+  background: transparent;
   position: relative;
   overflow-x: hidden;
-}
-
-/* Background cósmico animado (igual ao cliente) */
-.func-panel::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(ellipse at top, rgba(123, 159, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
-  animation: nebula-flow 15s ease-in-out infinite alternate;
-  pointer-events: none;
-  /* keep this behind UI but below the cosmic nebula which uses z-index: -1 */
-  z-index: -2;
-}
-
-@keyframes nebula-flow {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0.7;
-  }
-  100% {
-    transform: translateY(-20px) scale(1.05);
-    opacity: 1;
-  }
 }
 
 /* ===== HEADER ===== */

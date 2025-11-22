@@ -15,7 +15,8 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
   const [carregando, setCarregando] = useState(true);
   const [ingressoQrAberto, setIngressoQrAberto] = useState(null);
   
-  const { ingressos, sincronizarComBackend } = useMeusIngressos(usuario);
+  const { ingressos, sincronizarComBackend, cancelarCompra } = useMeusIngressos(usuario);
+  const [cancelando, setCancelando] = useState(null);
 
   useEffect(() => {
     carregarFilmesESessoes();
@@ -62,6 +63,22 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
   const formatarHora = (iso) => {
     const data = new Date(iso);
     return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleCancelarIngresso = async (ingresso) => {
+    if (!window.confirm('Tem certeza que deseja cancelar este ingresso? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setCancelando(ingresso.id);
+    const resultado = await cancelarCompra(ingresso.id);
+    setCancelando(null);
+
+    if (resultado.sucesso) {
+      alert('Ingresso cancelado com sucesso!');
+    } else {
+      alert(`Erro ao cancelar: ${resultado.erro}`);
+    }
   };
 
   return (
@@ -252,16 +269,40 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                     </div>
                   </div>
 
-                  <button 
-                    className="btn-qr-code-novo"
-                    onClick={() => setIngressoQrAberto(ingresso)}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <path d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" />
-                    </svg>
-                    QR Code
-                  </button>
+                  <div className="ingresso-acoes-novo">
+                    <button
+                      className="btn-qr-code-novo"
+                      onClick={() => setIngressoQrAberto(ingresso)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M7 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01" />
+                      </svg>
+                      QR Code
+                    </button>
+                    {ingresso.status !== 'CANCELADO' && ingresso.status !== 'VALIDADO' && (
+                      <button
+                        className="btn-cancelar-ingresso"
+                        onClick={() => handleCancelarIngresso(ingresso)}
+                        disabled={cancelando === ingresso.id}
+                      >
+                        {cancelando === ingresso.id ? (
+                          <>
+                            <div className="spinner-pequeno"></div>
+                            Cancelando...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M15 9l-6 6M9 9l6 6" />
+                            </svg>
+                            Cancelar
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>

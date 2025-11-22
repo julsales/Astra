@@ -266,6 +266,12 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void remover(ProdutoId produtoId) {
+        if (produtoId == null) throw new IllegalArgumentException("O id do produto não pode ser nulo");
+        produtos.remove(produtoId);
+    }
+
     // ClienteRepositorio
     @Override
     public void salvar(Cliente cliente) {

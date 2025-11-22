@@ -126,6 +126,37 @@ export const useMeusIngressos = (usuario) => {
     [persistir]
   );
 
+  const cancelarCompra = useCallback(
+    async (compraId) => {
+      try {
+        // Chama o backend para cancelar
+        const response = await fetch(`/api/compras/${compraId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const erro = await response.json();
+          throw new Error(erro.erro || 'Erro ao cancelar compra');
+        }
+
+        // Remove do estado local
+        persistir((listaAtual) =>
+          listaAtual.map((compra) =>
+            compra.id === compraId || String(compra.id) === String(compraId)
+              ? { ...compra, status: 'CANCELADO' }
+              : compra
+          )
+        );
+
+        return { sucesso: true };
+      } catch (error) {
+        console.error('Erro ao cancelar compra:', error);
+        return { sucesso: false, erro: error.message };
+      }
+    },
+    [persistir]
+  );
+
   const limparHistorico = useCallback(() => {
     persistir([]);
   }, [persistir]);
@@ -134,6 +165,7 @@ export const useMeusIngressos = (usuario) => {
     ingressos,
     registrarCompra,
     removerCompra,
+    cancelarCompra,
     limparHistorico,
     sincronizarComBackend,
   };

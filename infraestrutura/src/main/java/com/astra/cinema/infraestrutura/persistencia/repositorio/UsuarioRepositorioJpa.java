@@ -5,7 +5,9 @@ import com.astra.cinema.infraestrutura.persistencia.jpa.UsuarioJpa;
 import com.astra.cinema.infraestrutura.persistencia.jpa.UsuarioJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public class UsuarioRepositorioJpa implements UsuarioRepositorio {
@@ -33,6 +35,20 @@ public class UsuarioRepositorioJpa implements UsuarioRepositorio {
     public Optional<Usuario> buscarPorId(UsuarioId id) {
         return repository.findById(id.getValor())
                 .map(this::mapearParaDominio);
+    }
+
+    @Override
+    public List<Usuario> listarTodos() {
+        return repository.findAll().stream()
+                .map(this::mapearParaDominio)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Usuario> listarPorTipo(TipoUsuario tipo) {
+        return repository.findByTipo(tipo).stream()
+                .map(this::mapearParaDominio)
+                .collect(Collectors.toList());
     }
 
     private UsuarioJpa mapearParaJpa(Usuario usuario) {

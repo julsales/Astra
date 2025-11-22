@@ -3,6 +3,8 @@ package com.astra.cinema.aplicacao.funcionario;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.filme.Filme;
+import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngresso;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
 import com.astra.cinema.dominio.sessao.Sessao;
@@ -22,17 +24,21 @@ public class ConsultarHistoricoFuncionarioUseCase {
     private final ValidacaoIngressoRepositorio validacaoIngressoRepositorio;
     private final CompraRepositorio compraRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
+    private final FilmeRepositorio filmeRepositorio;
 
     public ConsultarHistoricoFuncionarioUseCase(
             ValidacaoIngressoRepositorio validacaoIngressoRepositorio,
             CompraRepositorio compraRepositorio,
-            SessaoRepositorio sessaoRepositorio) {
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio) {
         this.validacaoIngressoRepositorio = exigirNaoNulo(validacaoIngressoRepositorio,
             "O repositório de validações não pode ser nulo");
         this.compraRepositorio = exigirNaoNulo(compraRepositorio,
             "O repositório de compras não pode ser nulo");
         this.sessaoRepositorio = exigirNaoNulo(sessaoRepositorio,
             "O repositório de sessões não pode ser nulo");
+        this.filmeRepositorio = exigirNaoNulo(filmeRepositorio,
+            "O repositório de filmes não pode ser nulo");
     }
 
     /**
@@ -69,18 +75,38 @@ public class ConsultarHistoricoFuncionarioUseCase {
 
         List<IngressoAtivo> result = new ArrayList<>();
         for (Ingresso ingresso : ingressos) {
-            Sessao sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
-            if (sessao != null) {
-                result.add(new IngressoAtivo(
-                    ingresso.getIngressoId().getId(),
-                    ingresso.getQrCode(),
-                    ingresso.getTipo().toString(),
-                    ingresso.getStatus().toString(),
-                    ingresso.getAssentoId().getValor(),
-                    ingresso.getSessaoId().getId(),
-                    sessao.getSala(),
-                    sessao.getHorario()
-                ));
+            try {
+                Sessao sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
+                if (sessao != null) {
+                    // Buscar título do filme
+                    String filmeTitulo = "Filme #" + sessao.getFilmeId().getId();
+                    try {
+                        Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
+                        if (filme != null && filme.getTitulo() != null) {
+                            filmeTitulo = filme.getTitulo();
+                        }
+                    } catch (Exception e) {
+                        // Se falhar ao buscar o filme, usa o nome padrão
+                        System.err.println("Erro ao buscar filme " + sessao.getFilmeId() + ": " + e.getMessage());
+                    }
+
+                    result.add(new IngressoAtivo(
+                        ingresso.getIngressoId().getId(),
+                        ingresso.getQrCode(),
+                        ingresso.getTipo().toString(),
+                        ingresso.getStatus().toString(),
+                        ingresso.getAssentoId().getValor(),
+                        ingresso.getSessaoId().getId(),
+                        sessao.getSala(),
+                        sessao.getHorario(),
+                        sessao.getFilmeId().getId(),
+                        filmeTitulo,
+                        sessao.getStatus().toString()
+                    ));
+                }
+            } catch (Exception e) {
+                // Log e continua processando outros ingressos
+                System.err.println("Erro ao processar ingresso " + ingresso.getIngressoId() + ": " + e.getMessage());
             }
         }
 
@@ -170,9 +196,13 @@ public class ConsultarHistoricoFuncionarioUseCase {
         private final Integer sessaoId;
         private final String sala;
         private final java.util.Date horario;
+        private final Integer filmeId;
+        private final String filmeTitulo;
+        private final String statusSessao;
 
         public IngressoAtivo(Integer id, String qrCode, String tipo, String status,
-                           String assento, Integer sessaoId, String sala, java.util.Date horario) {
+                           String assento, Integer sessaoId, String sala, java.util.Date horario,
+                           Integer filmeId, String filmeTitulo, String statusSessao) {
             this.id = id;
             this.qrCode = qrCode;
             this.tipo = tipo;
@@ -181,6 +211,9 @@ public class ConsultarHistoricoFuncionarioUseCase {
             this.sessaoId = sessaoId;
             this.sala = sala;
             this.horario = horario;
+            this.filmeId = filmeId;
+            this.filmeTitulo = filmeTitulo;
+            this.statusSessao = statusSessao;
         }
 
         public Integer getId() { return id; }
@@ -191,5 +224,8 @@ public class ConsultarHistoricoFuncionarioUseCase {
         public Integer getSessaoId() { return sessaoId; }
         public String getSala() { return sala; }
         public java.util.Date getHorario() { return horario; }
+        public Integer getFilmeId() { return filmeId; }
+        public String getFilmeTitulo() { return filmeTitulo; }
+        public String getStatusSessao() { return statusSessao; }
     }
 }

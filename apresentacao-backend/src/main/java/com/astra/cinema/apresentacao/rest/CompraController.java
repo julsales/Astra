@@ -1,5 +1,6 @@
 package com.astra.cinema.apresentacao.rest;
 
+import com.astra.cinema.aplicacao.compra.CancelarCompraUseCase;
 import com.astra.cinema.aplicacao.compra.IniciarCompraUseCase;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.*;
@@ -23,11 +24,14 @@ public class CompraController {
     private static final Logger log = LoggerFactory.getLogger(CompraController.class);
 
     private final IniciarCompraUseCase iniciarCompraUseCase;
+    private final CancelarCompraUseCase cancelarCompraUseCase;
     private final CompraRepositorio compraRepositorio;
 
     public CompraController(IniciarCompraUseCase iniciarCompraUseCase,
+                           CancelarCompraUseCase cancelarCompraUseCase,
                            CompraRepositorio compraRepositorio) {
         this.iniciarCompraUseCase = iniciarCompraUseCase;
+        this.cancelarCompraUseCase = cancelarCompraUseCase;
         this.compraRepositorio = compraRepositorio;
     }
 
@@ -171,6 +175,66 @@ public class CompraController {
 
         public void setTipoIngresso(String tipoIngresso) {
             this.tipoIngresso = tipoIngresso;
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> cancelarCompra(@PathVariable Integer id) {
+        try {
+            log.info("Recebendo DELETE /api/compras/{}", id);
+
+            cancelarCompraUseCase.executar(new CompraId(id));
+
+            return ResponseEntity.ok(Map.of(
+                "mensagem", "Compra cancelada com sucesso",
+                "compraId", id
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("IllegalArgumentException ao cancelar compra: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        } catch (IllegalStateException e) {
+            log.warn("IllegalStateException ao cancelar compra: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Erro ao cancelar compra", e);
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro interno: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obterCompra(@PathVariable Integer id) {
+        try {
+            Compra compra = compraRepositorio.obterPorId(new CompraId(id));
+            if (compra == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", compra.getCompraId().getId());
+            response.put("clienteId", compra.getClienteId().getId());
+            response.put("status", compra.getStatus().name());
+
+            List<Map<String, Object>> ingressosResponse = compra.getIngressos().stream()
+                .map(i -> {
+                    Map<String, Object> ingressoMap = new HashMap<>();
+                    ingressoMap.put("id", i.getIngressoId().getId());
+                    ingressoMap.put("qrCode", i.getQrCode());
+                    ingressoMap.put("sessaoId", i.getSessaoId().getId());
+                    ingressoMap.put("assento", i.getAssentoId().getValor());
+                    ingressoMap.put("tipo", i.getTipo().name());
+                    ingressoMap.put("status", i.getStatus().name());
+                    return ingressoMap;
+                })
+                .collect(Collectors.toList());
+
+            response.put("ingressos", ingressosResponse);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro interno: " + e.getMessage()));
         }
     }
 }

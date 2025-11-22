@@ -5,6 +5,7 @@ import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirEstado;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 
 import com.astra.cinema.dominio.comum.*;
+import com.astra.cinema.dominio.pagamento.StatusPagamento;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,9 +42,17 @@ public class Venda implements Cloneable {
         return status;
     }
 
-    public void confirmar() {
+    /**
+     * Confirma a venda verificando se o pagamento foi aprovado.
+     * RN7: Uma venda na bomboniere só é confirmada após pagamento aprovado.
+     *
+     * @param statusPagamento O status atual do pagamento associado
+     */
+    public void confirmar(StatusPagamento statusPagamento) {
         exigirEstado(status == StatusVenda.PENDENTE, "Apenas vendas pendentes podem ser confirmadas");
         exigirEstado(pagamentoId != null, "A venda deve ter um pagamento associado");
+        exigirEstado(statusPagamento == StatusPagamento.SUCESSO,
+            "O pagamento não foi aprovado");
         this.status = StatusVenda.CONFIRMADA;
     }
 

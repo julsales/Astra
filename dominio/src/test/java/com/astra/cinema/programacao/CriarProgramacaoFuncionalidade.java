@@ -7,6 +7,7 @@ import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.filme.*;
 import com.astra.cinema.dominio.sessao.*;
 import com.astra.cinema.dominio.programacao.*;
+import com.astra.cinema.dominio.usuario.*;
 import io.cucumber.java.pt.*;
 
 import java.util.*;
@@ -14,6 +15,7 @@ import java.util.*;
 public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
     private static final String IMAGEM_PADRAO = "https://img.astra/poster.jpg";
     private List<SessaoId> sessoes = new ArrayList<>();
+    private Funcionario gerente = new Funcionario(new FuncionarioId(1), "Gerente Teste", Cargo.GERENTE);
     private Programacao programacaoCriada;
     private RuntimeException excecao;
 
@@ -46,8 +48,8 @@ public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
             calendario.setTime(inicio);
             calendario.add(Calendar.DAY_OF_MONTH, 7);
             var fim = calendario.getTime();
-            
-            programacaoCriada = programacaoService.criarProgramacao(inicio, fim, sessoes);
+
+            programacaoCriada = programacaoService.criarProgramacao(gerente, inicio, fim, sessoes);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -96,8 +98,8 @@ public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
             calendario.setTime(inicio);
             calendario.add(Calendar.DAY_OF_MONTH, 7);
             var fim = calendario.getTime();
-            
-            programacaoCriada = programacaoService.criarProgramacao(inicio, fim, sessoes);
+
+            programacaoCriada = programacaoService.criarProgramacao(gerente, inicio, fim, sessoes);
         } catch (RuntimeException e) {
             excecao = e;
         }

@@ -28,6 +28,9 @@ body {
   pointer-events: none;
 }
 
+/* ensure stars and nebula are behind UI elements but above base background */
+.stars { z-index: -1; }
+
 .star {
   position: absolute;
   width: 2px;

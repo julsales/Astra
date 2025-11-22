@@ -3,7 +3,6 @@ package com.astra.cinema.aplicacao.compra;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.*;
 import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
-import com.astra.cinema.dominio.pagamento.StatusPagamento;
 
 /**
  * Caso de uso: Confirmar uma compra após pagamento aprovado
@@ -36,13 +35,10 @@ public class ConfirmarCompraUseCase {
         
         var compra = compraRepositorio.obterPorId(compraId);
         var pagamento = pagamentoRepositorio.obterPorId(pagamentoId);
-        
-        if (pagamento.getStatus() != StatusPagamento.SUCESSO) {
-            throw new IllegalStateException("O pagamento não foi autorizado");
-        }
-        
+
         compra.setPagamentoId(pagamentoId);
-        compra.confirmar();
+        // RN1: Passa o status do pagamento para validação no domínio
+        compra.confirmar(pagamento.getStatus());
         compraRepositorio.salvar(compra);
     }
 }

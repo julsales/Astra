@@ -5,6 +5,7 @@ import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirEstado;
 
 import com.astra.cinema.dominio.comum.*;
+import com.astra.cinema.dominio.pagamento.StatusPagamento;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,9 +49,17 @@ public class Compra implements Cloneable {
         return status;
     }
 
-    public void confirmar() {
+    /**
+     * Confirma a compra verificando se o pagamento foi autorizado com sucesso.
+     * RN2: A compra só pode ser confirmada se o pagamento associado for autorizado.
+     *
+     * @param statusPagamento O status atual do pagamento associado
+     */
+    public void confirmar(StatusPagamento statusPagamento) {
         exigirEstado(status == StatusCompra.PENDENTE, "Apenas compras pendentes podem ser confirmadas");
         exigirEstado(pagamentoId != null, "A compra deve ter um pagamento associado");
+        exigirEstado(statusPagamento == StatusPagamento.SUCESSO,
+            "O pagamento não foi autorizado");
         this.status = StatusCompra.CONFIRMADA;
         for (Ingresso ingresso : ingressos) {
             ingresso.setStatus(StatusIngresso.VALIDADO);
@@ -59,13 +68,13 @@ public class Compra implements Cloneable {
 
     public void cancelar() {
         exigirEstado(status != StatusCompra.CANCELADA, "A compra já está cancelada");
-        
-        // Verifica se algum ingresso já foi validado
+
+        // Verifica se algum ingresso já foi utilizado
         for (Ingresso ingresso : ingressos) {
-            exigirEstado(ingresso.getStatus() != StatusIngresso.VALIDADO,
-                "Não é possível cancelar uma compra com ingresso já validado");
+            exigirEstado(!ingresso.isUtilizado(),
+                "Não é possível cancelar uma compra com ingresso já utilizado");
         }
-        
+
         this.status = StatusCompra.CANCELADA;
         for (Ingresso ingresso : ingressos) {
             ingresso.cancelar();
