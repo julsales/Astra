@@ -29,14 +29,50 @@ body {
 }
 
 /* ensure stars and nebula are behind UI elements but above base background */
-.stars { z-index: -1; }
+.stars { z-index: 0; }
+
+/* Make sure nebula sits slightly behind content but above the base background */
+.cosmic-nebula { z-index: 0; }
 
 .star {
   position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+}
+
+.star.twinkle {
+  animation: twinkle 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.1));
+}
+
+/* Shooting star style: long trail using pseudo-element */
+.star.shooting {
+  background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 30%, rgba(255,255,255,0) 100%);
+  height: 2px;
+  transform-origin: left center;
+  animation-name: shooting;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-iteration-count: infinite;
+}
+
+@keyframes shooting {
+  0% {
+    opacity: 0;
+    transform: translateX(0) rotate(0deg) scaleX(0.2);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-120vw) rotate(-10deg) scaleX(1);
+  }
+}
+
+.star {
+  /* legacy fallback for star sizing when class combinations not applied */
   width: 2px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
   animation: twinkle 4s ease-in-out infinite;
 }
 
