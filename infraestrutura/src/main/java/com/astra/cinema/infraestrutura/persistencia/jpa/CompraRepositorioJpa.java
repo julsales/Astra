@@ -215,9 +215,9 @@ public class CompraRepositorioJpa implements CompraRepositorio {
 
     @Override
     public List<Ingresso> buscarIngressosAtivos() {
-        // Busca ingressos com status VALIDADO (ingressos que ainda são relevantes para o cliente)
+        // Busca ingressos com status ATIVO (ingressos comprados e ainda não validados)
         java.util.List<String> statuses = java.util.Arrays.asList(
-            StatusIngresso.VALIDADO.name()
+            StatusIngresso.ATIVO.name()
         );
         List<IngressoJpa> ingressosJpa = ingressoJpaRepository.findByStatusIn(statuses);
         return ingressosJpa.stream()

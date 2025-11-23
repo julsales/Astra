@@ -350,8 +350,8 @@ public class FuncionarioOperacoesController {
         try {
             List<Compra> compras = compraRepositorio.listarTodas();
 
+            // Mostrar compras que possuam ingressos com status ATIVO
             List<Map<String, Object>> response = compras.stream()
-                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
                 .filter(c -> c.getIngressos() != null && !c.getIngressos().isEmpty())
                 .filter(c -> c.getIngressos().stream().anyMatch(i ->
                     i.getStatus() == com.astra.cinema.dominio.compra.StatusIngresso.ATIVO))
