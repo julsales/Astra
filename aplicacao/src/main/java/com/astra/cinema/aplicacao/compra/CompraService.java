@@ -35,7 +35,7 @@ public class CompraService {
         // Inicializa os use cases
         this.iniciarCompraUseCase = new IniciarCompraUseCase(compraRepositorio, sessaoRepositorio);
         this.confirmarCompraUseCase = new ConfirmarCompraUseCase(compraRepositorio, pagamentoRepositorio);
-        this.cancelarCompraUseCase = new CancelarCompraUseCase(compraRepositorio, pagamentoRepositorio);
+        this.cancelarCompraUseCase = new CancelarCompraUseCase(compraRepositorio, pagamentoRepositorio, sessaoRepositorio);
     }
 
     public Compra iniciarCompra(ClienteId clienteId, List<Ingresso> ingressos) {

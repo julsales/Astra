@@ -7,6 +7,7 @@ public interface CompraRepositorio {
     void salvar(Compra compra);
     Compra obterPorId(CompraId compraId);
     List<Compra> buscarPorCliente(ClienteId clienteId);
+    List<Compra> listarTodas();
     Ingresso buscarIngressoPorQrCode(String qrCode);
     Ingresso buscarIngressoPorId(IngressoId ingressoId);
     Compra buscarCompraPorQrCode(String qrCode);

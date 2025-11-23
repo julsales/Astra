@@ -64,7 +64,8 @@ public class UseCaseConfiguration {
     @Bean
     public CancelarCompraUseCase cancelarCompraUseCase(
             CompraRepositorio compraRepositorio,
-            PagamentoRepositorio pagamentoRepositorio) {
-        return new CancelarCompraUseCase(compraRepositorio, pagamentoRepositorio);
+            PagamentoRepositorio pagamentoRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new CancelarCompraUseCase(compraRepositorio, pagamentoRepositorio, sessaoRepositorio);
     }
 }

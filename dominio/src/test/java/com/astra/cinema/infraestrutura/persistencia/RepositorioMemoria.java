@@ -100,6 +100,14 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
         .collect(Collectors.toList());
     }
 
+    // Nota: listarTodas() para Compra conflita com SessaoRepositorio.listarTodas()
+    // Este método é usado apenas quando acessado via CompraRepositorio
+    public List<Compra> listarTodasCompras() {
+        return compras.values().stream()
+                .map(Compra::clone)
+                .collect(Collectors.toList());
+    }
+
     // SessaoRepositorio
     @Override
     public Sessao salvar(Sessao sessao) {

@@ -106,13 +106,50 @@ public class SessaoController {
                     .average()
                     .orElse(0.0);
 
-            Map<String, Object> indicadores = new HashMap<>();
-            indicadores.put("totalSessoes", totalSessoes);
-            indicadores.put("sessoesDisponiveis", sessoesDisponiveis);
-            indicadores.put("sessoesEsgotadas", sessoesEsgotadas);
-            indicadores.put("ocupacaoMedia", Math.round(ocupacaoMedia * 100.0) / 100.0);
+        Map<String, Object> indicadores = new HashMap<>();
+        // Campos compatíveis com o frontend
+        indicadores.put("total", totalSessoes);
+        indicadores.put("ativas", sessoesDisponiveis);
+        indicadores.put("canceladas", sessoesEsgotadas);
 
-            return ResponseEntity.ok(indicadores);
+        // Sessões hoje
+        long sessoesHoje = todasSessoes.stream()
+            .filter(s -> {
+            Calendar now = Calendar.getInstance();
+            Calendar sh = Calendar.getInstance();
+            sh.setTime(s.getHorario());
+            return now.get(Calendar.YEAR) == sh.get(Calendar.YEAR)
+                && now.get(Calendar.DAY_OF_YEAR) == sh.get(Calendar.DAY_OF_YEAR);
+            }).count();
+
+        // Sessões esta semana
+        long sessoesSemana = todasSessoes.stream()
+            .filter(s -> {
+            Calendar now = Calendar.getInstance();
+            Calendar st = Calendar.getInstance();
+            st.setTime(s.getHorario());
+            return now.get(Calendar.YEAR) == st.get(Calendar.YEAR)
+                && now.get(Calendar.WEEK_OF_YEAR) == st.get(Calendar.WEEK_OF_YEAR);
+            }).count();
+
+        indicadores.put("sessoesHoje", sessoesHoje);
+        indicadores.put("sessoesSemana", sessoesSemana);
+        indicadores.put("ocupacaoMedia", Math.round(ocupacaoMedia * 100.0) / 100.0);
+
+        long ingressosReservados = todasSessoes.stream()
+            .mapToLong(s -> {
+            long disponiveis = s.getMapaAssentosDisponiveis().values().stream().filter(d -> d).count();
+            return s.getCapacidade() - disponiveis;
+            }).sum();
+
+        long ingressosDisponiveis = todasSessoes.stream()
+            .mapToLong(Sessao::getCapacidade)
+            .sum() - ingressosReservados;
+
+        indicadores.put("ingressosReservados", ingressosReservados);
+        indicadores.put("ingressosDisponiveis", Math.max(0L, ingressosDisponiveis));
+
+        return ResponseEntity.ok(indicadores);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(null);
@@ -370,7 +407,7 @@ public class SessaoController {
         dto.put("sala", sessao.getSala());
         dto.put("capacidade", sessao.getCapacidade());
 
-        // Adiciona informações do filme
+        // Adiciona informações do filme (inclui campo filmeTitulo para compatibilidade)
         try {
             Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
             if (filme != null) {
@@ -381,9 +418,12 @@ public class SessaoController {
                 filmeInfo.put("classificacaoEtaria", filme.getClassificacaoEtaria());
                 filmeInfo.put("imagemUrl", filme.getImagemUrl());
                 dto.put("filme", filmeInfo);
+                dto.put("filmeTitulo", filme.getTitulo());
+            } else {
+                dto.put("filmeTitulo", "Filme #" + sessao.getFilmeId().getId());
             }
         } catch (Exception e) {
-            // Ignora erro ao buscar filme
+            dto.put("filmeTitulo", "Filme #" + sessao.getFilmeId().getId());
         }
 
         // Adiciona estatísticas de ocupação

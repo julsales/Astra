@@ -343,6 +343,149 @@ public class FuncionarioOperacoesController {
     }
 
     /**
+     * Lista compras ativas (com ingressos válidos) para remarcação.
+     */
+    @GetMapping("/compras/ativas")
+    public ResponseEntity<?> listarComprasAtivas() {
+        try {
+            List<Compra> compras = compraRepositorio.listarTodas();
+
+            List<Map<String, Object>> response = compras.stream()
+                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
+                .filter(c -> c.getIngressos() != null && !c.getIngressos().isEmpty())
+                .filter(c -> c.getIngressos().stream().anyMatch(i ->
+                    i.getStatus() == com.astra.cinema.dominio.compra.StatusIngresso.ATIVO))
+                .map(this::mapearCompraComIngressos)
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> erro = new HashMap<>();
+            erro.put("erro", "Erro ao carregar compras ativas: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        }
+    }
+
+    /**
+     * Busca compras por termo (QR Code, ID ou nome do cliente).
+     */
+    @GetMapping("/compras/buscar")
+    public ResponseEntity<?> buscarCompras(@RequestParam String termo) {
+        try {
+            List<Compra> todasCompras = compraRepositorio.listarTodas();
+            String termoBusca = termo.toLowerCase().trim();
+
+            List<Map<String, Object>> response = todasCompras.stream()
+                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
+                .filter(c -> {
+                    // Busca por ID da compra
+                    if (c.getCompraId() != null &&
+                        String.valueOf(c.getCompraId().getId()).contains(termoBusca)) {
+                        return true;
+                    }
+                    // Busca por QR Code de qualquer ingresso
+                    if (c.getIngressos() != null) {
+                        return c.getIngressos().stream().anyMatch(i ->
+                            i.getQrCode() != null &&
+                            i.getQrCode().toLowerCase().contains(termoBusca));
+                    }
+                    return false;
+                })
+                .map(this::mapearCompraComIngressos)
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> erro = new HashMap<>();
+            erro.put("erro", "Erro ao buscar compras: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        }
+    }
+
+    /**
+     * Remarca múltiplos ingressos de uma só vez.
+     */
+    @PostMapping("/ingressos/remarcar-multiplos")
+    public ResponseEntity<?> remarcarMultiplosIngressos(@RequestBody RemarcarMultiplosRequest request) {
+        try {
+            FuncionarioId funcionarioId = new FuncionarioId(1);
+            List<Map<String, Object>> resultados = new java.util.ArrayList<>();
+            int sucessos = 0;
+            int falhas = 0;
+
+            for (RemarcarIngressoRequest remarcacao : request.remarcacoes) {
+                try {
+                    IngressoId ingressoId = new IngressoId(remarcacao.ingressoId);
+                    SessaoId novaSessaoId = new SessaoId(remarcacao.novaSessaoId);
+                    AssentoId novoAssentoId = remarcacao.novoAssentoId != null ?
+                        new AssentoId(remarcacao.novoAssentoId) : null;
+
+                    RemarcarIngressoFuncionarioUseCase.ResultadoRemarcacao resultado =
+                        remarcarIngressoUseCase.executar(
+                            ingressoId,
+                            novaSessaoId,
+                            novoAssentoId,
+                            funcionarioId,
+                            remarcacao.motivoTecnico
+                        );
+
+                    Map<String, Object> itemResultado = new HashMap<>();
+                    itemResultado.put("ingressoId", remarcacao.ingressoId);
+                    itemResultado.put("sucesso", resultado.isSucesso());
+                    itemResultado.put("mensagem", resultado.getMensagem());
+                    resultados.add(itemResultado);
+
+                    if (resultado.isSucesso()) {
+                        sucessos++;
+                    } else {
+                        falhas++;
+                    }
+                } catch (Exception e) {
+                    Map<String, Object> itemResultado = new HashMap<>();
+                    itemResultado.put("ingressoId", remarcacao.ingressoId);
+                    itemResultado.put("sucesso", false);
+                    itemResultado.put("mensagem", e.getMessage());
+                    resultados.add(itemResultado);
+                    falhas++;
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("sucessos", sucessos);
+            response.put("falhas", falhas);
+            response.put("resultados", resultados);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> erro = new HashMap<>();
+            erro.put("erro", "Erro ao remarcar ingressos: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
+        }
+    }
+
+    private Map<String, Object> mapearCompraComIngressos(Compra compra) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", compra.getCompraId() != null ? compra.getCompraId().getId() : null);
+        map.put("status", compra.getStatus().toString());
+        map.put("clienteNome", "Cliente #" + (compra.getClienteId() != null ? compra.getClienteId().getId() : "?"));
+
+        if (compra.getIngressos() != null) {
+            List<Map<String, Object>> ingressos = compra.getIngressos().stream()
+                .filter(i -> i.getStatus() == com.astra.cinema.dominio.compra.StatusIngresso.ATIVO)
+                .map(this::mapearIngresso)
+                .collect(Collectors.toList());
+            map.put("ingressos", ingressos);
+        } else {
+            map.put("ingressos", List.of());
+        }
+
+        return map;
+    }
+
+    /**
      * Retorna estatísticas do funcionário para o dashboard.
      */
     @GetMapping("/estatisticas")
@@ -406,5 +549,9 @@ public class FuncionarioOperacoesController {
         Integer novaSessaoId,
         String novoAssentoId,
         String motivoTecnico
+    ) {}
+
+    public record RemarcarMultiplosRequest(
+        List<RemarcarIngressoRequest> remarcacoes
     ) {}
 }

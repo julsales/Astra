@@ -127,6 +127,22 @@ public class CompraRepositorioJpa implements CompraRepositorio {
     }
 
     @Override
+    public List<Compra> listarTodas() {
+        List<CompraJpa> comprasJpa = compraJpaRepository.findAll();
+        List<Compra> compras = new ArrayList<>();
+
+        for (CompraJpa compraJpa : comprasJpa) {
+            List<IngressoJpa> ingressosJpa = ingressoJpaRepository.findByCompraId(compraJpa.getId());
+            List<Ingresso> ingressos = ingressosJpa.stream()
+                    .map(mapeador::mapearParaIngresso)
+                    .collect(Collectors.toList());
+            compras.add(mapeador.mapearParaCompra(compraJpa, ingressos));
+        }
+
+        return compras;
+    }
+
+    @Override
     public Ingresso buscarIngressoPorQrCode(String qrCode) {
         if (qrCode == null || qrCode.isEmpty()) {
             throw new IllegalArgumentException("O QR Code não pode ser nulo ou vazio");

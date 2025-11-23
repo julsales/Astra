@@ -1,482 +1,663 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Film, Clock, Users, AlertTriangle, CheckCircle, Calendar, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { RefreshCw, Film, Clock, Users, AlertTriangle, CheckCircle, Calendar, MapPin, Search, ChevronRight, ChevronDown, Armchair } from 'lucide-react';
 import Modal from '../shared/Modal';
-import StatusBadge from '../shared/StatusBadge';
-import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
+import { formatarDataHora } from '../../utils/formatters';
 import './RemarcarNovo.css';
 
 /**
- * Componente de Remarcação Inteligente de Ingressos
- * Agrupa sessões por filme e destaca sessões com problemas
+ * Componente de Mapa de Assentos Visual
+ */
+const MapaAssentos = ({ assentos, selecionados, onSelecionar, modo = 'selecao', quantidadeMaxima = null }) => {
+  // Organiza assentos por fileira (A, B, C, etc.)
+  const organizarPorFileira = () => {
+    const fileiras = {};
+    Object.entries(assentos).forEach(([id, disponivel]) => {
+      const fileira = id.charAt(0);
+      if (!fileiras[fileira]) {
+        fileiras[fileira] = [];
+      }
+      fileiras[fileira].push({ id, disponivel });
+    });
+
+    // Ordena assentos dentro de cada fileira
+    Object.keys(fileiras).forEach(fileira => {
+      fileiras[fileira].sort((a, b) => {
+        const numA = parseInt(a.id.substring(1));
+        const numB = parseInt(b.id.substring(1));
+        return numA - numB;
+      });
+    });
+
+    return fileiras;
+  };
+
+  const fileiras = organizarPorFileira();
+  const fileirasOrdenadas = Object.keys(fileiras).sort();
+
+  const handleClick = (assento) => {
+    if (!assento.disponivel) return;
+
+    const jaSelecionado = selecionados.includes(assento.id);
+
+    if (jaSelecionado) {
+      onSelecionar(selecionados.filter(id => id !== assento.id));
+    } else {
+      if (quantidadeMaxima && selecionados.length >= quantidadeMaxima) {
+        // Substitui o primeiro selecionado
+        onSelecionar([...selecionados.slice(1), assento.id]);
+      } else {
+        onSelecionar([...selecionados, assento.id]);
+      }
+    }
+  };
+
+  return (
+    <div className="mapa-assentos-container">
+      <div className="mapa-tela">
+        <div className="tela-cinema">TELA</div>
+      </div>
+
+      <div className="mapa-grid">
+        {fileirasOrdenadas.map(fileira => (
+          <div key={fileira} className="fileira">
+            <span className="fileira-label">{fileira}</span>
+            <div className="assentos-fileira">
+              {fileiras[fileira].map(assento => {
+                const selecionado = selecionados.includes(assento.id);
+                return (
+                  <button
+                    key={assento.id}
+                    className={`assento-visual ${!assento.disponivel ? 'ocupado' : ''} ${selecionado ? 'selecionado' : ''}`}
+                    onClick={() => handleClick(assento)}
+                    disabled={!assento.disponivel}
+                    title={assento.disponivel ? `Assento ${assento.id}` : `Assento ${assento.id} (Ocupado)`}
+                  >
+                    <Armchair size={18} />
+                    <span className="assento-numero">{assento.id.substring(1)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <span className="fileira-label">{fileira}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mapa-legenda">
+        <div className="legenda-item">
+          <div className="legenda-box disponivel"></div>
+          <span>Disponível</span>
+        </div>
+        <div className="legenda-item">
+          <div className="legenda-box ocupado"></div>
+          <span>Ocupado</span>
+        </div>
+        <div className="legenda-item">
+          <div className="legenda-box selecionado"></div>
+          <span>Selecionado</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Componente Principal de Remarcação
  */
 const RemarcarNovo = () => {
-  const [filmes, setFilmes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-  const [filmeExpandido, setFilmeExpandido] = useState(null);
-  const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
-  const [ingressoSelecionado, setIngressoSelecionado] = useState(null);
-  const [modalRemarcar, setModalRemarcar] = useState(false);
-  const [sessoesDestino, setSessoesDestino] = useState([]);
-  const [motivoTecnico, setMotivoTecnico] = useState('');
-  const [sessaoDestinoSelecionada, setSessaoDestinoSelecionada] = useState(null);
-  const [assentosDisponiveis, setAssentosDisponiveis] = useState([]);
-  const [assentoSelecionado, setAssentoSelecionado] = useState(null);
-  const [carregandoAssentos, setCarregandoAssentos] = useState(false);
+  // Estados principais
+  const [etapa, setEtapa] = useState(1); // 1: Buscar compra, 2: Selecionar ingressos, 3: Escolher sessão, 4: Selecionar assentos
+  const [carregando, setCarregando] = useState(false);
 
+  // Estados de busca
+  const [termoBusca, setTermoBusca] = useState('');
+  const [comprasEncontradas, setComprasEncontradas] = useState([]);
+  const [compraExpandida, setCompraExpandida] = useState(null);
+
+  // Estados de seleção
+  const [compraSelecionada, setCompraSelecionada] = useState(null);
+  const [ingressosSelecionados, setIngressosSelecionados] = useState([]);
+  const [motivoTecnico, setMotivoTecnico] = useState('');
+
+  // Estados de sessão destino
+  const [filmes, setFilmes] = useState([]);
+  const [sessoes, setSessoes] = useState([]);
+  const [filmeExpandido, setFilmeExpandido] = useState(null);
+  const [sessaoDestino, setSessaoDestino] = useState(null);
+
+  // Estados de mapa de assentos
+  const [mapaAssentos, setMapaAssentos] = useState({});
+  const [assentosSelecionados, setAssentosSelecionados] = useState([]);
+
+  // Carregar dados iniciais
   useEffect(() => {
-    carregarDados();
+    carregarComprasAtivas();
+    carregarFilmesESessoes();
   }, []);
 
-  const carregarDados = async () => {
-    setCarregando(true);
+  const carregarComprasAtivas = async () => {
     try {
-      const response = await fetch('/api/funcionario/sessoes/para-remarcacao');
+      const response = await fetch('/api/funcionario/compras/ativas');
       if (response.ok) {
         const data = await response.json();
-        setFilmes(data.filmes || []);
+        setComprasEncontradas(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro ao carregar compras:', error);
+    }
+  };
+
+  const carregarFilmesESessoes = async () => {
+    try {
+      const [resFilmes, resSessoes] = await Promise.all([
+        fetch('/api/filmes/em-cartaz'),
+        fetch('/api/sessoes')
+      ]);
+
+      if (resFilmes.ok) {
+        const filmesData = await resFilmes.json();
+        setFilmes(filmesData);
+      }
+
+      if (resSessoes.ok) {
+        const sessoesData = await resSessoes.json();
+        // Filtrar apenas sessões futuras e disponíveis
+        const agora = new Date();
+        const sessoesFuturas = sessoesData.filter(s =>
+          new Date(s.horario) > agora && s.status === 'DISPONIVEL'
+        );
+        setSessoes(sessoesFuturas);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar filmes e sessões:', error);
+    }
+  };
+
+  const buscarCompra = async () => {
+    if (!termoBusca.trim()) return;
+
+    setCarregando(true);
+    try {
+      const response = await fetch(`/api/funcionario/compras/buscar?termo=${encodeURIComponent(termoBusca)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComprasEncontradas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar compra:', error);
     } finally {
       setCarregando(false);
     }
   };
 
-  const toggleFilme = (filmeId) => {
-    setFilmeExpandido(filmeExpandido === filmeId ? null : filmeId);
+  const selecionarCompra = (compra) => {
+    setCompraSelecionada(compra);
+    setIngressosSelecionados([]);
+    setEtapa(2);
   };
 
-  const abrirModalRemarcacao = async (ingresso, sessao) => {
-    setIngressoSelecionado(ingresso);
-    setSessaoSelecionada(sessao);
-
-    // Buscar TODAS as sessões disponíveis de TODOS os filmes (exceto a sessão atual)
-    try {
-      const response = await fetch('/api/sessoes');
-      if (response.ok) {
-        const todasSessoes = await response.json();
-
-        // Filtrar apenas sessões disponíveis e futuras, excluindo a sessão atual
-        const agora = new Date();
-        const sessoesDisponiveis = todasSessoes.filter(s =>
-          s.id !== sessao.sessaoId &&
-          s.status === 'DISPONIVEL' &&
-          new Date(s.horario) > agora
-        );
-
-        // Enriquecer com informações de filme
-        const sessoesComFilme = await Promise.all(
-          sessoesDisponiveis.map(async (s) => {
-            try {
-              const resFilme = await fetch(`/api/filmes/${s.filmeId}`);
-              const filme = resFilme.ok ? await resFilme.json() : null;
-              return {
-                ...s,
-                sessaoId: s.id,
-                filmeTitulo: filme?.titulo || `Filme #${s.filmeId}`,
-                statusSessao: s.status
-              };
-            } catch (err) {
-              console.error('Erro ao buscar filme:', err);
-              return {
-                ...s,
-                sessaoId: s.id,
-                filmeTitulo: `Filme #${s.filmeId}`,
-                statusSessao: s.status
-              };
-            }
-          })
-        );
-
-        setSessoesDestino(sessoesComFilme);
-      } else {
-        console.error('Erro ao buscar sessões disponíveis');
-        setSessoesDestino([]);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar sessões:', error);
-      setSessoesDestino([]);
+  const toggleIngressoSelecionado = (ingresso) => {
+    const jaExiste = ingressosSelecionados.find(i => i.id === ingresso.id);
+    if (jaExiste) {
+      setIngressosSelecionados(ingressosSelecionados.filter(i => i.id !== ingresso.id));
+    } else {
+      setIngressosSelecionados([...ingressosSelecionados, ingresso]);
     }
+  };
 
-    setModalRemarcar(true);
+  const avancarParaSessoes = () => {
+    if (ingressosSelecionados.length === 0) {
+      alert('Selecione pelo menos um ingresso para remarcar');
+      return;
+    }
+    if (!motivoTecnico.trim()) {
+      alert('Por favor, descreva o motivo técnico da remarcação');
+      return;
+    }
+    setEtapa(3);
   };
 
   const selecionarSessaoDestino = async (sessao) => {
-    setSessaoDestinoSelecionada(sessao);
-    setCarregandoAssentos(true);
+    setSessaoDestino(sessao);
+    setCarregando(true);
 
     try {
-      // Buscar assentos disponíveis da sessão
-      const response = await fetch(`/api/sessoes/${sessao.sessaoId}/assentos`);
+      const response = await fetch(`/api/sessoes/${sessao.id}/assentos`);
       if (response.ok) {
         const data = await response.json();
-        // Filtrar apenas assentos disponíveis
-        const disponiveis = data.assentos ? data.assentos.filter(a => a.disponivel) : [];
-        setAssentosDisponiveis(disponiveis);
-
-        // Se houver o mesmo assento disponível, sugerir automaticamente
-        const mesmoAssento = disponiveis.find(a => a.id === ingressoSelecionado.assento);
-        if (mesmoAssento) {
-          setAssentoSelecionado(mesmoAssento.id);
-        } else if (disponiveis.length > 0) {
-          // Caso contrário, selecionar o primeiro disponível
-          setAssentoSelecionado(disponiveis[0].id);
-        }
-      } else {
-        alert('Erro ao carregar assentos da sessão');
+        setMapaAssentos(data.assentos || {});
+        setAssentosSelecionados([]);
+        setEtapa(4);
       }
     } catch (error) {
-      console.error('Erro ao buscar assentos:', error);
-      alert('Erro ao buscar assentos disponíveis');
+      console.error('Erro ao carregar assentos:', error);
+      alert('Erro ao carregar mapa de assentos');
     } finally {
-      setCarregandoAssentos(false);
+      setCarregando(false);
     }
   };
 
   const confirmarRemarcacao = async () => {
-    if (!motivoTecnico.trim()) {
-      alert('Por favor, informe o motivo técnico da remarcação');
+    if (assentosSelecionados.length !== ingressosSelecionados.length) {
+      alert(`Selecione ${ingressosSelecionados.length} assento(s) para os ingressos remarcados`);
       return;
     }
 
-    if (!assentoSelecionado) {
-      alert('Por favor, selecione um assento para a nova sessão');
-      return;
-    }
-
+    setCarregando(true);
     try {
-      const response = await fetch('/api/funcionario/ingressos/remarcar', {
+      // Remarcar cada ingresso
+      const remarcacoes = ingressosSelecionados.map((ingresso, index) => ({
+        ingressoId: ingresso.id,
+        novaSessaoId: sessaoDestino.id,
+        novoAssentoId: assentosSelecionados[index],
+        motivoTecnico: motivoTecnico
+      }));
+
+      const response = await fetch('/api/funcionario/ingressos/remarcar-multiplos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ingressoId: ingressoSelecionado.id,
-          novaSessaoId: sessaoDestinoSelecionada.sessaoId,
-          novoAssentoId: assentoSelecionado,
-          motivoTecnico: motivoTecnico
-        })
+        body: JSON.stringify({ remarcacoes })
       });
 
       const data = await response.json();
 
-      if (response.ok && data.sucesso) {
-        alert(`Ingresso remarcado com sucesso!\nNovo assento: ${assentoSelecionado}`);
-        fecharModal();
-        carregarDados();
+      if (response.ok) {
+        alert(`${remarcacoes.length} ingresso(s) remarcado(s) com sucesso!`);
+        resetarFluxo();
       } else {
-        alert(`Erro: ${data.erro || data.mensagem}`);
+        alert(`Erro: ${data.erro || 'Falha ao remarcar ingressos'}`);
       }
     } catch (error) {
-      console.error('Erro ao remarcar ingresso:', error);
+      console.error('Erro ao remarcar:', error);
       alert('Erro de conexão com o servidor');
+    } finally {
+      setCarregando(false);
     }
   };
 
-  const fecharModal = () => {
-    setModalRemarcar(false);
+  const resetarFluxo = () => {
+    setEtapa(1);
+    setCompraSelecionada(null);
+    setIngressosSelecionados([]);
     setMotivoTecnico('');
-    setIngressoSelecionado(null);
-    setSessaoSelecionada(null);
-    setSessaoDestinoSelecionada(null);
-    setAssentosDisponiveis([]);
-    setAssentoSelecionado(null);
+    setSessaoDestino(null);
+    setMapaAssentos({});
+    setAssentosSelecionados([]);
+    setFilmeExpandido(null);
+    carregarComprasAtivas();
   };
 
-  const getStatusSessaoInfo = (statusSessao) => {
-    switch (statusSessao) {
-      case 'PROBLEMA_TECNICO':
-        return { cor: 'red', icone: AlertTriangle, label: 'Problema Técnico' };
-      case 'DISPONIVEL':
-        return { cor: 'green', icone: CheckCircle, label: 'Disponível' };
-      case 'ESGOTADA':
-        return { cor: 'amber', icone: Users, label: 'Esgotada' };
-      case 'CANCELADA':
-        return { cor: 'gray', icone: AlertTriangle, label: 'Cancelada' };
-      default:
-        return { cor: 'blue', icone: Film, label: statusSessao };
+  const voltarEtapa = () => {
+    if (etapa === 4) {
+      setSessaoDestino(null);
+      setMapaAssentos({});
+      setAssentosSelecionados([]);
+      setEtapa(3);
+    } else if (etapa === 3) {
+      setEtapa(2);
+    } else if (etapa === 2) {
+      setCompraSelecionada(null);
+      setIngressosSelecionados([]);
+      setMotivoTecnico('');
+      setEtapa(1);
     }
   };
 
-  if (carregando) {
-    return (
-      <div className="remarcar-loading">
-        <div className="spinner"></div>
-        <p>Carregando dados de remarcação...</p>
-      </div>
-    );
-  }
+  // Agrupa sessões por filme
+  const sessoesPorFilme = () => {
+    const agrupado = {};
+    sessoes.forEach(sessao => {
+      const filme = filmes.find(f => f.id === sessao.filmeId);
+      const filmeId = sessao.filmeId;
+      if (!agrupado[filmeId]) {
+        agrupado[filmeId] = {
+          filme: filme || { id: filmeId, titulo: `Filme #${filmeId}` },
+          sessoes: []
+        };
+      }
+      agrupado[filmeId].sessoes.push(sessao);
+    });
+    return Object.values(agrupado);
+  };
 
-  if (filmes.length === 0) {
-    return (
-      <div className="remarcar-empty">
-        <Film size={64} />
-        <h3>Nenhuma sessão com ingressos</h3>
-        <p>Não há ingressos ativos no momento</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="remarcar-novo-container">
-      <div className="remarcar-header-info">
-        <div className="remarcar-header-icon">
-          <RefreshCw size={32} />
-        </div>
-        <div>
-          <h2>Remarcação Inteligente de Ingressos</h2>
-          <p>Selecione uma sessão para ver seus ingressos e remarcar se necessário</p>
+  // Renderização da Etapa 1: Buscar/Selecionar Compra
+  const renderEtapa1 = () => (
+    <div className="etapa-container">
+      <div className="etapa-header">
+        <div className="etapa-numero">1</div>
+        <div className="etapa-info">
+          <h3>Buscar Compra</h3>
+          <p>Busque por QR Code, nome do cliente ou ID da compra</p>
         </div>
       </div>
 
-      <div className="remarcar-legenda">
-        <h4>Legenda de Status:</h4>
-        <div className="legenda-items">
-          <div className="legenda-item problema">
-            <AlertTriangle size={16} />
-            <span>Problema Técnico - Necessita remarcação</span>
-          </div>
-          <div className="legenda-item disponivel">
-            <CheckCircle size={16} />
-            <span>Disponível - Funcionando normalmente</span>
-          </div>
-          <div className="legenda-item esgotada">
-            <Users size={16} />
-            <span>Esgotada - Sem assentos disponíveis</span>
-          </div>
+      <div className="busca-container">
+        <div className="busca-input-wrapper">
+          <Search size={20} />
+          <input
+            type="text"
+            value={termoBusca}
+            onChange={(e) => setTermoBusca(e.target.value)}
+            placeholder="Digite QR Code, nome ou ID..."
+            onKeyPress={(e) => e.key === 'Enter' && buscarCompra()}
+          />
+          <button onClick={buscarCompra} disabled={carregando}>
+            {carregando ? 'Buscando...' : 'Buscar'}
+          </button>
         </div>
       </div>
 
-      <div className="filmes-lista">
-        {filmes.map(filme => (
-          <div key={filme.filmeId} className="filme-card">
+      <div className="compras-lista">
+        <h4>Compras com Ingressos Ativos ({comprasEncontradas.length})</h4>
+
+        {comprasEncontradas.length === 0 ? (
+          <div className="empty-state">
+            <Users size={48} />
+            <p>Nenhuma compra encontrada</p>
+          </div>
+        ) : (
+          comprasEncontradas.map(compra => (
             <div
-              className="filme-header"
-              onClick={() => toggleFilme(filme.filmeId)}
+              key={compra.id}
+              className={`compra-card ${compraExpandida === compra.id ? 'expandida' : ''}`}
             >
-              <div className="filme-info">
+              <div
+                className="compra-header"
+                onClick={() => setCompraExpandida(compraExpandida === compra.id ? null : compra.id)}
+              >
+                <div className="compra-info">
+                  <span className="compra-id">Compra #{compra.id}</span>
+                  <span className="compra-cliente">{compra.clienteNome || 'Cliente'}</span>
+                  <span className="compra-ingressos">{compra.ingressos?.length || 0} ingresso(s)</span>
+                </div>
+                <div className="compra-actions">
+                  <button
+                    className="btn-selecionar"
+                    onClick={(e) => { e.stopPropagation(); selecionarCompra(compra); }}
+                  >
+                    Selecionar <ChevronRight size={16} />
+                  </button>
+                  {compraExpandida === compra.id ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                </div>
+              </div>
+
+              {compraExpandida === compra.id && compra.ingressos && (
+                <div className="compra-ingressos-preview">
+                  {compra.ingressos.map(ing => (
+                    <div key={ing.id} className="ingresso-preview">
+                      <span className="qr">{ing.qrCode}</span>
+                      <span className="assento">Assento: {ing.assento}</span>
+                      <span className="sessao">Sessão #{ing.sessaoId}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  // Renderização da Etapa 2: Selecionar Ingressos
+  const renderEtapa2 = () => (
+    <div className="etapa-container">
+      <div className="etapa-header">
+        <div className="etapa-numero">2</div>
+        <div className="etapa-info">
+          <h3>Selecionar Ingressos para Remarcar</h3>
+          <p>Compra #{compraSelecionada?.id} - Selecione quais ingressos deseja remarcar</p>
+        </div>
+      </div>
+
+      <div className="motivo-container">
+        <label>Motivo Técnico da Remarcação *</label>
+        <textarea
+          value={motivoTecnico}
+          onChange={(e) => setMotivoTecnico(e.target.value)}
+          placeholder="Descreva o motivo técnico (ex: problema no projetor, ar-condicionado com defeito, etc.)"
+          rows={3}
+        />
+      </div>
+
+      <div className="ingressos-selecao">
+        <h4>Ingressos da Compra</h4>
+        <p className="hint">Clique para selecionar/desselecionar os ingressos que deseja remarcar</p>
+
+        <div className="ingressos-grid">
+          {compraSelecionada?.ingressos?.map(ingresso => {
+            const selecionado = ingressosSelecionados.find(i => i.id === ingresso.id);
+            return (
+              <div
+                key={ingresso.id}
+                className={`ingresso-card ${selecionado ? 'selecionado' : ''}`}
+                onClick={() => toggleIngressoSelecionado(ingresso)}
+              >
+                <div className="ingresso-check">
+                  {selecionado && <CheckCircle size={24} />}
+                </div>
+                <div className="ingresso-detalhes">
+                  <div className="qr-code">{ingresso.qrCode}</div>
+                  <div className="info-row">
+                    <MapPin size={14} />
+                    <span>Assento: {ingresso.assento}</span>
+                  </div>
+                  <div className="info-row">
+                    <Film size={14} />
+                    <span>Sessão #{ingresso.sessaoId}</span>
+                  </div>
+                  <div className="info-row">
+                    <Clock size={14} />
+                    <span>{ingresso.tipo}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="etapa-footer">
+        <button className="btn-voltar" onClick={voltarEtapa}>
+          ← Voltar
+        </button>
+        <div className="selecao-info">
+          {ingressosSelecionados.length} ingresso(s) selecionado(s)
+        </div>
+        <button
+          className="btn-avancar"
+          onClick={avancarParaSessoes}
+          disabled={ingressosSelecionados.length === 0 || !motivoTecnico.trim()}
+        >
+          Escolher Nova Sessão →
+        </button>
+      </div>
+    </div>
+  );
+
+  // Renderização da Etapa 3: Escolher Sessão de Destino
+  const renderEtapa3 = () => (
+    <div className="etapa-container">
+      <div className="etapa-header">
+        <div className="etapa-numero">3</div>
+        <div className="etapa-info">
+          <h3>Escolher Nova Sessão</h3>
+          <p>Remarcando {ingressosSelecionados.length} ingresso(s) - Selecione a sessão de destino</p>
+        </div>
+      </div>
+
+      <div className="sessoes-por-filme">
+        {sessoesPorFilme().map(({ filme, sessoes: sessoeFilme }) => (
+          <div key={filme.id} className="filme-grupo">
+            <div
+              className="filme-header-grupo"
+              onClick={() => setFilmeExpandido(filmeExpandido === filme.id ? null : filme.id)}
+            >
+              <div className="filme-info-grupo">
                 <Film size={24} />
-                <h3>{filme.filmeTitulo}</h3>
-                <span className="sessoes-count">{filme.sessoes.length} sessões</span>
+                <h4>{filme.titulo}</h4>
+                <span className="badge-sessoes">{sessoeFilme.length} sessão(ões)</span>
               </div>
-              <div className={`expand-icon ${filmeExpandido === filme.filmeId ? 'expanded' : ''}`}>
-                ▼
-              </div>
+              {filmeExpandido === filme.id ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
             </div>
 
-            {filmeExpandido === filme.filmeId && (
-              <div className="sessoes-grid">
-                {filme.sessoes.map(sessao => {
-                  const statusInfo = getStatusSessaoInfo(sessao.statusSessao);
-                  const StatusIcon = statusInfo.icone;
-                  const temProblema = sessao.statusSessao === 'PROBLEMA_TECNICO';
-
-                  return (
-                    <div key={sessao.sessaoId} className={`sessao-card ${temProblema ? 'problema' : ''}`}>
-                      <div className="sessao-header">
-                        <div className={`sessao-status status-${statusInfo.cor}`}>
-                          <StatusIcon size={20} />
-                          <span>{statusInfo.label}</span>
-                        </div>
-                        {temProblema && (
-                          <div className="badge-problema">
-                            <AlertTriangle size={14} />
-                            Requer Atenção
-                          </div>
-                        )}
+            {filmeExpandido === filme.id && (
+              <div className="sessoes-lista-filme">
+                {sessoeFilme.map(sessao => (
+                  <div
+                    key={sessao.id}
+                    className="sessao-destino-card"
+                    onClick={() => selecionarSessaoDestino(sessao)}
+                  >
+                    <div className="sessao-destino-info">
+                      <div className="sessao-sala">
+                        <MapPin size={16} />
+                        <span>{sessao.sala}</span>
                       </div>
-
-                      <div className="sessao-detalhes">
-                        <div className="detalhe-item">
-                          <MapPin size={16} />
-                          <span>{sessao.sala}</span>
-                        </div>
-                        <div className="detalhe-item">
-                          <Clock size={16} />
-                          <span>{formatarDataHora(sessao.horario)}</span>
-                        </div>
-                        <div className="detalhe-item">
-                          <Users size={16} />
-                          <span>{sessao.totalIngressos} ingresso(s)</span>
-                        </div>
+                      <div className="sessao-horario">
+                        <Calendar size={16} />
+                        <span>{formatarDataHora(sessao.horario)}</span>
                       </div>
-
-                      <div className="ingressos-lista">
-                        {sessao.ingressos.map(ingresso => (
-                          <div key={ingresso.id} className="ingresso-item">
-                            <div className="ingresso-info">
-                              <div className="ingresso-qr">{ingresso.qrCode}</div>
-                              <div className="ingresso-detalhes">
-                                <span className="assento">Assento: {ingresso.assento}</span>
-                                <span className="tipo">{ingresso.tipo}</span>
-                              </div>
-                            </div>
-                            <button
-                              className="btn-remarcar-ingresso"
-                              onClick={() => abrirModalRemarcacao(ingresso, sessao)}
-                            >
-                              <RefreshCw size={14} />
-                              Remarcar
-                            </button>
-                          </div>
-                        ))}
+                      <div className="sessao-ocupacao">
+                        <Users size={16} />
+                        <span>{sessao.assentosDisponiveis || '?'} disponíveis</span>
                       </div>
                     </div>
-                  );
-                })}
+                    <button className="btn-ver-mapa">
+                      Ver Mapa de Assentos →
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Modal de Remarcação */}
-      <Modal
-        isOpen={modalRemarcar}
-        onClose={fecharModal}
-        title="Remarcar Ingresso"
-        size="lg"
-      >
-        {ingressoSelecionado && sessaoSelecionada && (
-          <div className="modal-remarcar-content">
-            <div className="sessao-atual-info">
-              <h4>Ingresso Atual</h4>
-              <div className="info-grid">
-                <div><strong>QR Code:</strong> {ingressoSelecionado.qrCode}</div>
-                <div><strong>Assento:</strong> {ingressoSelecionado.assento}</div>
-                <div><strong>Filme:</strong> {filmes.find(f => f.sessoes.some(s => s.sessaoId === sessaoSelecionada.sessaoId))?.filmeTitulo || 'N/A'}</div>
-                <div><strong>Sessão Atual:</strong> {sessaoSelecionada.sala}</div>
-                <div><strong>Horário:</strong> {formatarDataHora(sessaoSelecionada.horario)}</div>
+      <div className="etapa-footer">
+        <button className="btn-voltar" onClick={voltarEtapa}>
+          ← Voltar
+        </button>
+      </div>
+    </div>
+  );
+
+  // Renderização da Etapa 4: Selecionar Assentos no Mapa
+  const renderEtapa4 = () => (
+    <div className="etapa-container">
+      <div className="etapa-header">
+        <div className="etapa-numero">4</div>
+        <div className="etapa-info">
+          <h3>Selecionar Novos Assentos</h3>
+          <p>
+            {sessaoDestino?.filmeTitulo || filmes.find(f => f.id === sessaoDestino?.filmeId)?.titulo} - {sessaoDestino?.sala}
+            <br />
+            <small>{formatarDataHora(sessaoDestino?.horario)}</small>
+          </p>
+        </div>
+      </div>
+
+      <div className="mapa-instrucoes">
+        <AlertTriangle size={20} />
+        <span>
+          Selecione <strong>{ingressosSelecionados.length}</strong> assento(s) para os ingressos remarcados
+        </span>
+      </div>
+
+      <MapaAssentos
+        assentos={mapaAssentos}
+        selecionados={assentosSelecionados}
+        onSelecionar={setAssentosSelecionados}
+        quantidadeMaxima={ingressosSelecionados.length}
+      />
+
+      <div className="resumo-remarcacao">
+        <h4>Resumo da Remarcação</h4>
+        <div className="resumo-grid">
+          {ingressosSelecionados.map((ing, idx) => (
+            <div key={ing.id} className="resumo-item">
+              <div className="de">
+                <span className="label">DE:</span>
+                <span>{ing.qrCode}</span>
+                <span>Assento {ing.assento}</span>
+              </div>
+              <div className="seta">→</div>
+              <div className="para">
+                <span className="label">PARA:</span>
+                <span>{assentosSelecionados[idx] || '(selecione)'}</span>
               </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <div className="motivo-section">
-              <label>Motivo Técnico *</label>
-              <textarea
-                value={motivoTecnico}
-                onChange={(e) => setMotivoTecnico(e.target.value)}
-                placeholder="Descreva o motivo da remarcação (ex: problema técnico na sala, falha no projetor, etc.)"
-                rows={3}
-                className="motivo-textarea"
-              />
-            </div>
+      <div className="etapa-footer">
+        <button className="btn-voltar" onClick={voltarEtapa}>
+          ← Voltar
+        </button>
+        <button
+          className="btn-confirmar-remarcacao"
+          onClick={confirmarRemarcacao}
+          disabled={assentosSelecionados.length !== ingressosSelecionados.length || carregando}
+        >
+          {carregando ? (
+            <>
+              <div className="spinner-small"></div>
+              Remarcando...
+            </>
+          ) : (
+            <>
+              <RefreshCw size={18} />
+              Confirmar Remarcação ({ingressosSelecionados.length} ingresso(s))
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
 
-            {!sessaoDestinoSelecionada ? (
-              <div className="sessoes-destino-section">
-                <h4>Selecione a Nova Sessão</h4>
-                {sessoesDestino.length === 0 ? (
-                  <p className="sem-sessoes">Não há outras sessões disponíveis para este filme</p>
-                ) : (
-                  <div className="sessoes-destino-lista">
-                    {sessoesDestino.map(sessao => {
-                      const statusInfo = getStatusSessaoInfo(sessao.statusSessao);
-                      const StatusIcon = statusInfo.icone;
+  return (
+    <div className="remarcar-novo-container">
+      <div className="remarcar-header-principal">
+        <div className="header-icon">
+          <RefreshCw size={36} />
+        </div>
+        <div className="header-texto">
+          <h2>Remarcação de Ingressos</h2>
+          <p>Remarque ingressos para qualquer filme e sessão disponível</p>
+        </div>
+      </div>
 
-                      return (
-                        <button
-                          key={sessao.sessaoId}
-                          className={`sessao-destino-btn ${sessao.statusSessao === 'DISPONIVEL' ? 'disponivel' : ''}`}
-                          onClick={() => selecionarSessaoDestino(sessao)}
-                          disabled={sessao.statusSessao !== 'DISPONIVEL'}
-                        >
-                          <div className="sessao-destino-info">
-                            <div className={`status-indicator status-${statusInfo.cor}`}>
-                              <StatusIcon size={18} />
-                            </div>
-                            <div className="sessao-destino-detalhes">
-                              <strong>{sessao.filmeTitulo || `Filme #${sessao.filmeId}`}</strong>
-                              <span>{sessao.sala} - {formatarDataHora(sessao.horario)}</span>
-                            </div>
-                          </div>
-                          <div className="sessao-destino-meta">
-                            <span className="ocupacao">{sessao.totalIngressos || 0} ingressos</span>
-                            {sessao.statusSessao === 'DISPONIVEL' ? (
-                              <span className="btn-label">Selecionar →</span>
-                            ) : (
-                              <span className="indisponivel-label">{statusInfo.label}</span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="assentos-section">
-                <div className="sessao-selecionada-info">
-                  <h4>Nova Sessão Selecionada</h4>
-                  <div className="sessao-escolhida">
-                    <MapPin size={16} />
-                    <span>{sessaoDestinoSelecionada.sala}</span>
-                    <Clock size={16} />
-                    <span>{formatarDataHora(sessaoDestinoSelecionada.horario)}</span>
-                    <button
-                      className="btn-voltar-sessoes"
-                      onClick={() => {
-                        setSessaoDestinoSelecionada(null);
-                        setAssentosDisponiveis([]);
-                        setAssentoSelecionado(null);
-                      }}
-                    >
-                      ← Trocar Sessão
-                    </button>
-                  </div>
-                </div>
+      {/* Indicador de Etapas */}
+      <div className="etapas-indicador">
+        <div className={`etapa-step ${etapa >= 1 ? 'ativo' : ''} ${etapa > 1 ? 'completo' : ''}`}>
+          <div className="step-numero">1</div>
+          <span>Buscar Compra</span>
+        </div>
+        <div className="step-linha"></div>
+        <div className={`etapa-step ${etapa >= 2 ? 'ativo' : ''} ${etapa > 2 ? 'completo' : ''}`}>
+          <div className="step-numero">2</div>
+          <span>Selecionar Ingressos</span>
+        </div>
+        <div className="step-linha"></div>
+        <div className={`etapa-step ${etapa >= 3 ? 'ativo' : ''} ${etapa > 3 ? 'completo' : ''}`}>
+          <div className="step-numero">3</div>
+          <span>Escolher Sessão</span>
+        </div>
+        <div className="step-linha"></div>
+        <div className={`etapa-step ${etapa >= 4 ? 'ativo' : ''}`}>
+          <div className="step-numero">4</div>
+          <span>Mapa de Assentos</span>
+        </div>
+      </div>
 
-                <div className="assentos-selecao">
-                  <h4>Selecione o Novo Assento *</h4>
-                  {carregandoAssentos ? (
-                    <div className="loading-assentos">
-                      <div className="spinner-small"></div>
-                      <p>Carregando assentos disponíveis...</p>
-                    </div>
-                  ) : assentosDisponiveis.length === 0 ? (
-                    <p className="sem-assentos">Nenhum assento disponível nesta sessão</p>
-                  ) : (
-                    <>
-                      <p className="assentos-hint">
-                        {assentosDisponiveis.find(a => a.id === ingressoSelecionado.assento)
-                          ? `✓ O assento original (${ingressoSelecionado.assento}) está disponível`
-                          : `⚠ O assento original (${ingressoSelecionado.assento}) não está disponível. Selecione outro.`}
-                      </p>
-                      <div className="assentos-grid">
-                        {assentosDisponiveis.map(assento => (
-                          <button
-                            key={assento.id}
-                            className={`assento-btn ${assentoSelecionado === assento.id ? 'selecionado' : ''} ${assento.id === ingressoSelecionado.assento ? 'original' : ''}`}
-                            onClick={() => setAssentoSelecionado(assento.id)}
-                          >
-                            {assento.id}
-                            {assento.id === ingressoSelecionado.assento && (
-                              <span className="badge-original">Original</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="modal-actions">
-                  <button
-                    className="btn-cancelar"
-                    onClick={fecharModal}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    className="btn-confirmar"
-                    onClick={confirmarRemarcacao}
-                    disabled={!assentoSelecionado || carregandoAssentos}
-                  >
-                    <RefreshCw size={16} />
-                    Confirmar Remarcação
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
+      {/* Conteúdo da Etapa Atual */}
+      <div className="etapa-content">
+        {etapa === 1 && renderEtapa1()}
+        {etapa === 2 && renderEtapa2()}
+        {etapa === 3 && renderEtapa3()}
+        {etapa === 4 && renderEtapa4()}
+      </div>
     </div>
   );
 };
