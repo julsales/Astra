@@ -1,5 +1,5 @@
 -- Cria tabela de validação de ingresso
-CREATE TABLE IF NOT EXISTS VALIDACAO_INGRESSO (
+CREATE TABLE IF NOT EXISTS validacao_ingresso (
     id                      SERIAL PRIMARY KEY,
     ingresso_id             INTEGER NOT NULL REFERENCES ingresso(id),
     funcionario_id          INTEGER NOT NULL REFERENCES funcionario(id),
@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS VALIDACAO_INGRESSO (
 );
 
 -- Índices para melhorar consultas
-CREATE INDEX idx_validacao_ingresso_id ON VALIDACAO_INGRESSO(ingresso_id);
-CREATE INDEX idx_validacao_funcionario_id ON VALIDACAO_INGRESSO(funcionario_id);
-CREATE INDEX idx_validacao_data_hora ON VALIDACAO_INGRESSO(data_hora_validacao DESC);
+CREATE INDEX idx_validacao_ingresso_id ON validacao_ingresso(ingresso_id);
+CREATE INDEX idx_validacao_funcionario_id ON validacao_ingresso(funcionario_id);
+CREATE INDEX idx_validacao_data_hora ON validacao_ingresso(data_hora_validacao DESC);

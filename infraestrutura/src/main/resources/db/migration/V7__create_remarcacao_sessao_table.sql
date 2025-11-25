@@ -1,5 +1,5 @@
 -- Cria tabela de remarcação de sessão
-CREATE TABLE IF NOT EXISTS REMARCACAO_SESSAO (
+CREATE TABLE IF NOT EXISTS remarcacao_sessao (
     id                      SERIAL PRIMARY KEY,
     ingresso_id             INTEGER NOT NULL REFERENCES ingresso(id),
     sessao_original_id      INTEGER NOT NULL REFERENCES sessao(id),
@@ -12,6 +12,6 @@ CREATE TABLE IF NOT EXISTS REMARCACAO_SESSAO (
 );
 
 -- Índices para melhorar consultas
-CREATE INDEX idx_remarcacao_ingresso_id ON REMARCACAO_SESSAO(ingresso_id);
-CREATE INDEX idx_remarcacao_funcionario_id ON REMARCACAO_SESSAO(funcionario_id);
-CREATE INDEX idx_remarcacao_data_hora ON REMARCACAO_SESSAO(data_hora_remarcacao DESC);
+CREATE INDEX idx_remarcacao_ingresso_id ON remarcacao_sessao(ingresso_id);
+CREATE INDEX idx_remarcacao_funcionario_id ON remarcacao_sessao(funcionario_id);
+CREATE INDEX idx_remarcacao_data_hora ON remarcacao_sessao(data_hora_remarcacao DESC);
