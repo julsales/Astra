@@ -1,4 +1,0 @@
-data,sessao_id,filme,sala,horario,capacidade,ingressos_confirmados,ingressos_cancelados,taxa_ocupacao_percentual,bomboniere_itens,bomboniere_receita,canal_top_1,observacoes
-2025-01-13,1,Neblina Quântica,IMAX Azul,18:30,180,34,1,73.0,47,1361.50,APP,"Picos de compra entre 10h-12h, reforçar push" 
-2025-01-13,2,Horizontes de Vênus,Sala Atmos,20:00,140,28,0,70.0,44,600.00,BALCAO,"Fila pequena apesar de vendas presenciais" 
-2025-01-13,3,Circuito Fantasma,Sala Vip,22:15,90,22,0,68.0,18,486.00,APP,"Sessão tardia com boa adesão no app" 

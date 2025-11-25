@@ -5,6 +5,7 @@ import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.compra.CancelarCompraUseCase;
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
+import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
@@ -19,8 +20,8 @@ import org.springframework.context.annotation.Configuration;
 public class UseCaseConfiguration {
 
     @Bean
-    public AutenticarUsuarioUseCase autenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio) {
-        return new AutenticarUsuarioUseCase(usuarioRepositorio);
+    public AutenticarUsuarioUseCase autenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio, FuncionarioRepositorio funcionarioRepositorio) {
+        return new AutenticarUsuarioUseCase(usuarioRepositorio, funcionarioRepositorio);
     }
 
     @Bean

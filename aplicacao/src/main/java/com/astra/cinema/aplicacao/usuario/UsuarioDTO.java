@@ -5,12 +5,18 @@ public class UsuarioDTO {
     private String email;
     private String nome;
     private String tipo;
+    private String cargo;
 
     public UsuarioDTO(Integer id, String email, String nome, String tipo) {
+        this(id, email, nome, tipo, null);
+    }
+
+    public UsuarioDTO(Integer id, String email, String nome, String tipo, String cargo) {
         this.id = id;
         this.email = email;
         this.nome = nome;
         this.tipo = tipo;
+        this.cargo = cargo;
     }
 
     // Getters e Setters
@@ -44,5 +50,13 @@ public class UsuarioDTO {
 
     public void setTipo(String tipo) {
         this.tipo = tipo;
+    }
+
+    public String getCargo() {
+        return cargo;
+    }
+
+    public void setCargo(String cargo) {
+        this.cargo = cargo;
     }
 }

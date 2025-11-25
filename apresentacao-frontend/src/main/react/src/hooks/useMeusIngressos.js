@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { gerarQrCodeDataUrl } from '../utils/qr';
 
 const formatarSessao = (sessao = {}) => ({
   id: sessao.id ?? null,
@@ -81,33 +82,44 @@ export const useMeusIngressos = (usuario) => {
         if (!res.ok) return;
         const dados = await res.json();
         // Mapear para o formato interno usado pelo frontend
-        const compras = dados.map((i) => {
-          // Converter string "A1, A2, A3" em array ["A1", "A2", "A3"]
-          let assentos = [];
-          if (i.assento) {
-            if (typeof i.assento === 'string') {
-              assentos = i.assento.split(',').map(a => a.trim()).filter(Boolean);
-            } else if (Array.isArray(i.assento)) {
-              assentos = i.assento;
+        const compras = await (async () => {
+          const promises = dados.map((i) => {
+            // Converter string "A1, A2, A3" em array ["A1", "A2", "A3"]
+            let assentos = [];
+            if (i.assento) {
+              if (typeof i.assento === 'string') {
+                assentos = i.assento.split(',').map(a => a.trim()).filter(Boolean);
+              } else if (Array.isArray(i.assento)) {
+                assentos = i.assento;
+              }
+            } else if (i.assentoIndividual) {
+              assentos = [i.assentoIndividual];
             }
-          } else if (i.assentoIndividual) {
-            assentos = [i.assentoIndividual];
-          }
 
-          return {
-            id: i.id || `ing-${i.qrCode}`,
-            codigo: i.qrCode || '',
-            dataCompra: new Date().toISOString(),
-            filme: { titulo: i.filme?.titulo || '' },
-            sessao: { id: i.sessaoId, horario: i.horario || new Date().toISOString(), sala: i.sala || 'Sala 1' },
-            assentos: assentos,
-            produtos: [],
-            total: i.total ?? 0,
-            metodoPagamento: 'NAO_INFORMADO',
-            status: i.status === 'UTILIZADO' ? 'VALIDADO' : (i.status ?? 'PENDENTE'),
-            qrCode: i.qrCode || '',
-          };
-        });
+            const qrPromise = i.qrCode
+              ? gerarQrCodeDataUrl(i.qrCode).catch((err) => {
+                  console.error('Erro ao gerar QR data URL durante sincronização:', err);
+                  return '';
+                })
+              : Promise.resolve('');
+
+            return qrPromise.then((qrDataUrl) => ({
+              id: i.id || `ing-${i.qrCode}`,
+              codigo: i.qrCode || '',
+              dataCompra: new Date().toISOString(),
+              filme: { titulo: (i.filme && i.filme.titulo) || '' },
+              sessao: { id: i.sessaoId, horario: i.horario || new Date().toISOString(), sala: i.sala || 'Sala 1' },
+              assentos: assentos,
+              produtos: [],
+              total: i.total ?? 0,
+              metodoPagamento: 'NAO_INFORMADO',
+              status: i.status === 'UTILIZADO' ? 'VALIDADO' : (i.status ?? 'PENDENTE'),
+              qrCode: qrDataUrl,
+            }));
+          });
+
+          return Promise.all(promises);
+        })();
 
         persistir((listaAtual) => {
           // Substitui ingressos que tenham mesmo qrCode/id

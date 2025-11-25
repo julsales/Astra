@@ -25,6 +25,11 @@ public interface FuncionarioRepositorio {
     Optional<Funcionario> buscarPorId(FuncionarioId funcionarioId);
 
     /**
+     * Busca um funcionário por nome (case-insensitive).
+     */
+    Optional<Funcionario> buscarPorNome(String nome);
+
+    /**
      * Remove um funcionário existente.
      */
     void remover(FuncionarioId funcionarioId);

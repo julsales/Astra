@@ -45,6 +45,15 @@ public class FuncionarioRepositorioJpa implements FuncionarioRepositorio {
     }
 
     @Override
+    public Optional<Funcionario> buscarPorNome(String nome) {
+        if (nome == null) {
+            return Optional.empty();
+        }
+        return repository.findByNomeIgnoreCase(nome)
+                .map(mapeador::mapearParaFuncionario);
+    }
+
+    @Override
     public void remover(FuncionarioId funcionarioId) {
         if (funcionarioId == null) {
             return;

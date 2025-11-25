@@ -2,6 +2,7 @@ package com.astra.cinema.infraestrutura.persistencia.jpa;
 
 import com.astra.cinema.dominio.usuario.Cargo;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +11,5 @@ public interface FuncionarioJpaRepository extends JpaRepository<FuncionarioJpa, 
     boolean existsByNomeIgnoreCaseAndCargo(String nome, Cargo cargo);
     boolean existsByNomeIgnoreCaseAndCargoAndIdNot(String nome, Cargo cargo, Integer id);
     List<FuncionarioJpa> findByCargo(Cargo cargo);
+    Optional<FuncionarioJpa> findByNomeIgnoreCase(String nome);
 }
