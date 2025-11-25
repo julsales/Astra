@@ -7,4 +7,5 @@ public interface ProgramacaoRepositorio {
     void salvar(Programacao programacao);
     Programacao obterPorId(ProgramacaoId programacaoId);
     List<Programacao> listarProgramacoes();
+    void remover(ProgramacaoId programacaoId);
 }

@@ -25,16 +25,21 @@ public class CriarProgramacaoFuncionalidade extends CinemaFuncionalidade {
         var filmeId = new FilmeId(1);
     var filme = new Filme(filmeId, "Interstellar", "Sinopse", "12", 169, IMAGEM_PADRAO, StatusFilme.EM_CARTAZ);
         filmeService.salvar(filme);
-        
+
         var statusSessao = StatusSessao.valueOf(status);
-        
-        // Cria três sessões
+
+        // Cria três sessões em salas diferentes
+        Calendar cal = Calendar.getInstance();
         for (int i = 1; i <= 3; i++) {
             var sessaoId = new SessaoId(i);
             Map<AssentoId, Boolean> assentos = new HashMap<>();
             assentos.put(new AssentoId("A" + i), true);
-            
-            var sessao = new Sessao(sessaoId, filmeId, new Date(), statusSessao, assentos);
+
+            // Horários diferentes para evitar conflitos
+            cal.add(Calendar.HOUR, 3);
+            Date horario = cal.getTime();
+
+            var sessao = new Sessao(sessaoId, filmeId, horario, statusSessao, assentos, "Sala " + i, 50);
             sessaoService.salvar(sessao);
             sessoes.add(sessaoId);
         }

@@ -1,9 +1,10 @@
 -- Cria tabela de programação
 CREATE TABLE IF NOT EXISTS programacao (
     id              SERIAL PRIMARY KEY,
-    filme_id        INTEGER NOT NULL REFERENCES filme(id),
-    data_inicio     TIMESTAMP WITH TIME ZONE NOT NULL,
-    data_fim        TIMESTAMP WITH TIME ZONE NOT NULL
+    periodo_inicio  DATE NOT NULL,
+    periodo_fim     DATE NOT NULL,
+    criado_em       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Cria tabela de associação entre programação e sessões
@@ -14,5 +15,5 @@ CREATE TABLE IF NOT EXISTS programacao_sessao (
 );
 
 -- Índices para melhorar performance
-CREATE INDEX idx_programacao_filme_id ON programacao(filme_id);
-CREATE INDEX idx_programacao_data ON programacao(data_inicio, data_fim);
+CREATE INDEX idx_programacao_periodo ON programacao(periodo_inicio, periodo_fim);
+CREATE INDEX idx_programacao_sessao_sessao_id ON programacao_sessao(sessao_id);

@@ -7,11 +7,15 @@ const Programacao = ({ usuario }) => {
   const [sessoes, setSessoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState('TODAS');
+  const [buscaTexto, setBuscaTexto] = useState('');
   const [formData, setFormData] = useState({
     periodoInicio: '',
     periodoFim: '',
     sessaoIds: []
   });
+  const [erro, setErro] = useState(null);
 
   const cargoUsuario = (
     usuario?.cargo ||
@@ -58,12 +62,15 @@ const Programacao = ({ usuario }) => {
       periodoFim: proximaSemana.toISOString().split('T')[0],
       sessaoIds: []
     });
+    setErro(null);
     setShowModal(true);
   };
 
   const fecharModal = () => {
+    if (submitting) return; // Não fecha se estiver salvando
     setShowModal(false);
     setFormData({ periodoInicio: '', periodoFim: '', sessaoIds: [] });
+    setErro(null);
   };
 
   const toggleSessao = (sessaoId) => {
@@ -77,13 +84,31 @@ const Programacao = ({ usuario }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErro(null);
 
+    // Validações do lado do cliente
     if (formData.sessaoIds.length === 0) {
-      alert('Selecione pelo menos uma sessão');
+      setErro('Selecione pelo menos uma sessão para a programação');
+      return;
+    }
+
+    const inicio = new Date(formData.periodoInicio);
+    const fim = new Date(formData.periodoFim);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    if (inicio > fim) {
+      setErro('A data de início deve ser anterior à data de fim');
+      return;
+    }
+
+    if (fim < hoje) {
+      setErro('Não é possível criar programação para períodos passados');
       return;
     }
 
     try {
+      setSubmitting(true);
       const payload = {
         periodoInicio: formData.periodoInicio,
         periodoFim: formData.periodoFim,
@@ -101,16 +126,18 @@ const Programacao = ({ usuario }) => {
       });
 
       if (response.ok) {
-        alert('Programação criada com sucesso!');
+        alert('✅ Programação criada com sucesso!');
         fecharModal();
         carregarDados();
       } else {
         const error = await response.json();
-        alert(error.mensagem || 'Erro ao criar programação');
+        setErro(error.mensagem || 'Erro ao criar programação');
       }
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao criar programação');
+      setErro('Erro de conexão. Tente novamente.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -123,6 +150,69 @@ const Programacao = ({ usuario }) => {
     fim.setHours(23, 59, 59);
     return horario >= inicio && horario <= fim;
   });
+
+  // Filtra programações com base na busca e filtros
+  const programacoesFiltradas = programacoes.filter(prog => {
+    // Filtro de busca por texto
+    if (buscaTexto) {
+      const termo = buscaTexto.toLowerCase();
+      const contemTexto =
+        prog.id?.toString().includes(termo) ||
+        prog.sessoes?.some(s =>
+          s.filmeTitulo?.toLowerCase().includes(termo) ||
+          s.sala?.toLowerCase().includes(termo)
+        );
+      if (!contemTexto) return false;
+    }
+
+    // Filtro por status (ativa, futura, passada)
+    if (filtroStatus !== 'TODAS') {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const inicio = new Date(prog.periodoInicio);
+      const fim = new Date(prog.periodoFim);
+
+      if (filtroStatus === 'ATIVA' && (inicio > hoje || fim < hoje)) return false;
+      if (filtroStatus === 'FUTURA' && inicio <= hoje) return false;
+      if (filtroStatus === 'PASSADA' && fim >= hoje) return false;
+    }
+
+    return true;
+  });
+
+  const obterStatusProgramacao = (prog) => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const inicio = new Date(prog.periodoInicio);
+    const fim = new Date(prog.periodoFim);
+
+    if (fim < hoje) return { texto: 'Finalizada', classe: 'inativa' };
+    if (inicio > hoje) return { texto: 'Futura', classe: 'pendente' };
+    return { texto: 'Em Exibição', classe: 'ativa' };
+  };
+
+  const removerProgramacao = async (id) => {
+    if (!window.confirm('Tem certeza que deseja remover esta programação? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/programacoes/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('✅ Programação removida com sucesso!');
+        carregarDados();
+      } else {
+        const error = await response.json();
+        alert('❌ ' + (error.mensagem || 'Erro ao remover programação'));
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('❌ Erro de conexão. Tente novamente.');
+    }
+  };
 
   if (loading) {
     return (
@@ -162,12 +252,74 @@ const Programacao = ({ usuario }) => {
           </div>
           <div className="stat-value">{sessoes.length}</div>
         </div>
+        <div className="stat-card">
+          <div className="stat-header">
+            <span className="stat-label">Em Exibição</span>
+            <div className="stat-icon-circle blue"></div>
+          </div>
+          <div className="stat-value">
+            {programacoes.filter(p => {
+              const hoje = new Date();
+              hoje.setHours(0, 0, 0, 0);
+              const inicio = new Date(p.periodoInicio);
+              const fim = new Date(p.periodoFim);
+              return inicio <= hoje && fim >= hoje;
+            }).length}
+          </div>
+        </div>
       </div>
 
       <div className="section-container">
         <h2 className="section-title">Programações Cadastradas</h2>
 
-        {programacoes.length === 0 ? (
+        {/* Filtros e Busca */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <div style={{ position: 'relative' }}>
+              <SearchIcon size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+              <input
+                type="text"
+                placeholder="Buscar por ID, filme ou sala..."
+                value={buscaTexto}
+                onChange={(e) => setBuscaTexto(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px 10px 40px',
+                  background: 'rgba(30,20,60,0.4)',
+                  border: '1px solid rgba(139,92,246,0.3)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '14px'
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {['TODAS', 'ATIVA', 'FUTURA', 'PASSADA'].map(status => (
+              <button
+                key={status}
+                onClick={() => setFiltroStatus(status)}
+                className={filtroStatus === status ? 'btn-primary' : 'btn-secondary'}
+                style={{ fontSize: '13px', padding: '8px 16px' }}
+              >
+                {status === 'TODAS' ? 'Todas' : status === 'ATIVA' ? 'Em Exibição' : status === 'FUTURA' ? 'Futuras' : 'Finalizadas'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {programacoesFiltradas.length === 0 && programacoes.length > 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '60px',
+            background: 'rgba(30,20,60,0.4)',
+            borderRadius: '16px',
+            border: '1px dashed rgba(139,92,246,0.3)'
+          }}>
+            <h3 style={{ color: 'white', marginBottom: '10px' }}>Nenhuma programação encontrada</h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)' }}>Tente ajustar os filtros ou termo de busca</p>
+          </div>
+        ) : programacoes.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '60px',
@@ -184,40 +336,63 @@ const Programacao = ({ usuario }) => {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>Status</th>
                   <th>Período</th>
                   <th>Sessões</th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {programacoes.map((prog) => (
-                  <tr key={prog.id}>
-                    <td>#{prog.id}</td>
-                    <td>
-                      <strong style={{ color: 'white' }}>
-                        {formatarData(prog.periodoInicio)} a {formatarData(prog.periodoFim)}
-                      </strong>
-                    </td>
-                    <td>
-                      <div>
-                        <strong>{prog.quantidadeSessoes || prog.sessoes?.length || 0}</strong> sessões
-                        {prog.sessoes && prog.sessoes.length > 0 && (
-                          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-                            {prog.sessoes.slice(0, 3).map(s => s.filmeTitulo || `Sessão #${s.id}`).join(', ')}
-                            {prog.sessoes.length > 3 && ` +${prog.sessoes.length - 3} mais`}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="table-actions">
-                        <button className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          <ViewIcon size={14} /> Detalhes
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {programacoesFiltradas.map((prog) => {
+                  const status = obterStatusProgramacao(prog);
+                  return (
+                    <tr key={prog.id}>
+                      <td>#{prog.id}</td>
+                      <td>
+                        <span className={`badge ${status.classe}`}>
+                          {status.texto}
+                        </span>
+                      </td>
+                      <td>
+                        <strong style={{ color: 'white' }}>
+                          {formatarData(prog.periodoInicio)} a {formatarData(prog.periodoFim)}
+                        </strong>
+                      </td>
+                      <td>
+                        <div>
+                          <strong>{prog.quantidadeSessoes || prog.sessoes?.length || 0}</strong> sessões
+                          {prog.sessoes && prog.sessoes.length > 0 && (
+                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
+                              {prog.sessoes.slice(0, 3).map(s => s.filmeTitulo || `Sessão #${s.id}`).join(', ')}
+                              {prog.sessoes.length > 3 && ` +${prog.sessoes.length - 3} mais`}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <ViewIcon size={14} /> Detalhes
+                          </button>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => removerProgramacao(prog.id)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#ef4444'
+                            }}
+                          >
+                            <DeleteIcon size={14} /> Remover
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -234,14 +409,32 @@ const Programacao = ({ usuario }) => {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {erro && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '8px',
+                  color: '#ef4444',
+                  marginBottom: '20px',
+                  fontSize: '14px'
+                }}>
+                  ⚠️ {erro}
+                </div>
+              )}
+
               <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
                   <label>Data Início *</label>
                   <input
                     type="date"
                     value={formData.periodoInicio}
-                    onChange={(e) => setFormData({ ...formData, periodoInicio: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, periodoInicio: e.target.value });
+                      setErro(null);
+                    }}
                     required
+                    disabled={submitting}
                   />
                 </div>
                 <div className="form-group">
@@ -249,8 +442,12 @@ const Programacao = ({ usuario }) => {
                   <input
                     type="date"
                     value={formData.periodoFim}
-                    onChange={(e) => setFormData({ ...formData, periodoFim: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, periodoFim: e.target.value });
+                      setErro(null);
+                    }}
                     required
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -307,11 +504,25 @@ const Programacao = ({ usuario }) => {
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={fecharModal}>
+                <button type="button" className="btn-secondary" onClick={fecharModal} disabled={submitting}>
                   <CancelIcon size={16} /> Cancelar
                 </button>
-                <button type="submit" className="btn-primary" disabled={formData.sessaoIds.length === 0}>
-                  <SaveIcon size={16} /> Criar Programação
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={formData.sessaoIds.length === 0 || submitting}
+                  style={{ position: 'relative' }}
+                >
+                  {submitting ? (
+                    <>
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <SaveIcon size={16} /> Criar Programação
+                    </>
+                  )}
                 </button>
               </div>
             </form>

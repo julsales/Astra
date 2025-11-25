@@ -340,4 +340,10 @@ public class RepositorioMemoria implements CompraRepositorio, FilmeRepositorio,
                 .map(Programacao::clone)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void remover(ProgramacaoId programacaoId) {
+        if (programacaoId == null) throw new IllegalArgumentException("O id da programação não pode ser nulo");
+        programacoes.remove(programacaoId);
+    }
 }

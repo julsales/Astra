@@ -105,13 +105,12 @@ public class ProgramacaoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> remover(@PathVariable Integer id) {
         try {
-            Programacao programacao = programacaoRepositorio.obterPorId(new ProgramacaoId(id));
-            if (programacao == null) {
-                return ResponseEntity.notFound().build();
-            }
-            // Para remover, precisaríamos adicionar método no repositório
-            // Por ora, retornamos sucesso simulado
+            ProgramacaoId programacaoId = new ProgramacaoId(id);
+            programacaoService.removerProgramacao(programacaoId);
             return ResponseEntity.ok(Map.of("mensagem", "Programação removida com sucesso"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("mensagem", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(500)
                     .body(Map.of("mensagem", "Erro ao remover programação: " + e.getMessage()));

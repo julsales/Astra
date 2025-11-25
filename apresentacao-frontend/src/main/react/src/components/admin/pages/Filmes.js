@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
 import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
 import { StatusBadge } from '../../shared/StatusBadge';

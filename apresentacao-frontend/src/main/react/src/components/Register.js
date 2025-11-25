@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import './Register.css';
 
 const Register = ({ onBackToLogin }) => {

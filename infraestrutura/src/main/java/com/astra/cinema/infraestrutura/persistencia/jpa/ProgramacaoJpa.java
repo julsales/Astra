@@ -125,6 +125,14 @@ class ProgramacaoRepositorioJpaImpl implements ProgramacaoRepositorio {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void remover(ProgramacaoId programacaoId) {
+        if (programacaoId == null) {
+            throw new IllegalArgumentException("O id da programação não pode ser nulo");
+        }
+        repository.deleteById(programacaoId.getId());
+    }
+
     private Programacao mapearParaDominio(ProgramacaoJpa jpa) {
         List<SessaoId> sessoes = jpa.getSessaoIds().stream()
                 .map(SessaoId::new)

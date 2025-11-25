@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import Login from './components/Login';
 import AdminPanel from './components/admin/AdminPanel';
