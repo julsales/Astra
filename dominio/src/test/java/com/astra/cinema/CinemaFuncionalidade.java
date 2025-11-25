@@ -24,13 +24,13 @@ public class CinemaFuncionalidade {
     public CinemaFuncionalidade() {
         repositorio = new RepositorioMemoria();
 
-        compraService = new CompraService(repositorio, repositorio, repositorio);
-        sessaoService = new SessaoService(repositorio, repositorio);
-        filmeService = new FilmeService(repositorio, repositorio);
+        compraService = new CompraService(repositorio, repositorio.asSessaoRepositorio(), repositorio);
+        sessaoService = new SessaoService(repositorio.asSessaoRepositorio(), repositorio);
+        filmeService = new FilmeService(repositorio, repositorio.asSessaoRepositorio());
         pagamentoService = new PagamentoService(repositorio);
         vendaService = new VendaService(repositorio, repositorio, repositorio);
         produtoService = new ProdutoService(repositorio);
         clienteService = new ClienteService(repositorio);
-        programacaoService = new ProgramacaoService(repositorio, repositorio);
+        programacaoService = new ProgramacaoService(repositorio, repositorio.asSessaoRepositorio());
     }
 }

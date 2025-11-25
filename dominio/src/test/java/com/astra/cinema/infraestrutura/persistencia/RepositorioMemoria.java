@@ -12,7 +12,7 @@ import com.astra.cinema.dominio.comum.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio, FilmeRepositorio,
+public class RepositorioMemoria implements CompraRepositorio, FilmeRepositorio,
         PagamentoRepositorio, VendaRepositorio, ProdutoRepositorio, ClienteRepositorio, ProgramacaoRepositorio {
 
     // Mapas para armazenamento em memória
@@ -25,6 +25,35 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     private final Map<ProdutoId, Produto> produtos = new HashMap<>();
     private final Map<ClienteId, Cliente> clientes = new HashMap<>();
     private final Map<ProgramacaoId, Programacao> programacoes = new HashMap<>();
+
+    // Adapter para SessaoRepositorio
+    private final SessaoRepositorio sessaoRepositorio = new SessaoRepositorioAdapter();
+
+    public SessaoRepositorio asSessaoRepositorio() {
+        return sessaoRepositorio;
+    }
+
+    private class SessaoRepositorioAdapter implements SessaoRepositorio {
+        @Override
+        public Sessao salvar(Sessao sessao) {
+            return RepositorioMemoria.this.salvar(sessao);
+        }
+
+        @Override
+        public Sessao obterPorId(SessaoId sessaoId) {
+            return RepositorioMemoria.this.obterPorId(sessaoId);
+        }
+
+        @Override
+        public List<Sessao> buscarPorFilme(FilmeId filmeId) {
+            return RepositorioMemoria.this.buscarPorFilme(filmeId);
+        }
+
+        @Override
+        public List<Sessao> listarTodas() {
+            return RepositorioMemoria.this.listarTodasSessoes();
+        }
+    }
 
     // CompraRepositorio
     @Override
@@ -95,21 +124,19 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
     @Override
     public List<Ingresso> buscarIngressosAtivos() {
     return ingressos.values().stream()
-        .filter(i -> i.getStatus() == StatusIngresso.VALIDADO)
+        .filter(i -> i.getStatus() == StatusIngresso.ATIVO)
         .map(Ingresso::clone)
         .collect(Collectors.toList());
     }
 
-    // Nota: listarTodas() para Compra conflita com SessaoRepositorio.listarTodas()
-    // Este método é usado apenas quando acessado via CompraRepositorio
-    public List<Compra> listarTodasCompras() {
+    @Override
+    public List<Compra> listarTodas() {
         return compras.values().stream()
                 .map(Compra::clone)
                 .collect(Collectors.toList());
     }
 
     // SessaoRepositorio
-    @Override
     public Sessao salvar(Sessao sessao) {
         if (sessao == null) throw new IllegalArgumentException("A sessão não pode ser nula");
 
@@ -133,7 +160,6 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
         return sessaoSalvar;
     }
 
-    @Override
     public Sessao obterPorId(SessaoId sessaoId) {
         if (sessaoId == null) throw new IllegalArgumentException("O id não pode ser nulo");
         return Optional.ofNullable(sessoes.get(sessaoId))
@@ -141,7 +167,6 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 .orElseThrow(() -> new IllegalArgumentException("Sessão não encontrada"));
     }
 
-    @Override
     public List<Sessao> buscarPorFilme(FilmeId filmeId) {
         return sessoes.values().stream()
                 .filter(s -> s.getFilmeId().equals(filmeId))
@@ -149,8 +174,7 @@ public class RepositorioMemoria implements CompraRepositorio, SessaoRepositorio,
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<Sessao> listarTodas() {
+    public List<Sessao> listarTodasSessoes() {
         return sessoes.values().stream()
                 .map(Sessao::clone)
                 .collect(Collectors.toList());
