@@ -8,6 +8,7 @@ import com.astra.cinema.dominio.comum.PagamentoId;
 import com.astra.cinema.dominio.comum.VendaId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class VendaRepositorioJpa implements VendaRepositorio {
     private CinemaMapeador mapeador;
 
     @Override
+    @Transactional
     public void salvar(Venda venda) {
         if (venda == null) {
             throw new IllegalArgumentException("A venda não pode ser nula");

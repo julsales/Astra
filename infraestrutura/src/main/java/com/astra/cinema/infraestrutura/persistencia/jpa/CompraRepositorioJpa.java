@@ -188,6 +188,7 @@ public class CompraRepositorioJpa implements CompraRepositorio {
     }
 
     @Override
+    @Transactional
     public void atualizarIngresso(Ingresso ingresso) {
         if (ingresso == null) {
             throw new IllegalArgumentException("O ingresso não pode ser nulo");
