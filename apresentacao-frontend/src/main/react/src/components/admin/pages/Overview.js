@@ -87,6 +87,20 @@ const Overview = ({ usuario }) => {
       const totalFuncionarios = Array.isArray(funcionarios) ? funcionarios.length : 0;
       const totalUsuarios = totalClientes + totalFuncionarios;
 
+      // Buscar estatísticas de vendas do backend
+      let totalVendas = 0;
+      let vendasHoje = 0;
+      try {
+        const resEstatisticas = await fetch('/api/funcionario/estatisticas');
+        if (resEstatisticas.ok) {
+          const stats = await resEstatisticas.json();
+          totalVendas = stats.totalVendas || 0;
+          vendasHoje = stats.vendasHoje || 0;
+        }
+      } catch (e) {
+        console.warn('Endpoint /api/funcionario/estatisticas não disponível');
+      }
+
       // Atualizar métricas
       setMetricas([
         { label: 'Filmes em Cartaz', valor: filmes.length, icone: '' },
@@ -96,6 +110,18 @@ const Overview = ({ usuario }) => {
 
       // Calcular estatísticas REAIS e ÚTEIS
       setEstatisticas({
+        vendasHoje: {
+          valor: vendasHoje,
+          variacao: '-',
+          tipo: 'neutro',
+          descricao: 'vendas hoje'
+        },
+        totalVendas: {
+          valor: totalVendas,
+          variacao: '-',
+          tipo: 'neutro',
+          descricao: 'receita total'
+        },
         filmesAtivos: {
           valor: filmes.length,
           variacao: filmes.filter(f => f.status === 'EM_CARTAZ').length,
@@ -154,22 +180,22 @@ const Overview = ({ usuario }) => {
       <div className="stats-grid-main">
         <div className="stat-card vendas">
           <div className="stat-header">
-            <span className="stat-label">Filmes em Cartaz</span>
+            <span className="stat-label">Vendas Hoje</span>
             <div className="stat-icon-circle purple"></div>
           </div>
-          <div className="stat-value">{estatisticas.filmesAtivos.valor}</div>
+          <div className="stat-value">{estatisticas.vendasHoje.valor}</div>
           <div className="stat-footer neutro">
-            <span>{estatisticas.filmesAtivos.descricao}</span>
+            <span>{estatisticas.vendasHoje.descricao}</span>
           </div>
         </div>
         <div className="stat-card ingressos">
           <div className="stat-header">
-            <span className="stat-label">Sessões Programadas</span>
-            <div className="stat-icon-circle blue"></div>
+            <span className="stat-label">Total Vendas</span>
+            <div className="stat-icon-circle green"></div>
           </div>
-          <div className="stat-value">{estatisticas.sessoesAtivas.valor}</div>
+          <div className="stat-value">R$ {estatisticas.totalVendas.valor.toFixed(2)}</div>
           <div className="stat-footer neutro">
-            <span>{estatisticas.sessoesAtivas.descricao}</span>
+            <span>{estatisticas.totalVendas.descricao}</span>
           </div>
         </div>
         <div className="stat-card ocupacao">
@@ -184,12 +210,12 @@ const Overview = ({ usuario }) => {
         </div>
         <div className="stat-card ticket">
           <div className="stat-header">
-            <span className="stat-label">Valor em Estoque</span>
-            <div className="stat-icon-circle green"></div>
+            <span className="stat-label">Filmes em Cartaz</span>
+            <div className="stat-icon-circle blue"></div>
           </div>
-          <div className="stat-value">R$ {estatisticas.bomboniere.valor.toFixed(2)}</div>
+          <div className="stat-value">{estatisticas.filmesAtivos.valor}</div>
           <div className="stat-footer neutro">
-            <span>{estatisticas.bomboniere.descricao}</span>
+            <span>{estatisticas.filmesAtivos.descricao}</span>
           </div>
         </div>
       </div>

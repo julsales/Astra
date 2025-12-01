@@ -69,8 +69,9 @@ public class VendaRepositorioJpa implements VendaRepositorio {
             vendaJpa.setQuantidade(1);
             vendaJpa.setPagamentoId(pagamentoId);
             vendaJpa.setStatus(status);
+            vendaJpa.setCriadoEm(java.time.LocalDateTime.now());
             VendaJpa salva = vendaJpaRepository.save(vendaJpa);
-            
+
             // Usa o ID da primeira linha salva como referência
             if (i == 0) {
                 primeiroIdSalvo = salva.getId();

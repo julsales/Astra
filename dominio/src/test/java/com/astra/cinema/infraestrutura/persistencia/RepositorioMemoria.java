@@ -130,6 +130,21 @@ public class RepositorioMemoria implements CompraRepositorio, FilmeRepositorio,
     }
 
     @Override
+    public CompraId obterCompraIdPorIngresso(IngressoId ingressoId) {
+        if (ingressoId == null) {
+            return null;
+        }
+
+        // Encontrar a compra que contém este ingresso
+        return compras.values().stream()
+                .filter(compra -> compra.getIngressos().stream()
+                        .anyMatch(i -> i.getIngressoId().equals(ingressoId)))
+                .findFirst()
+                .map(Compra::getCompraId)
+                .orElse(null);
+    }
+
+    @Override
     public List<Compra> listarTodas() {
         return compras.values().stream()
                 .map(Compra::clone)

@@ -113,7 +113,7 @@ export const useMeusIngressos = (usuario) => {
               produtos: [],
               total: i.total ?? 0,
               metodoPagamento: 'NAO_INFORMADO',
-              status: i.status === 'UTILIZADO' ? 'VALIDADO' : (i.status ?? 'PENDENTE'),
+              status: i.status || 'ATIVO',
               qrCode: qrDataUrl,
             }));
           });

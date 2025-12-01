@@ -37,6 +37,9 @@ const FuncionarioPanel = ({ onLogout }) => {
   const [proximaSessao, setProximaSessao] = useState(null);
   const [estatisticasHoje, setEstatisticasHoje] = useState({
     validacoes: 0,
+    totalValidacoes: 0,
+    taxaSucesso: 0,
+    ingressosPendentes: 0,
     vendas: 0,
     totalVendas: 0
   });
@@ -98,7 +101,9 @@ const FuncionarioPanel = ({ onLogout }) => {
           validacoes: stats.validacoesHoje || 0,
           totalValidacoes: stats.totalValidacoes || 0,
           taxaSucesso: stats.taxaSucesso || 0,
-          ingressosPendentes: stats.ingressosPendentes || 0
+          ingressosPendentes: stats.ingressosPendentes || 0,
+          vendas: stats.vendasHoje || 0,
+          totalVendas: stats.totalVendas || 0
         });
       }
     } catch (error) {
@@ -182,9 +187,35 @@ const FuncionarioPanel = ({ onLogout }) => {
     }
   };
 
+  const agruparHistoricoPorCompra = () => {
+    // Agrupar validações por compraId
+    const grupos = {};
+    historico.forEach(item => {
+      const compraId = item.compraId || item.id; // fallback para item.id se compraId não existir
+      if (!grupos[compraId]) {
+        grupos[compraId] = {
+          ...item,
+          assentos: [item.assento]
+        };
+      } else {
+        // Adicionar assento ao grupo se ainda não estiver lá
+        if (!grupos[compraId].assentos.includes(item.assento)) {
+          grupos[compraId].assentos.push(item.assento);
+        }
+        // Manter a data/hora mais recente
+        if (new Date(item.dataHora) > new Date(grupos[compraId].dataHora)) {
+          grupos[compraId].dataHora = item.dataHora;
+        }
+      }
+    });
+
+    return Object.values(grupos);
+  };
+
   const filtrarHistorico = () => {
-    if (filtroHistorico === 'todos') return historico;
-    return historico.filter(item => {
+    const agrupado = agruparHistoricoPorCompra();
+    if (filtroHistorico === 'todos') return agrupado;
+    return agrupado.filter(item => {
       if (filtroHistorico === 'sucesso') return item.sucesso;
       if (filtroHistorico === 'falha') return !item.sucesso;
       return true;
@@ -644,7 +675,7 @@ const FuncionarioPanel = ({ onLogout }) => {
                   <span className="codigo">{item.qrCode}</span>
                 </div>
                 <div className="func-historico-detalhes">
-                  <p><strong>Assento:</strong> {item.assento}</p>
+                  <p><strong>Assento{item.assentos && item.assentos.length > 1 ? 's' : ''}:</strong> {item.assentos ? item.assentos.join(', ') : item.assento}</p>
                   <p><strong>Sessão:</strong> #{item.sessaoId}</p>
                   <p><strong>Data:</strong> {formatarDataHora(item.dataHora)}</p>
                 </div>
@@ -677,6 +708,29 @@ const FuncionarioPanel = ({ onLogout }) => {
         <div className="func-header-text">
           <h2>Bomboniere - PDV</h2>
           <p>Registrar vendas de produtos</p>
+        </div>
+      </div>
+
+      {/* Estatísticas de Vendas */}
+      <div className="func-stats-grid" style={{ marginBottom: '24px', gridTemplateColumns: 'repeat(2, 1fr)' }}>
+        <div className="func-stat-card blue">
+          <div className="func-stat-icon">
+            <ShoppingCart size={32} />
+          </div>
+          <div className="func-stat-info">
+            <h3>{estatisticasHoje.vendas || 0}</h3>
+            <p>Vendas Hoje</p>
+          </div>
+        </div>
+
+        <div className="func-stat-card green">
+          <div className="func-stat-icon">
+            <TrendingUp size={32} />
+          </div>
+          <div className="func-stat-info">
+            <h3>{formatarMoeda(estatisticasHoje.totalVendas || 0)}</h3>
+            <p>Total Vendas</p>
+          </div>
         </div>
       </div>
 

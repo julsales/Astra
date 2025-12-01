@@ -116,11 +116,13 @@ public class ConsultarHistoricoFuncionarioUseCase {
     private ItemHistorico criarItemHistorico(ValidacaoIngresso validacao) {
         // Buscar informações adicionais do ingresso
         Ingresso ingresso = compraRepositorio.buscarIngressoPorId(validacao.getIngressoId());
+        CompraId compraId = compraRepositorio.obterCompraIdPorIngresso(validacao.getIngressoId());
 
         if (ingresso != null) {
             return new ItemHistorico(
                 validacao.getValidacaoId().getValor(),
                 validacao.getIngressoId().getId(),
+                compraId != null ? compraId.getId() : null,
                 ingresso.getQrCode(),
                 ingresso.getAssentoId().getValor(),
                 ingresso.getStatus().toString(),
@@ -135,6 +137,7 @@ public class ConsultarHistoricoFuncionarioUseCase {
         return new ItemHistorico(
             validacao.getValidacaoId().getValor(),
             validacao.getIngressoId().getId(),
+            null,
             "N/A",
             "N/A",
             "N/A",
@@ -151,6 +154,7 @@ public class ConsultarHistoricoFuncionarioUseCase {
     public static class ItemHistorico {
         private final Integer validacaoId;
         private final Integer ingressoId;
+        private final Integer compraId;
         private final String qrCode;
         private final String assento;
         private final String status;
@@ -159,11 +163,12 @@ public class ConsultarHistoricoFuncionarioUseCase {
         private final String mensagem;
         private final java.util.Date dataHora;
 
-        public ItemHistorico(Integer validacaoId, Integer ingressoId, String qrCode,
+        public ItemHistorico(Integer validacaoId, Integer ingressoId, Integer compraId, String qrCode,
                            String assento, String status, Integer sessaoId,
                            boolean sucesso, String mensagem, java.util.Date dataHora) {
             this.validacaoId = validacaoId;
             this.ingressoId = ingressoId;
+            this.compraId = compraId;
             this.qrCode = qrCode;
             this.assento = assento;
             this.status = status;
@@ -175,6 +180,7 @@ public class ConsultarHistoricoFuncionarioUseCase {
 
         public Integer getValidacaoId() { return validacaoId; }
         public Integer getIngressoId() { return ingressoId; }
+        public Integer getCompraId() { return compraId; }
         public String getQrCode() { return qrCode; }
         public String getAssento() { return assento; }
         public String getStatus() { return status; }

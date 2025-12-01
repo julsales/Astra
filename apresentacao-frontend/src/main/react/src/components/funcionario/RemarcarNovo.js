@@ -369,6 +369,9 @@ const RemarcarNovo = () => {
                   <span className="compra-id">Compra #{compra.id}</span>
                   <span className="compra-cliente">{compra.clienteNome || 'Cliente'}</span>
                   <span className="compra-ingressos">{compra.ingressos?.length || 0} ingresso(s)</span>
+                  {compra.ingressos && compra.ingressos.length > 0 && (
+                    <span className="compra-assentos">Assentos: {compra.ingressos.map(i => i.assento).join(', ')}</span>
+                  )}
                 </div>
                 <div className="compra-actions">
                   <button

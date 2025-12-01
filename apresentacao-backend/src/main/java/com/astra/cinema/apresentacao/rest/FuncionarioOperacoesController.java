@@ -8,10 +8,17 @@ import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.sessao.Sessao;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpa;
+import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpaRepository;
+import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpa;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,18 +42,24 @@ public class FuncionarioOperacoesController {
     private final RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase;
     private final CompraRepositorio compraRepositorio;
     private final com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio;
+    private final VendaJpaRepository vendaJpaRepository;
+    private final ProdutoJpaRepository produtoJpaRepository;
 
     public FuncionarioOperacoesController(
             ValidarIngressoFuncionarioUseCase validarIngressoUseCase,
             ConsultarHistoricoFuncionarioUseCase consultarHistoricoUseCase,
             RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase,
             CompraRepositorio compraRepositorio,
-            com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio) {
+            com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio,
+            VendaJpaRepository vendaJpaRepository,
+            ProdutoJpaRepository produtoJpaRepository) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.consultarHistoricoUseCase = consultarHistoricoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
         this.filmeRepositorio = filmeRepositorio;
+        this.vendaJpaRepository = vendaJpaRepository;
+        this.produtoJpaRepository = produtoJpaRepository;
     }
 
     /**
@@ -319,6 +332,7 @@ public class FuncionarioOperacoesController {
         Map<String, Object> map = new HashMap<>();
         map.put("id", item.getValidacaoId());
         map.put("ingressoId", item.getIngressoId());
+        map.put("compraId", item.getCompraId());
         map.put("qrCode", item.getQrCode());
         map.put("assento", item.getAssento());
         map.put("status", item.getStatus());
@@ -518,12 +532,50 @@ public class FuncionarioOperacoesController {
                 .filter(i -> "ATIVO".equals(i.getStatus()) || "PENDENTE".equals(i.getStatus()))
                 .count();
 
+            // Calcular vendas (bomboniere + ingressos)
+            LocalDateTime inicioDia = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+            LocalDateTime fimDia = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
+
+            // Vendas da bomboniere (hoje)
+            List<VendaJpa> vendasBomboniereHoje = vendaJpaRepository.findAll().stream()
+                .filter(v -> v.getCriadoEm() != null &&
+                        v.getCriadoEm().isAfter(inicioDia) &&
+                        v.getCriadoEm().isBefore(fimDia))
+                .toList();
+
+            double totalVendasBomboniereHoje = vendasBomboniereHoje.stream()
+                .mapToDouble(v -> {
+                    ProdutoJpa produto = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
+                    return produto != null ? produto.getPreco() * v.getQuantidade() : 0.0;
+                })
+                .sum();
+
+            // Vendas de ingressos (total de todas as compras confirmadas)
+            List<Compra> todasCompras = compraRepositorio.listarTodas();
+            double totalVendasIngressos = todasCompras.stream()
+                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
+                .filter(c -> c.getPagamentoId() != null)
+                .mapToDouble(c -> {
+                    // Aproximadamente R$ 25 por ingresso (valor médio)
+                    return c.getIngressos() != null ? c.getIngressos().size() * 25.0 : 0.0;
+                })
+                .sum();
+
+            // Total geral de vendas
+            double totalVendas = totalVendasBomboniereHoje + totalVendasIngressos;
+
             Map<String, Object> response = new HashMap<>();
             response.put("totalValidacoes", totalValidacoes);
             response.put("validacoesHoje", validacoesHoje);
             response.put("validacoesSucesso", validacoesSucesso);
             response.put("ingressosPendentes", ingressosPendentes);
             response.put("ingressosAtivos", ingressosAtivos.size());
+
+            // Dados de vendas
+            response.put("vendasHoje", vendasBomboniereHoje.size());
+            response.put("totalVendas", Math.round(totalVendas * 100) / 100.0);
+            response.put("totalVendasBomboniere", Math.round(totalVendasBomboniereHoje * 100) / 100.0);
+            response.put("totalVendasIngressos", Math.round(totalVendasIngressos * 100) / 100.0);
 
             // Taxa de sucesso
             double taxaSucesso = totalValidacoes > 0
