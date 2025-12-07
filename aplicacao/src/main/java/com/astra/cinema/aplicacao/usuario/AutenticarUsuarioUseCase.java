@@ -21,17 +21,17 @@ public class AutenticarUsuarioUseCase {
         this.funcionarioRepositorio = funcionarioRepositorio;
     }
 
-    public Optional<UsuarioDTO> executar(String email, String senha) {
+    public ResultadoAutenticacao executar(String email, String senha) {
         Optional<Usuario> usuarioOpt = usuarioRepositorio.buscarPorEmail(email);
 
         if (usuarioOpt.isEmpty()) {
-            return Optional.empty();
+            return null;
         }
 
         Usuario usuario = usuarioOpt.get();
         
         if (!usuario.verificarSenha(senha)) {
-            return Optional.empty();
+            return null;
         }
 
         String cargo = null;
@@ -47,12 +47,24 @@ public class AutenticarUsuarioUseCase {
             }
         }
 
-        return Optional.of(new UsuarioDTO(
-                usuario.getId().getValor(),
-                usuario.getEmail(),
-                usuario.getNome(),
-                usuario.getTipo().name(),
-                cargo
-        ));
+        return new ResultadoAutenticacao(usuario, cargo);
+    }
+    
+    public static class ResultadoAutenticacao {
+        private final Usuario usuario;
+        private final String cargo;
+        
+        public ResultadoAutenticacao(Usuario usuario, String cargo) {
+            this.usuario = usuario;
+            this.cargo = cargo;
+        }
+        
+        public Usuario getUsuario() {
+            return usuario;
+        }
+        
+        public String getCargo() {
+            return cargo;
+        }
     }
 }

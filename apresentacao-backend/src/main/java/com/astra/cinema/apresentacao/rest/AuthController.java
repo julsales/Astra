@@ -1,11 +1,10 @@
 package com.astra.cinema.apresentacao.rest;
 
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
-import com.astra.cinema.aplicacao.usuario.UsuarioDTO;
+import com.astra.cinema.apresentacao.dto.response.UsuarioAutenticadoDTO;
+import com.astra.cinema.dominio.usuario.Usuario;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,16 +19,25 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Optional<UsuarioDTO> usuario = autenticarUsuarioUseCase.executar(
+        AutenticarUsuarioUseCase.ResultadoAutenticacao resultado = autenticarUsuarioUseCase.executar(
                 request.getEmail(),
                 request.getSenha()
         );
 
-        if (usuario.isEmpty()) {
+        if (resultado == null) {
             return ResponseEntity.status(401).body(new ErrorResponse("Credenciais inválidas"));
         }
 
-        return ResponseEntity.ok(usuario.get());
+        Usuario usuario = resultado.getUsuario();
+        UsuarioAutenticadoDTO dto = UsuarioAutenticadoDTO.builder()
+                .id(usuario.getId().getValor())
+                .email(usuario.getEmail())
+                .nome(usuario.getNome())
+                .tipo(usuario.getTipo().name())
+                .cargo(resultado.getCargo())
+                .build();
+
+        return ResponseEntity.ok(dto);
     }
 
     // Classes auxiliares

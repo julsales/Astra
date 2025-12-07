@@ -84,8 +84,7 @@ public class RemarcarIngressosSessaoUseCase {
             novoHorario,
             sessao.getStatus(),
             mapaAssentos,
-            sessao.getSala(),
-            sessao.getCapacidade()
+            sessao.getSalaId()
         );
 
         sessaoRepositorio.salvar(sessaoAtualizada);

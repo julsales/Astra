@@ -75,7 +75,7 @@ public class CinemaMapeador {
     /**
      * Mapeia Sessao de domínio para SessaoJpa
      */
-    public SessaoJpa mapearParaSessaoJpa(Sessao sessao) {
+    public SessaoJpa mapearParaSessaoJpa(Sessao sessao, SalaJpa sala) {
         if (sessao == null) {
             return null;
         }
@@ -91,8 +91,7 @@ public class CinemaMapeador {
         sessaoJpa.setFilmeId(sessao.getFilmeId().getId());
         sessaoJpa.setHorario(sessao.getHorario());
         sessaoJpa.setStatus(sessao.getStatus());
-    sessaoJpa.setSala(sessao.getSala());
-    sessaoJpa.setCapacidade(sessao.getCapacidade());
+        sessaoJpa.setSala(sala);
         
         // Mapeia o mapa de assentos (AssentoId -> Boolean) para (String -> Boolean)
         Map<String, Boolean> assentosJpa = sessao.getMapaAssentosDisponiveis().entrySet().stream()
@@ -116,6 +115,9 @@ public class CinemaMapeador {
 
         SessaoId sessaoId = new SessaoId(sessaoJpa.getId());
         FilmeId filmeId = new FilmeId(sessaoJpa.getFilmeId());
+        SalaId salaId = sessaoJpa.getSala() != null ? 
+            new SalaId(sessaoJpa.getSala().getId()) : 
+            new SalaId(1); // fallback temporário
         
         // Mapeia o mapa de assentos (String -> Boolean) para (AssentoId -> Boolean)
         Map<AssentoId, Boolean> assentosDominio = sessaoJpa.getAssentosDisponiveis().entrySet().stream()
@@ -130,8 +132,7 @@ public class CinemaMapeador {
             sessaoJpa.getHorario(),
             sessaoJpa.getStatus(),
             assentosDominio,
-            sessaoJpa.getSala() != null ? sessaoJpa.getSala() : "Sala 1",
-            sessaoJpa.getCapacidade() != null ? sessaoJpa.getCapacidade() : assentosDominio.size()
+            salaId
         );
     }
 

@@ -13,13 +13,23 @@ CREATE TABLE IF NOT EXISTS FILME (
     status VARCHAR(20) NOT NULL
 );
 
--- Tabela SESSAO
+-- Tabela SALA (nova - representa as salas físicas do cinema)
+CREATE TABLE IF NOT EXISTS SALA (
+    id INTEGER AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL UNIQUE,
+    capacidade INTEGER NOT NULL,
+    tipo VARCHAR(50) NOT NULL
+);
+
+-- Tabela SESSAO (atualizada - agora referencia SALA)
 CREATE TABLE IF NOT EXISTS SESSAO (
     id INTEGER AUTO_INCREMENT PRIMARY KEY,
     filme_id INTEGER NOT NULL,
     horario TIMESTAMP NOT NULL,
     status VARCHAR(20) NOT NULL,
-    FOREIGN KEY (filme_id) REFERENCES FILME(id)
+    sala_id INTEGER NOT NULL,
+    FOREIGN KEY (filme_id) REFERENCES FILME(id),
+    FOREIGN KEY (sala_id) REFERENCES SALA(id)
 );
 
 -- Tabela SESSAO_ASSENTO (ElementCollection)

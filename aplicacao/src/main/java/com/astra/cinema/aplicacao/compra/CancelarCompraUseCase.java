@@ -2,7 +2,6 @@ package com.astra.cinema.aplicacao.compra;
 
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.*;
-import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 
@@ -16,24 +15,18 @@ import java.util.Map;
  */
 public class CancelarCompraUseCase {
     private final CompraRepositorio compraRepositorio;
-    private final PagamentoRepositorio pagamentoRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
 
     public CancelarCompraUseCase(CompraRepositorio compraRepositorio,
-                                 PagamentoRepositorio pagamentoRepositorio,
                                  SessaoRepositorio sessaoRepositorio) {
         if (compraRepositorio == null) {
             throw new IllegalArgumentException("O repositório de compras não pode ser nulo");
-        }
-        if (pagamentoRepositorio == null) {
-            throw new IllegalArgumentException("O repositório de pagamentos não pode ser nulo");
         }
         if (sessaoRepositorio == null) {
             throw new IllegalArgumentException("O repositório de sessões não pode ser nulo");
         }
 
         this.compraRepositorio = compraRepositorio;
-        this.pagamentoRepositorio = pagamentoRepositorio;
         this.sessaoRepositorio = sessaoRepositorio;
     }
 
@@ -60,8 +53,8 @@ public class CancelarCompraUseCase {
 
         // Estorna o pagamento se existir
         if (compra.getPagamentoId() != null) {
-            var pagamento = pagamentoRepositorio.obterPorId(compra.getPagamentoId());
             // Aqui seria feito o estorno no gateway de pagamento
+            // var pagamento = pagamentoRepositorio.obterPorId(compra.getPagamentoId());
         }
 
         // Salva as sessões com assentos liberados

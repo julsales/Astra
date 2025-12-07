@@ -1,5 +1,6 @@
 package com.astra.cinema.aplicacao.sessao;
 
+import com.astra.cinema.dominio.comum.SalaId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
@@ -24,14 +25,15 @@ public class ModificarSessaoUseCase {
     }
 
     /**
-     * Modifica o horário de uma sessão
+     * Modifica o horário e/ou sala de uma sessão
      * 
      * @param sessaoId ID da sessão
-     * @param novoHorario Novo horário
+     * @param novoHorario Novo horário (ou null para manter)
+     * @param novaSala Nova sala (ou null para manter)
      * @return Sessão modificada
      * @throws IllegalStateException se a sessão já passou ou está cancelada
      */
-    public Sessao executar(SessaoId sessaoId, Date novoHorario, String novaSala, Integer novaCapacidade) {
+    public Sessao executar(SessaoId sessaoId, Date novoHorario, SalaId novaSala) {
         if (sessaoId == null) {
             throw new IllegalArgumentException("O ID da sessão não pode ser nulo");
         }
@@ -52,8 +54,8 @@ public class ModificarSessaoUseCase {
 
         // Determina valores atualizados (aceita nulls --> mantém o valor atual)
         Date horarioAtualizado = (novoHorario != null) ? novoHorario : sessao.getHorario();
-        String salaAtualizada = (novaSala != null && !novaSala.isBlank()) ? novaSala : sessao.getSala();
-        int capacidadeAtualizada = (novaCapacidade != null && novaCapacidade > 0) ? novaCapacidade : sessao.getCapacidade();
+        SalaId salaAtualizada = (novaSala != null) ? novaSala : sessao.getSalaId();
+        // Nota: novaCapacidade é ignorada - a capacidade vem da Sala
 
         Sessao sessaoModificada = new Sessao(
             sessao.getSessaoId(),
@@ -61,8 +63,7 @@ public class ModificarSessaoUseCase {
             horarioAtualizado,
             sessao.getStatus(),
             sessao.getMapaAssentosDisponiveis(),
-            salaAtualizada,
-            capacidadeAtualizada
+            salaAtualizada
         );
 
         // Persiste

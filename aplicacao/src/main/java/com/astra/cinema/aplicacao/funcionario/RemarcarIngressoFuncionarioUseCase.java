@@ -1,5 +1,6 @@
 package com.astra.cinema.aplicacao.funcionario;
 
+import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
@@ -25,6 +26,7 @@ public class RemarcarIngressoFuncionarioUseCase {
     private final CompraRepositorio compraRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
     private final RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio;
+    private final RemarcarIngressoUseCase remarcarIngressoUseCase;
 
     public RemarcarIngressoFuncionarioUseCase(
             CompraRepositorio compraRepositorio,
@@ -34,14 +36,15 @@ public class RemarcarIngressoFuncionarioUseCase {
         this.sessaoRepositorio = exigirNaoNulo(sessaoRepositorio, "O repositório de sessões não pode ser nulo");
         this.remarcacaoSessaoRepositorio = exigirNaoNulo(remarcacaoSessaoRepositorio,
             "O repositório de remarcações não pode ser nulo");
+        this.remarcarIngressoUseCase = new RemarcarIngressoUseCase(compraRepositorio, sessaoRepositorio);
     }
 
     /**
-     * Remarca um ingresso para outra sessão.
+     * Remarca um ingresso para outra sessão (por ID do ingresso).
      *
      * @param ingressoId ID do ingresso a ser remarcado
      * @param novaSessaoId ID da nova sessão
-     * @param novoAssentoId ID do novo assento (pode ser null para manter o mesmo)
+     * @param novoAssentoId ID do novo assento
      * @param funcionarioId ID do funcionário que está fazendo a remarcação
      * @param motivoTecnico Motivo técnico da remarcação
      * @return Resultado da remarcação
@@ -54,28 +57,45 @@ public class RemarcarIngressoFuncionarioUseCase {
             String motivoTecnico) {
 
         exigirNaoNulo(ingressoId, "O ID do ingresso não pode ser nulo");
+
+        // Buscar ingresso e obter QR Code
+        Ingresso ingresso = compraRepositorio.buscarIngressoPorId(ingressoId);
+        exigirNaoNulo(ingresso, "Ingresso não encontrado");
+
+        // Delegar para o método que usa QR Code
+        return executar(ingresso.getQrCode(), novaSessaoId, novoAssentoId, funcionarioId, motivoTecnico);
+    }
+
+    /**
+     * Remarca um ingresso para outra sessão (por QR Code).
+     *
+     * @param qrCode QR Code do ingresso a ser remarcado
+     * @param novaSessaoId ID da nova sessão
+     * @param novoAssentoId ID do novo assento
+     * @param funcionarioId ID do funcionário que está fazendo a remarcação
+     * @param motivoTecnico Motivo técnico da remarcação
+     * @return Resultado da remarcação
+     */
+    public ResultadoRemarcacao executar(
+            String qrCode,
+            SessaoId novaSessaoId,
+            AssentoId novoAssentoId,
+            FuncionarioId funcionarioId,
+            String motivoTecnico) {
+
+        exigirTexto(qrCode, "O QR Code não pode ser nulo ou vazio");
         exigirNaoNulo(novaSessaoId, "O ID da nova sessão não pode ser nulo");
+        exigirNaoNulo(novoAssentoId, "O ID do novo assento não pode ser nulo");
         exigirNaoNulo(funcionarioId, "O ID do funcionário não pode ser nulo");
         exigirTexto(motivoTecnico, "O motivo técnico da remarcação é obrigatório");
 
-        // Buscar ingresso
-        Ingresso ingresso = compraRepositorio.buscarIngressoPorId(ingressoId);
-        if (ingresso == null) {
-            throw new IllegalArgumentException("Ingresso não encontrado");
-        }
+        // Buscar ingresso para validações específicas
+        Ingresso ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
+        exigirNaoNulo(ingresso, "Ingresso não encontrado");
 
-        // Buscar sessão original
-        SessaoId sessaoOriginalId = ingresso.getSessaoId();
-        Sessao sessaoOriginal = sessaoRepositorio.obterPorId(sessaoOriginalId);
-        if (sessaoOriginal == null) {
-            throw new IllegalArgumentException("Sessão original não encontrada");
-        }
-
-        // Buscar nova sessão
-        Sessao novaSessao = sessaoRepositorio.obterPorId(novaSessaoId);
-        if (novaSessao == null) {
-            throw new IllegalArgumentException("Nova sessão não encontrada");
-        }
+        // Buscar sessão original para validação de tempo
+        Sessao sessaoOriginal = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
+        exigirNaoNulo(sessaoOriginal, "Sessão original não encontrada");
 
         // Validar prazo de 2h antes da sessão
         Date agora = new Date();
@@ -87,23 +107,16 @@ public class RemarcarIngressoFuncionarioUseCase {
                 "Não é possível remarcar com menos de 2 horas antes do início da sessão");
         }
 
-        // Determinar assento (usar o mesmo se não especificado)
-        AssentoId assentoFinal = novoAssentoId != null ? novoAssentoId : ingresso.getAssentoId();
-
-        // Verificar disponibilidade do assento na nova sessão
-        if (!novaSessao.assentoDisponivel(assentoFinal)) {
-            throw new IllegalArgumentException("O assento não está disponível na nova sessão");
-        }
-
-        // Liberar assento na sessão original (se necessário, depende da implementação)
-        // E reservar na nova sessão
-        novaSessao.reservarAssento(assentoFinal);
-        sessaoRepositorio.salvar(novaSessao);
-
-        // Remarcar o ingresso
+        // Guardar dados originais para histórico
+        SessaoId sessaoOriginalId = ingresso.getSessaoId();
         AssentoId assentoOriginal = ingresso.getAssentoId();
-        ingresso.remarcarSessao(novaSessaoId, assentoFinal);
-        compraRepositorio.atualizarIngresso(ingresso);
+        IngressoId ingressoId = ingresso.getIngressoId();
+
+        // Executar remarcação base (validações + lógica de assentos)
+        remarcarIngressoUseCase.executar(qrCode, novaSessaoId, novoAssentoId);
+
+        // Buscar nova sessão para retorno
+        Sessao novaSessao = sessaoRepositorio.obterPorId(novaSessaoId);
 
         // Registrar a remarcação no histórico
         RemarcacaoSessao remarcacao = new RemarcacaoSessao(
@@ -112,17 +125,20 @@ public class RemarcarIngressoFuncionarioUseCase {
             sessaoOriginalId,
             novaSessaoId,
             assentoOriginal,
-            assentoFinal,
+            novoAssentoId,
             funcionarioId,
             agora,
             motivoTecnico
         );
         remarcacaoSessaoRepositorio.salvar(remarcacao);
 
+        // Buscar ingresso atualizado
+        Ingresso ingressoAtualizado = compraRepositorio.buscarIngressoPorQrCode(qrCode);
+
         return new ResultadoRemarcacao(
             true,
             "Ingresso remarcado com sucesso",
-            ingresso,
+            ingressoAtualizado,
             sessaoOriginal,
             novaSessao
         );

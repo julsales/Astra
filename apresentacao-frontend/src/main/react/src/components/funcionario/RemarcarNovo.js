@@ -140,7 +140,23 @@ const RemarcarNovo = () => {
       const response = await fetch('/api/funcionario/compras/ativas');
       if (response.ok) {
         const data = await response.json();
-        setComprasEncontradas(data);
+        // Enriquecer compras com informações de sessão e filme
+        const comprasEnriquecidas = await Promise.all(data.map(async (compra) => {
+          if (compra.ingressos && compra.ingressos.length > 0) {
+            const primeiroIngresso = compra.ingressos[0];
+            try {
+              const sessaoRes = await fetch(`/api/sessoes/${primeiroIngresso.sessaoId}`);
+              if (sessaoRes.ok) {
+                const sessaoData = await sessaoRes.json();
+                compra.sessaoInfo = sessaoData;
+              }
+            } catch (e) {
+              console.error('Erro ao carregar sessão:', e);
+            }
+          }
+          return compra;
+        }));
+        setComprasEncontradas(comprasEnriquecidas);
       }
     } catch (error) {
       console.error('Erro ao carregar compras:', error);
@@ -365,12 +381,35 @@ const RemarcarNovo = () => {
                 className="compra-header"
                 onClick={() => setCompraExpandida(compraExpandida === compra.id ? null : compra.id)}
               >
-                <div className="compra-info">
-                  <span className="compra-id">Compra #{compra.id}</span>
-                  <span className="compra-cliente">{compra.clienteNome || 'Cliente'}</span>
-                  <span className="compra-ingressos">{compra.ingressos?.length || 0} ingresso(s)</span>
+                <div className="compra-info-completa">
+                  <div className="compra-linha-principal">
+                    <span className="compra-id">Compra #{compra.id}</span>
+                    <span className="compra-cliente">Cliente #{compra.clienteId || 'Cliente'}</span>
+                    <span className="compra-ingressos">{compra.ingressos?.length || 0} ingresso(s)</span>
+                  </div>
+
+                  {compra.sessaoInfo && (
+                    <div className="compra-sessao-info">
+                      <div className="info-badge filme">
+                        <Film size={14} />
+                        <span>{compra.sessaoInfo.filme?.titulo || compra.sessaoInfo.filmeTitulo || `Filme #${compra.sessaoInfo.filmeId}`}</span>
+                      </div>
+                      <div className="info-badge horario">
+                        <Calendar size={14} />
+                        <span>{formatarDataHora(compra.sessaoInfo.horario)}</span>
+                      </div>
+                      <div className="info-badge sala">
+                        <MapPin size={14} />
+                        <span>{compra.sessaoInfo.sala}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {compra.ingressos && compra.ingressos.length > 0 && (
-                    <span className="compra-assentos">Assentos: {compra.ingressos.map(i => i.assento).join(', ')}</span>
+                    <div className="compra-assentos-linha">
+                      <Users size={14} />
+                      <span>Assentos: {compra.ingressos.map(i => i.assento).join(', ')}</span>
+                    </div>
                   )}
                 </div>
                 <div className="compra-actions">
@@ -388,9 +427,14 @@ const RemarcarNovo = () => {
                 <div className="compra-ingressos-preview">
                   {compra.ingressos.map(ing => (
                     <div key={ing.id} className="ingresso-preview">
-                      <span className="qr">{ing.qrCode}</span>
-                      <span className="assento">Assento: {ing.assento}</span>
-                      <span className="sessao">Sessão #{ing.sessaoId}</span>
+                      <div className="preview-qr">{ing.qrCode}</div>
+                      <div className="preview-detalhes">
+                        <span className="preview-assento">
+                          <MapPin size={12} />
+                          Assento: {ing.assento}
+                        </span>
+                        <span className="preview-tipo">{ing.tipo}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -412,6 +456,32 @@ const RemarcarNovo = () => {
           <p>Compra #{compraSelecionada?.id} - Selecione quais ingressos deseja remarcar</p>
         </div>
       </div>
+
+      {compraSelecionada?.sessaoInfo && (
+        <div className="compra-contexto-box">
+          <h4>Sessão Atual</h4>
+          <div className="contexto-info">
+            <div className="contexto-badge">
+              <Film size={18} />
+              <span>{compraSelecionada.sessaoInfo.filme?.titulo || compraSelecionada.sessaoInfo.filmeTitulo || `Filme #${compraSelecionada.sessaoInfo.filmeId}`}</span>
+            </div>
+            <div className="contexto-badge">
+              <Calendar size={18} />
+              <span>{formatarDataHora(compraSelecionada.sessaoInfo.horario)}</span>
+            </div>
+            <div className="contexto-badge">
+              <MapPin size={18} />
+              <span>{compraSelecionada.sessaoInfo.sala}</span>
+            </div>
+            {compraSelecionada.sessaoInfo.filme?.duracao && (
+              <div className="contexto-badge">
+                <Clock size={18} />
+                <span>{compraSelecionada.sessaoInfo.filme.duracao} min</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="motivo-container">
         <label>Motivo Técnico da Remarcação *</label>
@@ -444,10 +514,6 @@ const RemarcarNovo = () => {
                   <div className="info-row">
                     <MapPin size={14} />
                     <span>Assento: {ingresso.assento}</span>
-                  </div>
-                  <div className="info-row">
-                    <Film size={14} />
-                    <span>Sessão #{ingresso.sessaoId}</span>
                   </div>
                   <div className="info-row">
                     <Clock size={14} />

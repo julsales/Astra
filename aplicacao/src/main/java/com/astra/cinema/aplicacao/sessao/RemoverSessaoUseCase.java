@@ -58,8 +58,7 @@ public class RemoverSessaoUseCase {
             sessao.getHorario(),
             StatusSessao.CANCELADA,
             sessao.getMapaAssentosDisponiveis(),
-            sessao.getSala(),
-            sessao.getCapacidade()
+            sessao.getSalaId()
         );
 
         // Persiste

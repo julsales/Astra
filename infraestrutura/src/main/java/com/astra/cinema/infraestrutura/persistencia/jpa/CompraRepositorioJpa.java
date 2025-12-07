@@ -78,8 +78,8 @@ public class CompraRepositorioJpa implements CompraRepositorio {
             ingressoJpa.setStatus(ingresso.getStatus().name());
             ingressoJpa.setQrCode(qrCode); // QR Code gerado no backend
             
-            // Salva e obtém o ID gerado
-            IngressoJpa ingressoSalvo = ingressoJpaRepository.save(ingressoJpa);
+            // Salva o ingresso
+            ingressoJpaRepository.save(ingressoJpa);
             
             // Atualiza o ingresso do domínio com o ID gerado (se necessário)
             // Isso garante que o ingresso tenha o ID correto após ser salvo

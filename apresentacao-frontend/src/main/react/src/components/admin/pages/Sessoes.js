@@ -25,6 +25,7 @@ const Sessoes = ({ usuario }) => {
 
   const [sessoes, setSessoes] = useState([]);
   const [filmes, setFilmes] = useState([]);
+  const [salas, setSalas] = useState([]);
   const [indicadores, setIndicadores] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -34,8 +35,7 @@ const Sessoes = ({ usuario }) => {
   const [formData, setFormData] = useState({
     filmeId: '',
     horario: '',
-    sala: 'Sala 1',
-    capacidadeSala: 100
+    salaId: ''
   });
   const [remarcacaoForm, setRemarcacaoForm] = useState({
     novoHorario: '',
@@ -67,23 +67,26 @@ const Sessoes = ({ usuario }) => {
         params.append('apenasAtivas', 'true');
       }
 
-      const [resFilmes, resSessoes, resIndicadores] = await Promise.all([
+      const [resFilmes, resSessoes, resIndicadores, resSalas] = await Promise.all([
         fetch('/api/filmes/em-cartaz'),
         fetch(params.toString() ? `/api/sessoes?${params}` : '/api/sessoes'),
-        fetch('/api/sessoes/indicadores')
+        fetch('/api/sessoes/indicadores'),
+        fetch('/api/salas')
       ]);
 
-      if (!resFilmes.ok || !resSessoes.ok || !resIndicadores.ok) {
+      if (!resFilmes.ok || !resSessoes.ok || !resIndicadores.ok || !resSalas.ok) {
         throw new Error('Falha ao buscar dados de sessões');
       }
 
       const dadosFilmes = await resFilmes.json();
       const dadosSessoes = await resSessoes.json();
       const dadosIndicadores = await resIndicadores.json();
+      const dadosSalas = await resSalas.json();
 
       setFilmes(dadosFilmes);
       setSessoes(dadosSessoes);
       setIndicadores(dadosIndicadores);
+      setSalas(dadosSalas);
       setFiltros(filtrosAplicados);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
@@ -111,16 +114,14 @@ const Sessoes = ({ usuario }) => {
       setFormData({
         filmeId: sessao.filmeId,
         horario: dataFormatada,
-        sala: sessao.sala,
-        capacidadeSala: sessao.capacidade
+        salaId: sessao.salaId || ''
       });
     } else {
       setEditando(null);
       setFormData({
         filmeId: '',
         horario: '',
-        sala: 'Sala 1',
-        capacidadeSala: 100
+        salaId: salas.length > 0 ? salas[0].id : ''
       });
     }
     setShowModal(true);
@@ -139,12 +140,12 @@ const Sessoes = ({ usuario }) => {
   const fecharModal = () => {
     setShowModal(false);
     setEditando(null);
-    setFormData({ filmeId: '', horario: '', sala: 'Sala 1', capacidadeSala: 100 });
+    setFormData({ filmeId: '', horario: '', salaId: '' });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Validar se o horário foi preenchido (apenas ao criar)
       if (!editando && !formData.horario) {
@@ -152,25 +153,27 @@ const Sessoes = ({ usuario }) => {
         return;
       }
 
+      // Validar se sala foi selecionada
+      if (!formData.salaId) {
+        alert('Por favor, selecione uma sala');
+        return;
+      }
+
       // Converter horário do datetime-local para ISO string
-      const horarioISO = formData.horario.includes('T') 
+      const horarioISO = formData.horario.includes('T')
         ? new Date(formData.horario).toISOString()
         : new Date(formData.horario + ':00').toISOString();
-
-      const capacidadeValor = parseInt(formData.capacidadeSala, 10) || 100;
 
       const payload = editando
         ? {
             horario: horarioISO,
-            sala: formData.sala,
-            capacidade: capacidadeValor,
+            salaId: parseInt(formData.salaId),
             funcionario: getFuncionarioPayload()
           }
         : {
             filmeId: parseInt(formData.filmeId),
             horario: horarioISO,
-            sala: formData.sala,
-            capacidade: capacidadeValor,
+            salaId: parseInt(formData.salaId),
             funcionario: getFuncionarioPayload()
           };
 
@@ -492,17 +495,6 @@ const Sessoes = ({ usuario }) => {
               )}
 
               <div className="form-group">
-                <label>Capacidade da Sala *</label>
-                <input
-                  type="number"
-                  min="10"
-                  value={formData.capacidadeSala}
-                  onChange={(e) => setFormData({...formData, capacidadeSala: e.target.value})}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
                 <label>Data e Horário *</label>
                 <input
                   type="datetime-local"
@@ -515,14 +507,16 @@ const Sessoes = ({ usuario }) => {
               <div className="form-group">
                 <label>Sala *</label>
                 <select
-                  value={formData.sala}
-                  onChange={(e) => setFormData({...formData, sala: e.target.value})}
+                  value={formData.salaId}
+                  onChange={(e) => setFormData({...formData, salaId: e.target.value})}
                   required
                 >
-                  <option value="Sala 1">Sala 1</option>
-                  <option value="Sala 2">Sala 2</option>
-                  <option value="Sala 3">Sala 3</option>
-                  <option value="Sala 4">Sala 4</option>
+                  <option value="">Selecione uma sala</option>
+                  {salas.map(sala => (
+                    <option key={sala.id} value={sala.id}>
+                      {sala.nome} - {sala.capacidade} lugares ({sala.tipo})
+                    </option>
+                  ))}
                 </select>
               </div>
 

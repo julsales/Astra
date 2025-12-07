@@ -6,11 +6,6 @@ import com.astra.cinema.dominio.compra.StatusIngresso;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
-
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 
 public class ValidarIngressoUseCase {

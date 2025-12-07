@@ -16,10 +16,16 @@ INSERT INTO FUNCIONARIO (nome, cargo) VALUES ('Maria Santos', 'ATENDENTE');
 INSERT INTO FUNCIONARIO (nome, cargo) VALUES ('Pedro Oliveira', 'GERENTE');
 INSERT INTO FUNCIONARIO (nome, cargo) VALUES ('Ana Costa', 'ATENDENTE');
 
+-- Inserindo salas do cinema (NOVO)
+INSERT INTO SALA (nome, capacidade, tipo) VALUES ('Sala 1', 100, 'PADRAO');
+INSERT INTO SALA (nome, capacidade, tipo) VALUES ('Sala 2', 80, 'PADRAO');
+INSERT INTO SALA (nome, capacidade, tipo) VALUES ('Sala VIP', 50, 'VIP');
+INSERT INTO SALA (nome, capacidade, tipo) VALUES ('Sala IMAX', 150, 'IMAX');
+
 -- Inserindo sessões para filmes em cartaz
--- Sessão 1: Duna 2 - hoje às 14h
-INSERT INTO SESSAO (filme_id, horario, status) VALUES
-(1, DATEADD('HOUR', 2, CURRENT_TIMESTAMP), 'DISPONIVEL');
+-- Sessão 1: Duna 2 - hoje às 14h - Sala 1
+INSERT INTO SESSAO (filme_id, horario, status, sala_id) VALUES
+(1, DATEADD('HOUR', 2, CURRENT_TIMESTAMP), 'DISPONIVEL', 1);
 
 -- Criando assentos para a sessão 1 (100 assentos: A1-A10, B1-B10, ..., J1-J10)
 INSERT INTO SESSAO_ASSENTO (sessao_id, assento_id, disponivel) VALUES
@@ -39,17 +45,17 @@ INSERT INTO SESSAO_ASSENTO (sessao_id, assento_id, disponivel) VALUES
 (1, 'E1', true), (1, 'E2', true), (1, 'E3', true), (1, 'E4', true), (1, 'E5', true),
 (1, 'E6', true), (1, 'E7', true), (1, 'E8', true), (1, 'E9', true), (1, 'E10', true);
 
--- Sessão 2: Matrix - amanhã às 19h
-INSERT INTO SESSAO (filme_id, horario, status) VALUES
-(2, DATEADD('DAY', 1, DATEADD('HOUR', 19, CURRENT_DATE)), 'DISPONIVEL');
+-- Sessão 2: Matrix - amanhã às 19h - Sala 2
+INSERT INTO SESSAO (filme_id, horario, status, sala_id) VALUES
+(2, DATEADD('DAY', 1, DATEADD('HOUR', 19, CURRENT_DATE)), 'DISPONIVEL', 2);
 
--- Criando assentos para a sessão 2 (mesma estrutura)
+-- Criando assentos para a sessão 2 (80 assentos - capacidade da Sala 2)
 INSERT INTO SESSAO_ASSENTO (sessao_id, assento_id, disponivel)
-SELECT 2, assento_id, disponivel FROM SESSAO_ASSENTO WHERE sessao_id = 1;
+SELECT 2, assento_id, disponivel FROM SESSAO_ASSENTO WHERE sessao_id = 1 AND assento_id NOT LIKE 'I%' AND assento_id NOT LIKE 'J%';
 
--- Sessão 3: Oppenheimer - amanhã às 15h
-INSERT INTO SESSAO (filme_id, horario, status) VALUES
-(4, DATEADD('DAY', 1, DATEADD('HOUR', 15, CURRENT_DATE)), 'DISPONIVEL');
+-- Sessão 3: Oppenheimer - amanhã às 15h - Sala VIP
+INSERT INTO SESSAO (filme_id, horario, status, sala_id) VALUES
+(4, DATEADD('DAY', 1, DATEADD('HOUR', 15, CURRENT_DATE)), 'DISPONIVEL', 3);
 
 -- Criando assentos para a sessão 3
 INSERT INTO SESSAO_ASSENTO (sessao_id, assento_id, disponivel)

@@ -19,7 +19,6 @@ import java.util.Map;
 public class CriarSessaoUseCase {
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
-    private static final int CAPACIDADE_PADRAO_SALA = 100;
 
     public CriarSessaoUseCase(SessaoRepositorio sessaoRepositorio,
                               FilmeRepositorio filmeRepositorio) {
@@ -37,12 +36,15 @@ public class CriarSessaoUseCase {
     /**
      * Cria uma nova sessão para um filme (versão legacy com mapa de assentos)
      */
-    public Sessao executar(FilmeId filmeId, Date horario, Map<AssentoId, Boolean> assentos) {
+    public Sessao executar(FilmeId filmeId, Date horario, Map<AssentoId, Boolean> assentos, SalaId salaId) {
         if (filmeId == null) {
             throw new IllegalArgumentException("O id do filme não pode ser nulo");
         }
         if (horario == null) {
             throw new IllegalArgumentException("O horário não pode ser nulo");
+        }
+        if (salaId == null) {
+            throw new IllegalArgumentException("O id da sala não pode ser nulo");
         }
         
         var filme = filmeRepositorio.obterPorId(filmeId);
@@ -53,30 +55,30 @@ public class CriarSessaoUseCase {
         validarStatusFilme(filme);
         
         // ID será gerado automaticamente pelo banco via IDENTITY
-        var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, assentos,
-            "Sala 1", assentos != null ? assentos.size() : 0);
+        var sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, assentos, salaId);
         
         // Persiste a sessão e retorna com o ID gerado pelo banco
         return sessaoRepositorio.salvar(sessao);
     }
 
     /**
-     * Cria uma nova sessão para um filme com capacidade específica
+     * Cria uma nova sessão para um filme com salaId específica
      * 
      * @param filmeId ID do filme
      * @param horario Horário da sessão
-     * @param capacidadeSala Número de assentos da sala
+     * @param salaId ID da sala
+     * @param capacidadeSala Número de assentos (será determinado pela sala futuramente)
      * @return Sessão criada
      * @throws IllegalStateException se o filme não estiver em cartaz
      * @throws IllegalArgumentException se os parâmetros forem inválidos
      */
-    public Sessao executar(FilmeId filmeId, Date horario, int capacidadeSala) {
-        return executar(filmeId, horario, capacidadeSala, "Sala 1");
-    }
-
-    public Sessao executar(FilmeId filmeId, Date horario, int capacidadeSala, String sala) {
+    public Sessao executar(FilmeId filmeId, Date horario, SalaId salaId, int capacidadeSala) {
         // Validação de parâmetros
         validarParametros(filmeId, horario, capacidadeSala);
+        
+        if (salaId == null) {
+            throw new IllegalArgumentException("O id da sala não pode ser nulo");
+        }
 
         // Busca o filme
         Filme filme = filmeRepositorio.obterPorId(filmeId);
@@ -91,8 +93,7 @@ public class CriarSessaoUseCase {
         Map<AssentoId, Boolean> mapaAssentos = criarMapaAssentosDisponiveis(capacidadeSala);
 
         // Cria a sessão (ID será gerado automaticamente pelo banco via IDENTITY)
-        Sessao sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos,
-            sala != null && !sala.isBlank() ? sala : "Sala 1", capacidadeSala);
+        Sessao sessao = new Sessao(null, filmeId, horario, StatusSessao.DISPONIVEL, mapaAssentos, salaId);
 
         // Persiste a sessão e retorna com o ID gerado pelo banco
         return sessaoRepositorio.salvar(sessao);

@@ -1,11 +1,11 @@
 package com.astra.cinema.apresentacao.rest;
 
+import com.astra.cinema.dominio.programacao.ProgramacaoService;
 import com.astra.cinema.dominio.comum.ProgramacaoId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.programacao.Programacao;
 import com.astra.cinema.dominio.programacao.ProgramacaoRepositorio;
-import com.astra.cinema.dominio.programacao.ProgramacaoService;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.Cargo;
 import com.astra.cinema.dominio.usuario.Funcionario;
@@ -133,7 +133,8 @@ public class ProgramacaoController {
                         var sessao = sessaoRepositorio.obterPorId(sessaoId);
                         if (sessao != null) {
                             sessaoMap.put("horario", sessao.getHorario());
-                            sessaoMap.put("sala", sessao.getSala());
+                            sessaoMap.put("salaId", sessao.getSalaId().getId());
+                            sessaoMap.put("sala", "Sala " + sessao.getSalaId().getId());
                             sessaoMap.put("status", sessao.getStatus().name());
 
                             var filme = filmeRepositorio.obterPorId(sessao.getFilmeId());

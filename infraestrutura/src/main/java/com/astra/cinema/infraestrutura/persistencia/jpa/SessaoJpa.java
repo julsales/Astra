@@ -1,6 +1,5 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
-import com.astra.cinema.dominio.comum.AssentoId;
 import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.sessao.Sessao;
@@ -10,7 +9,6 @@ import jakarta.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -40,11 +38,9 @@ class SessaoJpa {
     @Column(nullable = false)
     private StatusSessao status;
 
-    @Column(nullable = false)
-    private Integer capacidade;
-
-    @Column(length = 30)
-    private String sala;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "sala_id", nullable = false)
+    private SalaJpa sala;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "SESSAO_ASSENTO", joinColumns = @JoinColumn(name = "sessao_id"))
@@ -85,19 +81,11 @@ class SessaoJpa {
         this.status = status;
     }
 
-    public Integer getCapacidade() {
-        return capacidade;
-    }
-
-    public void setCapacidade(Integer capacidade) {
-        this.capacidade = capacidade;
-    }
-
-    public String getSala() {
+    public SalaJpa getSala() {
         return sala;
     }
 
-    public void setSala(String sala) {
+    public void setSala(SalaJpa sala) {
         this.sala = sala;
     }
 
@@ -131,6 +119,9 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
     private SessaoJpaRepository repository;
 
     @Autowired
+    private SalaJpaRepository salaRepository;
+
+    @Autowired
     private CinemaMapeador mapeador;
 
     @Override
@@ -138,6 +129,10 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
         if (sessao == null) {
             throw new IllegalArgumentException("A sessão não pode ser nula");
         }
+        
+        // Busca a sala no banco
+        SalaJpa sala = salaRepository.findById(sessao.getSalaId().getId())
+            .orElseThrow(() -> new IllegalArgumentException("Sala não encontrada: " + sessao.getSalaId().getId()));
         
         SessaoJpa sessaoJpa;
         
@@ -150,8 +145,7 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
             sessaoJpa.setFilmeId(sessao.getFilmeId().getId());
             sessaoJpa.setHorario(sessao.getHorario());
             sessaoJpa.setStatus(sessao.getStatus());
-            sessaoJpa.setSala(sessao.getSala());
-            sessaoJpa.setCapacidade(sessao.getCapacidade());
+            sessaoJpa.setSala(sala);
             
             // IMPORTANTE: Limpa o mapa antigo e adiciona o novo
             sessaoJpa.getAssentosDisponiveis().clear();
@@ -163,7 +157,7 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
             sessaoJpa.getAssentosDisponiveis().putAll(assentosJpa);
         } else {
             // Nova sessão - usa o mapeador normalmente
-            sessaoJpa = mapeador.mapearParaSessaoJpa(sessao);
+            sessaoJpa = mapeador.mapearParaSessaoJpa(sessao, sala);
         }
         
         SessaoJpa sessaoSalva = repository.save(sessaoJpa);

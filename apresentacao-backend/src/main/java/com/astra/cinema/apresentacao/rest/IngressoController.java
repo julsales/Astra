@@ -82,7 +82,8 @@ public class IngressoController {
                 response.put("sessao", Map.of(
                     "id", resultado.getSessao().getSessaoId().getId(),
                     "horario", resultado.getSessao().getHorario().toString(),
-                    "sala", resultado.getSessao().getSala()
+                    "salaId", resultado.getSessao().getSalaId().getId(),
+                    "sala", "Sala " + resultado.getSessao().getSalaId().getId()
                 ));
             }
 
@@ -152,7 +153,8 @@ public class IngressoController {
                         Sessao sessao = sessaoRepositorio.obterPorId(i.getSessaoId());
                         if (sessao != null) {
                             map.put("horario", sessao.getHorario().toString());
-                            map.put("sala", sessao.getSala());
+                            map.put("salaId", sessao.getSalaId().getId());
+                            map.put("sala", "Sala " + sessao.getSalaId().getId());
 
                             // Buscar informações do filme
                             try {

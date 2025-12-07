@@ -97,7 +97,7 @@ public class ConsultarHistoricoFuncionarioUseCase {
                         ingresso.getStatus().toString(),
                         ingresso.getAssentoId().getValor(),
                         ingresso.getSessaoId().getId(),
-                        sessao.getSala(),
+                        String.valueOf(sessao.getSalaId().getId()), // Convertido para String temporariamente
                         sessao.getHorario(),
                         sessao.getFilmeId().getId(),
                         filmeTitulo,

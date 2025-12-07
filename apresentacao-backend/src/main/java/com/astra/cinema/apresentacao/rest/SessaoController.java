@@ -271,17 +271,21 @@ public class SessaoController {
                 return ResponseEntity.badRequest()
                         .body(Map.of("erro", "Horário é obrigatório"));
             }
+            
+            if (request.getSalaId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("erro", "ID da sala é obrigatório"));
+            }
 
             int capacidade = request.getCapacidade() != null && request.getCapacidade() > 0 ?
                     request.getCapacidade() : 50;
-            String sala = request.getSala() != null && !request.getSala().trim().isEmpty() ?
-                    request.getSala() : "Sala 1";
+            SalaId salaId = new SalaId(request.getSalaId());
 
             Sessao sessao = criarSessaoUseCase.executar(
                     new FilmeId(request.getFilmeId()),
                     request.getHorario(),
-                    capacidade,
-                    sala
+                    salaId,
+                    capacidade
             );
 
             return ResponseEntity.status(201).body(mapearSessaoParaDTO(sessao));
@@ -306,14 +310,12 @@ public class SessaoController {
                          @RequestBody SessaoRequest request) {
         try {
         Date novoHorario = request.getHorario();
-        String novaSala = request.getSala();
-        Integer novaCapacidade = request.getCapacidade();
+        SalaId novaSala = request.getSalaId() != null ? new SalaId(request.getSalaId()) : null;
 
         modificarSessaoUseCase.executar(
             new SessaoId(id),
             novoHorario,
-            novaSala,
-            novaCapacidade
+            novaSala
         );
 
             Sessao sessaoAtualizada = sessaoRepositorio.obterPorId(new SessaoId(id));
@@ -404,7 +406,8 @@ public class SessaoController {
         dto.put("filmeId", sessao.getFilmeId().getId());
         dto.put("horario", sessao.getHorario());
         dto.put("status", sessao.getStatus().name());
-        dto.put("sala", sessao.getSala());
+        dto.put("salaId", sessao.getSalaId().getId());
+        dto.put("sala", "Sala " + sessao.getSalaId().getId()); // Temporário
         dto.put("capacidade", sessao.getCapacidade());
 
         // Adiciona informações do filme (inclui campo filmeTitulo para compatibilidade)
@@ -448,7 +451,8 @@ public class SessaoController {
         @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private Date horario;
         private Integer capacidade;
-        private String sala;
+        private Integer salaId;
+        private String sala; // Mantido para compatibilidade temporária
 
         public Integer getFilmeId() {
             return filmeId;
@@ -468,6 +472,14 @@ public class SessaoController {
 
         public Integer getCapacidade() {
             return capacidade;
+        }
+        
+        public Integer getSalaId() {
+            return salaId;
+        }
+        
+        public void setSalaId(Integer salaId) {
+            this.salaId = salaId;
         }
 
         public void setCapacidade(Integer capacidade) {

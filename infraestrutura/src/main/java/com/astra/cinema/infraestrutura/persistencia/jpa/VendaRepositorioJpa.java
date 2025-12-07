@@ -49,17 +49,15 @@ public class VendaRepositorioJpa implements VendaRepositorio {
 
         Integer pagamentoId = venda.getPagamentoId() != null ? venda.getPagamentoId().getId() : null;
         String status = venda.getStatus().name();
-        Integer vendaIdDominio = venda.getVendaId().getId();
 
         // Remove vendas antigas com o mesmo ID de domínio (se existirem)
         // Como o ID do banco é auto-incrementado, precisamos usar uma estratégia diferente
         // Vamos buscar por status e pagamentoId para identificar vendas relacionadas
         // Por simplicidade, vamos deletar todas as vendas com o mesmo vendaId de domínio
         // se já existirem (isso requer uma coluna adicional ou outra estratégia)
-        
+
         // Por enquanto, vamos criar novas linhas para cada produto
         // O primeiro produto terá o ID que será usado como referência
-        Integer primeiroIdSalvo = null;
         
         for (int i = 0; i < produtos.size(); i++) {
             Produto produto = produtos.get(i);
@@ -70,12 +68,7 @@ public class VendaRepositorioJpa implements VendaRepositorio {
             vendaJpa.setPagamentoId(pagamentoId);
             vendaJpa.setStatus(status);
             vendaJpa.setCriadoEm(java.time.LocalDateTime.now());
-            VendaJpa salva = vendaJpaRepository.save(vendaJpa);
-
-            // Usa o ID da primeira linha salva como referência
-            if (i == 0) {
-                primeiroIdSalvo = salva.getId();
-            }
+            vendaJpaRepository.save(vendaJpa);
         }
     }
 

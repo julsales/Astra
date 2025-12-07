@@ -4,7 +4,6 @@ import CosmicNebula from '../CosmicNebula';
 import Overview from './pages/Overview';
 import Sessoes from './pages/Sessoes';
 import Filmes from './pages/Filmes';
-import Promocoes from './pages/Promocoes';
 import Relatorios from './pages/Relatorios';
 import Usuarios from './pages/Usuarios';
 import Bomboniere from './pages/Bomboniere';

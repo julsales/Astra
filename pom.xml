@@ -13,7 +13,11 @@
 
     <modules>
         <module>pai</module>
-        <module>dominio</module>
+        <module>dominio-compartilhado</module>
+        <module>dominio-sessoes</module>
+        <module>dominio-vendas</module>
+        <module>dominio-bomboniere</module>
+        <module>dominio-usuarios</module>
         <module>aplicacao</module>
         <module>infraestrutura</module>
         <module>apresentacao-frontend</module>

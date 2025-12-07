@@ -101,7 +101,8 @@ public class ClienteController {
                         var sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
                         if (sessao != null) {
                             ingressoMap.put("horario", sessao.getHorario());
-                            ingressoMap.put("sala", sessao.getSala());
+                            ingressoMap.put("salaId", sessao.getSalaId().getId());
+                            ingressoMap.put("sala", "Sala " + sessao.getSalaId().getId());
 
                             var filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
                             if (filme != null) {

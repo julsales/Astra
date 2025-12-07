@@ -16,7 +16,31 @@
     <dependencies>
         <dependency>
             <groupId>com.astra</groupId>
-            <artifactId>astra-dominio</artifactId>
+            <artifactId>astra-dominio-compartilhado</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.astra</groupId>
+            <artifactId>astra-dominio-sessoes</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.astra</groupId>
+            <artifactId>astra-dominio-vendas</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.astra</groupId>
+            <artifactId>astra-dominio-bomboniere</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.astra</groupId>
+            <artifactId>astra-dominio-usuarios</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

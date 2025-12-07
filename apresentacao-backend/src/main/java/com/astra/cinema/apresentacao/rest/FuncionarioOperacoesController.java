@@ -184,7 +184,7 @@ public class FuncionarioOperacoesController {
                 if (!sessoes.containsKey(sessaoId)) {
                     Map<String, Object> sessao = new HashMap<>();
                     sessao.put("sessaoId", sessaoId);
-                    sessao.put("sala", ingresso.getSala());
+                    sessao.put("sala", ingresso.getSala()); // Já retorna String do Use Case
                     sessao.put("horario", ingresso.getHorario());
                     sessao.put("statusSessao", ingresso.getStatusSessao());
                     sessao.put("ingressos", new java.util.ArrayList<Map<String, Object>>());
@@ -322,7 +322,8 @@ public class FuncionarioOperacoesController {
     private Map<String, Object> mapearSessao(Sessao sessao) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", sessao.getSessaoId() != null ? sessao.getSessaoId().getId() : null);
-        map.put("sala", sessao.getSala());
+        map.put("salaId", sessao.getSalaId() != null ? sessao.getSalaId().getId() : null);
+        map.put("sala", "Sala " + (sessao.getSalaId() != null ? sessao.getSalaId().getId() : ""));
         map.put("horario", sessao.getHorario());
         map.put("filmeId", sessao.getFilmeId() != null ? sessao.getFilmeId().getId() : null);
         return map;
