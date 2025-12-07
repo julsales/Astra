@@ -13,5 +13,6 @@ public interface CompraRepositorio {
     Compra buscarCompraPorQrCode(String qrCode);
     void atualizarIngresso(Ingresso ingresso);
     List<Ingresso> buscarIngressosAtivos();
+    List<Ingresso> buscarIngressosAtivosPorCliente(ClienteId clienteId);
     CompraId obterCompraIdPorIngresso(IngressoId ingressoId);
 }

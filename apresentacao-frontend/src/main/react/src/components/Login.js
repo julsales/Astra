@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import './Login.css';
+import Register from './Register';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [mostrarRegistro, setMostrarRegistro] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +42,11 @@ const Login = ({ onLogin }) => {
       setCarregando(false);
     }
   };
+
+  // Se está mostrando o registro, renderiza o componente de registro
+  if (mostrarRegistro) {
+    return <Register onBackToLogin={() => setMostrarRegistro(false)} />;
+  }
 
   return (
     <div className="login-container">
@@ -103,6 +110,14 @@ const Login = ({ onLogin }) => {
 
           <button type="submit" className="login-button" disabled={carregando}>
             {carregando ? 'Entrando...' : 'Entrar'}
+          </button>
+
+          <button 
+            type="button" 
+            className="create-account-button" 
+            onClick={() => setMostrarRegistro(true)}
+          >
+            Criar Conta
           </button>
         </form>
 

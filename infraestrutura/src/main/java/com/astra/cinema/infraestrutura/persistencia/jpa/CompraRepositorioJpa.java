@@ -228,6 +228,22 @@ public class CompraRepositorioJpa implements CompraRepositorio {
     }
 
     @Override
+    public List<Ingresso> buscarIngressosAtivosPorCliente(ClienteId clienteId) {
+        // Busca ingressos com status ATIVO e VALIDADO de um cliente específico
+        java.util.List<String> statuses = java.util.Arrays.asList(
+            StatusIngresso.ATIVO.name(),
+            StatusIngresso.VALIDADO.name()
+        );
+        List<IngressoJpa> ingressosJpa = ingressoJpaRepository.findByClienteIdAndStatusIn(
+            clienteId.getId(), 
+            statuses
+        );
+        return ingressosJpa.stream()
+                .map(mapeador::mapearParaIngresso)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public CompraId obterCompraIdPorIngresso(IngressoId ingressoId) {
         if (ingressoId == null) {
             return null;

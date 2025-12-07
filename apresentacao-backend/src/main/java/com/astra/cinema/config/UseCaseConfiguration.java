@@ -18,6 +18,7 @@ import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemoverSessaoUseCase;
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
+import com.astra.cinema.aplicacao.usuario.RegistrarClienteUseCase;
 import com.astra.cinema.aplicacao.usuario.funcionario.GerenciarFuncionariosUseCase;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
@@ -26,6 +27,7 @@ import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
 import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
+import com.astra.cinema.dominio.usuario.ClienteRepositorio;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +39,13 @@ public class UseCaseConfiguration {
     @Bean
     public AutenticarUsuarioUseCase autenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio, FuncionarioRepositorio funcionarioRepositorio) {
         return new AutenticarUsuarioUseCase(usuarioRepositorio, funcionarioRepositorio);
+    }
+
+    @Bean
+    public RegistrarClienteUseCase registrarClienteUseCase(
+            UsuarioRepositorio usuarioRepositorio,
+            ClienteRepositorio clienteRepositorio) {
+        return new RegistrarClienteUseCase(usuarioRepositorio, clienteRepositorio);
     }
 
     @Bean

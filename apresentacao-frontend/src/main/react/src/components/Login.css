@@ -181,6 +181,32 @@
   transform: none;
 }
 
+.create-account-button {
+  width: 100%;
+  padding: 15px;
+  background: transparent;
+  border: 2px solid rgba(123, 159, 255, 0.4);
+  border-radius: 10px;
+  color: #7B9FFF;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  letter-spacing: 0.5px;
+}
+
+.create-account-button:hover {
+  background: rgba(123, 159, 255, 0.1);
+  border-color: #7B9FFF;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(123, 159, 255, 0.3);
+}
+
+.create-account-button:active {
+  transform: translateY(0);
+}
+
 .register-link {
   text-align: center;
   color: rgba(255, 255, 255, 0.65);

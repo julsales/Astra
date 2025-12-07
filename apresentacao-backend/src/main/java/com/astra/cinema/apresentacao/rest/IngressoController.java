@@ -114,9 +114,17 @@ public class IngressoController {
     }
 
     @GetMapping("/ativos")
-    public ResponseEntity<?> buscarIngressosAtivos() {
+    public ResponseEntity<?> buscarIngressosAtivos(@RequestParam(required = false) Integer clienteId) {
         try {
-            List<Ingresso> ingressos = compraRepositorio.buscarIngressosAtivos();
+            List<Ingresso> ingressos;
+            
+            // Se clienteId foi fornecido, busca apenas os ingressos deste cliente
+            if (clienteId != null) {
+                ingressos = compraRepositorio.buscarIngressosAtivosPorCliente(new com.astra.cinema.dominio.comum.ClienteId(clienteId));
+            } else {
+                // Se não fornecido, busca todos (comportamento antigo, para compatibilidade)
+                ingressos = compraRepositorio.buscarIngressosAtivos();
+            }
 
             List<Map<String, Object>> response = ingressos.stream()
                 .map(i -> {
@@ -133,11 +141,22 @@ public class IngressoController {
                                 .map(ing -> ing.getAssentoId().getValor())
                                 .collect(Collectors.joining(", "));
                             map.put("assento", todosAssentos);  // TODOS os assentos
+                            
+                            // Calcular valor total baseado no número de ingressos e tipo
+                            double valorTotal = compra.getIngressos().stream()
+                                .mapToDouble(ing -> {
+                                    // Preço base: R$ 35,00 para inteira, R$ 17,50 para meia
+                                    return ing.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5;
+                                })
+                                .sum();
+                            map.put("total", valorTotal);
                         } else {
                             map.put("assento", i.getAssentoId().getValor());  // Fallback
+                            map.put("total", i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5);
                         }
                     } catch (Exception e) {
                         map.put("assento", i.getAssentoId().getValor());  // Fallback
+                        map.put("total", i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5);
                     }
 
                     map.put("assentoIndividual", i.getAssentoId().getValor());  // Assento individual

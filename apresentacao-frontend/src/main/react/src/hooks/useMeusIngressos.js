@@ -33,8 +33,8 @@ const normalizarCompra = (compra) => ({
 
 export const useMeusIngressos = (usuario) => {
   const storageKey = useMemo(
-    () => `meus-ingressos-${usuario?.id ?? 'anonimo'}`,
-    [usuario?.id]
+    () => `meus-ingressos-${usuario?.clienteId ?? usuario?.id ?? 'anonimo'}`,
+    [usuario?.clienteId, usuario?.id]
   );
 
   const [ingressos, setIngressos] = useState([]);
@@ -76,9 +76,10 @@ export const useMeusIngressos = (usuario) => {
 
     // Sincronizar com backend (quando houver um usuário autenticado)
     const sincronizarComBackend = useCallback(async () => {
-      if (!usuario || !usuario.id) return;
+      if (!usuario || !usuario.clienteId) return;
       try {
-        const res = await fetch('/api/ingressos/ativos');
+        // Passa o clienteId como parâmetro para filtrar apenas os ingressos do usuário logado
+        const res = await fetch(`/api/ingressos/ativos?clienteId=${usuario.clienteId}`);
         if (!res.ok) return;
         const dados = await res.json();
         // Mapear para o formato interno usado pelo frontend

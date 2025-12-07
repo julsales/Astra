@@ -70,7 +70,7 @@ const Register = ({ onBackToLogin }) => {
     }
 
     try {
-      const response = await fetch('/api/clientes', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,23 +78,20 @@ const Register = ({ onBackToLogin }) => {
         body: JSON.stringify({
           nome: formData.nome,
           email: formData.email,
-          senha: formData.senha,
-          cpf: formData.cpf.replace(/\D/g, ''),
-          telefone: formData.telefone,
-          dataNascimento: formData.dataNascimento
+          senha: formData.senha
         }),
       });
 
       if (response.ok) {
-        alert(' Cadastro realizado com sucesso!\nFaça login para continuar.');
+        alert('✅ Cadastro realizado com sucesso!\nFaça login para continuar.');
         onBackToLogin();
       } else {
         const data = await response.json();
-        alert(` Erro: ${data.message || 'Não foi possível realizar o cadastro'}`);
+        alert(`❌ Erro: ${data.mensagem || 'Não foi possível realizar o cadastro'}`);
       }
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
-      alert(' Erro ao conectar com o servidor.');
+      alert('❌ Erro ao conectar com o servidor.');
     }
   };
 
@@ -103,19 +100,8 @@ const Register = ({ onBackToLogin }) => {
       <div className="register-box">
         <div className="logo-container">
           <div className="logo">
-            <svg className="star-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <radialGradient id="starGradient">
-                  <stop offset="0%" stopColor="#FFA500" />
-                  <stop offset="100%" stopColor="#FF8C00" />
-                </radialGradient>
-              </defs>
-              <polygon points="50,15 61,38 85,41 67,58 72,82 50,70 28,82 33,58 15,41 39,38" fill="url(#starGradient)" />
-              <circle cx="50" cy="50" r="12" fill="#FFD700" />
-            </svg>
-            <span className="logo-text">ASTRA</span>
+            <img src="/logo.png" alt="Astra Cinemas" className="logo-image" />
           </div>
-          <div className="logo-subtitle">CINEMAS</div>
         </div>
 
         <div className="welcome-section">

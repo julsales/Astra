@@ -12,4 +12,5 @@ public class UsuarioAutenticadoDTO {
     private String nome;
     private String tipo;
     private String cargo;
+    private Integer clienteId; // ID do cliente quando tipo = CLIENTE
 }

@@ -60,4 +60,24 @@ public class ClienteRepositorioJpa implements ClienteRepositorio {
             clienteJpa.getEmail()
         );
     }
+
+    @Override
+    public Cliente obterPorEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("O email não pode ser nulo ou vazio");
+        }
+
+        ClienteJpa clienteJpa = clienteJpaRepository.findByEmail(email)
+                .orElse(null);
+
+        if (clienteJpa == null) {
+            return null;
+        }
+
+        return new Cliente(
+            new ClienteId(clienteJpa.getId()),
+            clienteJpa.getNome(),
+            clienteJpa.getEmail()
+        );
+    }
 }
