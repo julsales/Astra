@@ -36,6 +36,7 @@ public class ClienteRepositorioJpa implements ClienteRepositorio {
 
         clienteJpa.setNome(cliente.getNome());
         clienteJpa.setEmail(cliente.getEmail());
+        clienteJpa.setCpf(cliente.getCpf());
 
         // Define criadoEm apenas se for novo
         if (clienteJpa.getId() == null) {
@@ -57,7 +58,8 @@ public class ClienteRepositorioJpa implements ClienteRepositorio {
         return new Cliente(
             new ClienteId(clienteJpa.getId()),
             clienteJpa.getNome(),
-            clienteJpa.getEmail()
+            clienteJpa.getEmail(),
+            clienteJpa.getCpf()
         );
     }
 
@@ -77,7 +79,29 @@ public class ClienteRepositorioJpa implements ClienteRepositorio {
         return new Cliente(
             new ClienteId(clienteJpa.getId()),
             clienteJpa.getNome(),
-            clienteJpa.getEmail()
+            clienteJpa.getEmail(),
+            clienteJpa.getCpf()
+        );
+    }
+
+    @Override
+    public Cliente obterPorCpf(String cpf) {
+        if (cpf == null || cpf.trim().isEmpty()) {
+            return null;
+        }
+
+        ClienteJpa clienteJpa = clienteJpaRepository.findByCpf(cpf)
+                .orElse(null);
+
+        if (clienteJpa == null) {
+            return null;
+        }
+
+        return new Cliente(
+            new ClienteId(clienteJpa.getId()),
+            clienteJpa.getNome(),
+            clienteJpa.getEmail(),
+            clienteJpa.getCpf()
         );
     }
 }

@@ -6,4 +6,5 @@ public interface ClienteRepositorio {
     void salvar(Cliente cliente);
     Cliente obterPorId(ClienteId clienteId);
     Cliente obterPorEmail(String email);
+    Cliente obterPorCpf(String cpf);
 }

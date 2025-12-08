@@ -28,7 +28,10 @@ public class VendaJpa {
     
     @Column(name = "status", nullable = false, length = 20)
     private String status;
-    
+
+    @Column(name = "compra_id")
+    private Integer compraId;
+
     @Column(name = "criado_em")
     private LocalDateTime criadoEm;
 
@@ -37,12 +40,13 @@ public class VendaJpa {
     }
 
     // Construtor com parâmetros
-    public VendaJpa(Integer id, Integer produtoId, Integer quantidade, Integer pagamentoId, String status) {
+    public VendaJpa(Integer id, Integer produtoId, Integer quantidade, Integer pagamentoId, String status, Integer compraId) {
         this.id = id;
         this.produtoId = produtoId;
         this.quantidade = quantidade;
         this.pagamentoId = pagamentoId;
         this.status = status;
+        this.compraId = compraId;
         this.criadoEm = LocalDateTime.now();
     }
 
@@ -93,6 +97,14 @@ public class VendaJpa {
 
     public void setCriadoEm(LocalDateTime criadoEm) {
         this.criadoEm = criadoEm;
+    }
+
+    public Integer getCompraId() {
+        return compraId;
+    }
+
+    public void setCompraId(Integer compraId) {
+        this.compraId = compraId;
     }
 }
 

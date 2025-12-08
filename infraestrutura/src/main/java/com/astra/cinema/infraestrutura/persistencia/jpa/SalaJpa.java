@@ -69,9 +69,6 @@ class SalaJpa {
 /**
  * Repositório Spring Data JPA para Sala
  */
-interface SalaJpaRepository extends JpaRepository<SalaJpa, Integer> {
-    Optional<SalaJpa> findByNome(String nome);
-}
 
 /**
  * Implementação do repositório de domínio para Sala usando JPA

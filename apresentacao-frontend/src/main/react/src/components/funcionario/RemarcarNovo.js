@@ -384,7 +384,7 @@ const RemarcarNovo = () => {
                 <div className="compra-info-completa">
                   <div className="compra-linha-principal">
                     <span className="compra-id">Compra #{compra.id}</span>
-                    <span className="compra-cliente">Cliente #{compra.clienteId || 'Cliente'}</span>
+                    <span className="compra-cliente">{compra.clienteNome || 'Cliente desconhecido'}</span>
                     <span className="compra-ingressos">{compra.ingressos?.length || 0} ingresso(s)</span>
                   </div>
 

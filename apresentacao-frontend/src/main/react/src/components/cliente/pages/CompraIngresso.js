@@ -211,11 +211,18 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       await carregarAssentos();
 
       // Chama o backend para criar a compra (gera QR Codes automaticamente)
+      // Converter produtos da bomboniere para o formato do backend
+      const produtosParaBackend = Object.entries(itensBomboniere).map(([produtoId, quantidade]) => ({
+        produtoId: parseInt(produtoId),
+        quantidade: quantidade
+      }));
+
       const payload = {
         clienteId: usuario.id,
         sessaoId: sessao.id,
         assentos: assentosSelecionados,
-        tipoIngresso: 'INTEIRA' // Pode ser ajustado depois
+        tipoIngresso: tipoIngresso.toUpperCase(), // 'INTEIRA' ou 'MEIA'
+        produtos: produtosParaBackend // Adiciona produtos da bomboniere
       };
 
 
@@ -262,31 +269,22 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
       // Usa o primeiro QR Code para compatibilidade (ou pode mostrar todos)
       const primeiroIngresso = ingressosComQrCode[0];
       
-      const compra = {
-        id: compraBackend.compraId,
-        filme,
-        sessao,
-        assentos: assentosSelecionados,
-        produtos: itensBomboniereSelecionados,
-        totalIngressos: totalIngressosCompra,
-        totalBomboniere: totalBomboniereCompra,
-        total: totalIngressosCompra + totalBomboniereCompra,
-        metodoPagamento,
-        status: compraBackend.status || 'CONFIRMADO',
-        qrCode: primeiroIngresso.qrCodeDataUrl,
-        codigo: primeiroIngresso.qrCode, // Código do backend
-        ingressos: ingressosComQrCode // Todos os ingressos com QR Codes
-      };
+      // NÃO registra localmente - deixa a sincronização automática do HomeCliente fazer isso
+      // Isso evita duplicatas (registro local + sincronização backend)
 
-      registrarCompra(compra);
-      
       setAssentosSelecionados([]);
       setItensBomboniere({});
       setEtapa(1);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         setProcessando(false);
-        onConcluir();
+        // Força sincronização imediata antes de voltar
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Aguarda backend processar
+        } catch (e) {
+          console.error('Erro ao aguardar sincronização', e);
+        }
+        onConcluir(); // Volta para HomeCliente que vai sincronizar automaticamente
       }, 1500);
     } catch (error) {
       console.error('Erro ao finalizar compra:', error);

@@ -20,11 +20,14 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
 
   useEffect(() => {
     carregarFilmesESessoes();
-    // tentar sincronizar ingressos com backend quando usuário estiver logado
-    if (usuario && usuario.id) {
+  }, []); // Remove sincronizarComBackend das dependências
+
+  // Sincronizar ingressos separadamente quando componente monta ou aba muda para ingressos
+  useEffect(() => {
+    if (usuario && usuario.id && abaAtiva === 'ingressos') {
       sincronizarComBackend();
     }
-  }, [sincronizarComBackend, usuario]);
+  }, [abaAtiva, usuario, sincronizarComBackend]);
 
   const carregarFilmesESessoes = async () => {
     setCarregando(true);
@@ -79,6 +82,21 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
     } else {
       alert(`Erro ao cancelar: ${resultado.erro}`);
     }
+  };
+
+  const handleBaixarQrCode = () => {
+    if (!ingressoQrAberto || !ingressoQrAberto.qrCode) {
+      alert('QR Code não disponível para download');
+      return;
+    }
+
+    // Cria um link temporário para download
+    const link = document.createElement('a');
+    link.href = ingressoQrAberto.qrCode;
+    link.download = `ingresso-${ingressoQrAberto.codigo || 'astra'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -260,6 +278,20 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                     </div>
                   </div>
 
+                  {ingresso.produtos && ingresso.produtos.length > 0 && (
+                    <div className="ingresso-bomboniere">
+                      <h4>🍿 Bomboniere</h4>
+                      <ul className="produtos-lista">
+                        {ingresso.produtos.map((produto, idx) => (
+                          <li key={idx}>
+                            <span>{produto.quantidade}x {produto.nome}</span>
+                            <span>R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="ingresso-footer-novo">
                     <div className="ingresso-tipo">
                       <span className="label">Inteira</span>
@@ -363,19 +395,47 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                   <span className="valor">{ingressoQrAberto.sessao?.sala || 'Sala 1'}</span>
                 </div>
                 <div className="qr-detalhe">
-                  <span className="label">Assento:</span>
+                  <span className="label">Assentos:</span>
                   <span className="valor">{ingressoQrAberto.assentos?.join(', ') || 'D5'}</span>
                 </div>
               </div>
 
+              {/* Lista detalhada de ingressos por assento */}
+              {ingressoQrAberto.ingressosDetalhados && ingressoQrAberto.ingressosDetalhados.length > 0 && (
+                <div className="qr-ingressos-detalhados">
+                  <h5 style={{ fontSize: '0.9rem', color: '#a78bfa', marginBottom: '10px', fontWeight: '600' }}>Detalhes dos Ingressos:</h5>
+                  {ingressoQrAberto.ingressosDetalhados.map((ing, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: 'rgba(167, 139, 250, 0.1)',
+                      borderRadius: '8px',
+                      marginBottom: '6px'
+                    }}>
+                      <span style={{ color: '#e5e7eb', fontSize: '0.9rem' }}>
+                        Assento {ing.assento}
+                      </span>
+                      <span style={{
+                        color: ing.tipo === 'INTEIRA' ? '#fbbf24' : '#34d399',
+                        fontWeight: '600',
+                        fontSize: '0.9rem'
+                      }}>
+                        {ing.tipo === 'INTEIRA' ? 'Inteira' : 'Meia'} - R$ {ing.tipo === 'INTEIRA' ? '35,00' : '17,50'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="qr-preco-final">
-                <span>Inteira</span>
+                <span>Total</span>
                 <span className="preco">R$ {(ingressoQrAberto.total || 35).toFixed(2)}</span>
               </div>
             </div>
 
             <div className="modal-qr-acoes">
-              <button className="btn-secondary-novo">
+              <button className="btn-secondary-novo" onClick={handleBaixarQrCode}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                 </svg>

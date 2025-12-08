@@ -165,7 +165,7 @@ const Relatorios = ({ usuario }) => {
             borderRadius: '12px',
             border: '1px solid rgba(139,92,246,0.2)'
           }}>
-            <h3 style={{ color: 'white', marginBottom: '15px' }}> Filmes em Cartaz</h3>
+            <h3 style={{ color: 'white', marginBottom: '15px' }}>Filmes em Cartaz</h3>
             <div style={{ display: 'grid', gap: '10px' }}>
               {dados.filmes.map(filme => (
                 <div key={filme.id} style={{
@@ -194,7 +194,7 @@ const Relatorios = ({ usuario }) => {
             borderRadius: '12px',
             border: '1px solid rgba(139,92,246,0.2)'
           }}>
-            <h3 style={{ color: 'white', marginBottom: '15px' }}> Produtos Bomboniere</h3>
+            <h3 style={{ color: 'white', marginBottom: '15px' }}>Produtos Bomboniere</h3>
             <div style={{ display: 'grid', gap: '10px' }}>
               {dados.produtos.map(produto => (
                 <div key={produto.id} style={{

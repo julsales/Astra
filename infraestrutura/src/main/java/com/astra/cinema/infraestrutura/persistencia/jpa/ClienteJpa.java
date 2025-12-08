@@ -17,6 +17,9 @@ public class ClienteJpa {
     @Column(name = "email", nullable = false, unique = true, length = 200)
     private String email;
 
+    @Column(name = "cpf", length = 14)
+    private String cpf;
+
     @Column(name = "criado_em")
     private LocalDateTime criadoEm;
 
@@ -45,6 +48,14 @@ public class ClienteJpa {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
     }
 
     public LocalDateTime getCriadoEm() {

@@ -7,9 +7,6 @@ import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.sessao.StatusSessao;
 import jakarta.persistence.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
@@ -96,16 +93,6 @@ class SessaoJpa {
     public void setAssentosDisponiveis(Map<String, Boolean> assentosDisponiveis) {
         this.assentosDisponiveis = assentosDisponiveis;
     }
-}
-
-/**
- * Interface Spring Data JPA para Sessão
- */
-interface SessaoJpaRepository extends JpaRepository<SessaoJpa, Integer> {
-    List<SessaoJpa> findByFilmeId(Integer filmeId);
-    
-    @Query("SELECT s FROM SessaoJpa s WHERE s.filmeId = :filmeId AND s.horario > :dataAtual")
-    List<SessaoJpa> findSessoesFuturasPorFilme(@Param("filmeId") Integer filmeId, @Param("dataAtual") Date dataAtual);
 }
 
 /**

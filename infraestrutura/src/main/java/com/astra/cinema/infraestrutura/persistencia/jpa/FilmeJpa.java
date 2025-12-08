@@ -102,9 +102,6 @@ class FilmeJpa {
 /**
  * Interface Spring Data JPA para Filme
  */
-interface FilmeJpaRepository extends JpaRepository<FilmeJpa, Integer> {
-    List<FilmeJpa> findByStatus(StatusFilme status);
-}
 
 /**
  * Implementação do repositório de domínio usando JPA

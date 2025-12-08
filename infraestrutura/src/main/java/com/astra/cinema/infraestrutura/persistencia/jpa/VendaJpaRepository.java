@@ -11,5 +11,6 @@ import java.util.List;
 @Repository
 public interface VendaJpaRepository extends JpaRepository<VendaJpa, Integer> {
     List<VendaJpa> findByStatus(String status);
+    List<VendaJpa> findByCompraId(Integer compraId);
 }
 

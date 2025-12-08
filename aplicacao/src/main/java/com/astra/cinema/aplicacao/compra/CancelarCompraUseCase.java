@@ -37,6 +37,10 @@ public class CancelarCompraUseCase {
 
         var compra = compraRepositorio.obterPorId(compraId);
 
+        if (compra == null) {
+            throw new IllegalArgumentException("Compra não encontrada com ID: " + compraId.getId());
+        }
+
         // Agrupa ingressos por sessão para liberar assentos
         Map<SessaoId, Sessao> sessoesAfetadas = new HashMap<>();
         for (Ingresso ingresso : compra.getIngressos()) {

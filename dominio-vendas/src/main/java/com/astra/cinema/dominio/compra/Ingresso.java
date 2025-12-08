@@ -70,7 +70,7 @@ public class Ingresso implements Cloneable {
 
     public void cancelar() {
         exigirEstado(!utilizado, "Não é possível cancelar um ingresso já utilizado");
-        this.status = StatusIngresso.ATIVO;
+        this.status = StatusIngresso.CANCELADO;
     }
 
     public void remarcarSessao(SessaoId novaSessaoId, AssentoId novoAssentoId) {

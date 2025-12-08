@@ -35,9 +35,8 @@ public class VendaRepositorioJpa implements VendaRepositorio {
     @Autowired
     private CinemaMapeador mapeador;
 
-    @Override
     @Transactional
-    public void salvar(Venda venda) {
+    public void salvar(Venda venda, Integer compraId) {
         if (venda == null) {
             throw new IllegalArgumentException("A venda não pode ser nula");
         }
@@ -50,26 +49,24 @@ public class VendaRepositorioJpa implements VendaRepositorio {
         Integer pagamentoId = venda.getPagamentoId() != null ? venda.getPagamentoId().getId() : null;
         String status = venda.getStatus().name();
 
-        // Remove vendas antigas com o mesmo ID de domínio (se existirem)
-        // Como o ID do banco é auto-incrementado, precisamos usar uma estratégia diferente
-        // Vamos buscar por status e pagamentoId para identificar vendas relacionadas
-        // Por simplicidade, vamos deletar todas as vendas com o mesmo vendaId de domínio
-        // se já existirem (isso requer uma coluna adicional ou outra estratégia)
-
-        // Por enquanto, vamos criar novas linhas para cada produto
-        // O primeiro produto terá o ID que será usado como referência
-        
+        // Cria linhas para cada produto
         for (int i = 0; i < produtos.size(); i++) {
             Produto produto = produtos.get(i);
             VendaJpa vendaJpa = new VendaJpa();
-            // Não setamos o ID - deixa o JPA gerar automaticamente
             vendaJpa.setProdutoId(produto.getProdutoId().getId());
             vendaJpa.setQuantidade(1);
             vendaJpa.setPagamentoId(pagamentoId);
             vendaJpa.setStatus(status);
+            vendaJpa.setCompraId(compraId); // Associa à compra
             vendaJpa.setCriadoEm(java.time.LocalDateTime.now());
             vendaJpaRepository.save(vendaJpa);
         }
+    }
+
+    @Override
+    @Transactional
+    public void salvar(Venda venda) {
+        salvar(venda, null); // Chamada sem compraId (para compatibilidade)
     }
 
     @Override
@@ -167,6 +164,64 @@ public class VendaRepositorioJpa implements VendaRepositorio {
             if (venda != null && !vendas.contains(venda)) {
                 vendas.add(venda);
             }
+        }
+
+        return vendas;
+    }
+
+    @Override
+    public List<Venda> buscarPorCompra(com.astra.cinema.dominio.comum.CompraId compraId) {
+        if (compraId == null) {
+            throw new IllegalArgumentException("O ID da compra não pode ser nulo");
+        }
+
+        // Busca todas as vendas associadas a esta compra
+        List<VendaJpa> vendasJpa = vendaJpaRepository.findByCompraId(compraId.getId());
+
+        // Agrupa por produto (múltiplas linhas com mesmo produto = quantidade > 1)
+        Map<Integer, List<VendaJpa>> vendasPorProduto = vendasJpa.stream()
+            .collect(Collectors.groupingBy(VendaJpa::getProdutoId));
+
+        List<Venda> vendas = new ArrayList<>();
+
+        // Para cada produto, cria uma Venda com a quantidade correta
+        for (Map.Entry<Integer, List<VendaJpa>> entry : vendasPorProduto.entrySet()) {
+            Integer produtoId = entry.getKey();
+            List<VendaJpa> vendasDoProduto = entry.getValue();
+
+            if (vendasDoProduto.isEmpty()) continue;
+
+            VendaJpa primeira = vendasDoProduto.get(0);
+            ProdutoJpa produtoJpa = produtoJpaRepository.findById(produtoId).orElse(null);
+
+            if (produtoJpa == null) continue;
+
+            Produto produto = mapeador.paraDominio(produtoJpa);
+
+            // Quantidade total = soma das quantidades de todas as linhas
+            int quantidadeTotal = vendasDoProduto.stream()
+                .mapToInt(VendaJpa::getQuantidade)
+                .sum();
+
+            // Cria lista de produtos com a quantidade correta
+            List<Produto> produtos = new ArrayList<>();
+            for (int i = 0; i < quantidadeTotal; i++) {
+                produtos.add(produto);
+            }
+
+            PagamentoId pagId = primeira.getPagamentoId() != null
+                ? new PagamentoId(primeira.getPagamentoId())
+                : null;
+            StatusVenda status = StatusVenda.valueOf(primeira.getStatus());
+
+            Venda venda = new Venda(
+                new VendaId(primeira.getId()),
+                produtos,
+                pagId,
+                status
+            );
+
+            vendas.add(venda);
         }
 
         return vendas;

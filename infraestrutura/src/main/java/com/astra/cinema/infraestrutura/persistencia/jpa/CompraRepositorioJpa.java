@@ -56,19 +56,30 @@ public class CompraRepositorioJpa implements CompraRepositorio {
         
         CompraJpa compraSalva = compraJpa; // Agora tem o ID gerado pelo banco
 
-        // Salva os ingressos associados e gera QR Code para cada um
+        // Salva os ingressos associados (cada um com seu próprio QR Code)
         List<Ingresso> ingressos = compra.getIngressos();
         for (Ingresso ingresso : ingressos) {
-            // Gera QR Code único no backend
+            // Verifica se já existe um ingresso com mesma sessão e assento nesta compra
+            List<IngressoJpa> ingressosExistentes = ingressoJpaRepository.findByCompraId(compraSalva.getId());
+            boolean ingressoJaExiste = ingressosExistentes.stream()
+                .anyMatch(i -> i.getSessaoId().equals(ingresso.getSessaoId().getId()) &&
+                              i.getAssento().equals(ingresso.getAssentoId().getValor()));
+
+            if (ingressoJaExiste) {
+                // Ingresso já foi salvo anteriormente, pula para o próximo
+                continue;
+            }
+
+            // Gera um QR Code único para este ingresso
             String qrCode = qrCodeGenerator.gerarQrCode();
-            
+
             // Garante que o QR Code seja único (tenta novamente se já existir)
             int tentativas = 0;
             while (ingressoJpaRepository.findByQrCode(qrCode).isPresent() && tentativas < 5) {
                 qrCode = qrCodeGenerator.gerarQrCode();
                 tentativas++;
             }
-            
+
             // Cria IngressoJpa diretamente (o ID será gerado pelo banco)
             IngressoJpa ingressoJpa = new IngressoJpa();
             ingressoJpa.setCompraId(compraSalva.getId());
@@ -76,11 +87,11 @@ public class CompraRepositorioJpa implements CompraRepositorio {
             ingressoJpa.setAssento(ingresso.getAssentoId().getValor());
             ingressoJpa.setTipo(ingresso.getTipo().name());
             ingressoJpa.setStatus(ingresso.getStatus().name());
-            ingressoJpa.setQrCode(qrCode); // QR Code gerado no backend
-            
+            ingressoJpa.setQrCode(qrCode); // QR Code único para cada ingresso
+
             // Salva o ingresso
             ingressoJpaRepository.save(ingressoJpa);
-            
+
             // Atualiza o ingresso do domínio com o ID gerado (se necessário)
             // Isso garante que o ingresso tenha o ID correto após ser salvo
         }

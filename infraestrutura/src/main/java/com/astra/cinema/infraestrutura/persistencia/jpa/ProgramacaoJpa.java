@@ -73,8 +73,6 @@ class ProgramacaoJpa {
 /**
  * Interface Spring Data JPA para Programação
  */
-interface ProgramacaoJpaRepository extends JpaRepository<ProgramacaoJpa, Integer> {
-}
 
 /**
  * Implementação do repositório de domínio usando JPA

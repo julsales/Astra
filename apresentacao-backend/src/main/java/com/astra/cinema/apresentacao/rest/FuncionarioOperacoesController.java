@@ -44,6 +44,7 @@ public class FuncionarioOperacoesController {
     private final com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio;
     private final VendaJpaRepository vendaJpaRepository;
     private final ProdutoJpaRepository produtoJpaRepository;
+    private final com.astra.cinema.dominio.usuario.ClienteRepositorio clienteRepositorio;
 
     public FuncionarioOperacoesController(
             ValidarIngressoFuncionarioUseCase validarIngressoUseCase,
@@ -52,7 +53,8 @@ public class FuncionarioOperacoesController {
             CompraRepositorio compraRepositorio,
             com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio,
             VendaJpaRepository vendaJpaRepository,
-            ProdutoJpaRepository produtoJpaRepository) {
+            ProdutoJpaRepository produtoJpaRepository,
+            com.astra.cinema.dominio.usuario.ClienteRepositorio clienteRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.consultarHistoricoUseCase = consultarHistoricoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
@@ -60,6 +62,7 @@ public class FuncionarioOperacoesController {
         this.filmeRepositorio = filmeRepositorio;
         this.vendaJpaRepository = vendaJpaRepository;
         this.produtoJpaRepository = produtoJpaRepository;
+        this.clienteRepositorio = clienteRepositorio;
     }
 
     /**
@@ -485,7 +488,23 @@ public class FuncionarioOperacoesController {
         Map<String, Object> map = new HashMap<>();
         map.put("id", compra.getCompraId() != null ? compra.getCompraId().getId() : null);
         map.put("status", compra.getStatus().toString());
-        map.put("clienteNome", "Cliente #" + (compra.getClienteId() != null ? compra.getClienteId().getId() : "?"));
+
+        // Busca o nome real do cliente
+        String nomeCliente = "Cliente desconhecido";
+        if (compra.getClienteId() != null) {
+            try {
+                var cliente = clienteRepositorio.obterPorId(compra.getClienteId());
+                if (cliente != null) {
+                    nomeCliente = cliente.getNome();
+                    map.put("clienteId", compra.getClienteId().getId());
+                } else {
+                    nomeCliente = "Cliente #" + compra.getClienteId().getId();
+                }
+            } catch (Exception e) {
+                nomeCliente = "Cliente #" + compra.getClienteId().getId();
+            }
+        }
+        map.put("clienteNome", nomeCliente);
 
         if (compra.getIngressos() != null) {
             List<Map<String, Object>> ingressos = compra.getIngressos().stream()
@@ -538,13 +557,22 @@ public class FuncionarioOperacoesController {
             LocalDateTime fimDia = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
 
             // Vendas da bomboniere (hoje)
-            List<VendaJpa> vendasBomboniereHoje = vendaJpaRepository.findAll().stream()
+            List<VendaJpa> todasVendasBomboniere = vendaJpaRepository.findAll();
+            List<VendaJpa> vendasBomboniereHoje = todasVendasBomboniere.stream()
                 .filter(v -> v.getCriadoEm() != null &&
                         v.getCriadoEm().isAfter(inicioDia) &&
                         v.getCriadoEm().isBefore(fimDia))
                 .toList();
 
             double totalVendasBomboniereHoje = vendasBomboniereHoje.stream()
+                .mapToDouble(v -> {
+                    ProdutoJpa produto = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
+                    return produto != null ? produto.getPreco() * v.getQuantidade() : 0.0;
+                })
+                .sum();
+
+            // Total histórico de vendas da bomboniere (todas as datas)
+            double totalHistoricoBomboniere = todasVendasBomboniere.stream()
                 .mapToDouble(v -> {
                     ProdutoJpa produto = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
                     return produto != null ? produto.getPreco() * v.getQuantidade() : 0.0;
@@ -562,8 +590,8 @@ public class FuncionarioOperacoesController {
                 })
                 .sum();
 
-            // Total geral de vendas
-            double totalVendas = totalVendasBomboniereHoje + totalVendasIngressos;
+            // Total geral de vendas (histórico bomboniere + histórico ingressos)
+            double totalVendas = totalHistoricoBomboniere + totalVendasIngressos;
 
             Map<String, Object> response = new HashMap<>();
             response.put("totalValidacoes", totalValidacoes);

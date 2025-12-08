@@ -9,12 +9,18 @@ import com.astra.cinema.apresentacao.exception.RecursoNaoEncontradoException;
 import com.astra.cinema.dominio.comum.*;
 import com.astra.cinema.dominio.compra.*;
 import com.astra.cinema.dominio.compra.StatusIngresso;
+import com.astra.cinema.dominio.bomboniere.Produto;
+import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
+import com.astra.cinema.dominio.bomboniere.StatusVenda;
+import com.astra.cinema.dominio.bomboniere.Venda;
+import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,15 +41,21 @@ public class CompraController {
     private final CancelarCompraUseCase cancelarCompraUseCase;
     private final CompraRepositorio compraRepositorio;
     private final IngressoMapper ingressoMapper;
+    private final ProdutoRepositorio produtoRepositorio;
+    private final VendaRepositorio vendaRepositorio;
 
     public CompraController(IniciarCompraUseCase iniciarCompraUseCase,
                            CancelarCompraUseCase cancelarCompraUseCase,
                            CompraRepositorio compraRepositorio,
-                           IngressoMapper ingressoMapper) {
+                           IngressoMapper ingressoMapper,
+                           ProdutoRepositorio produtoRepositorio,
+                           VendaRepositorio vendaRepositorio) {
         this.iniciarCompraUseCase = iniciarCompraUseCase;
         this.cancelarCompraUseCase = cancelarCompraUseCase;
         this.compraRepositorio = compraRepositorio;
         this.ingressoMapper = ingressoMapper;
+        this.produtoRepositorio = produtoRepositorio;
+        this.vendaRepositorio = vendaRepositorio;
     }
 
     /**
@@ -76,11 +88,54 @@ public class CompraController {
 
         log.info("Ingressos construídos: {}", ingressos.size());
 
-        // Salva a compra (gera QR Codes automaticamente)
+        // Salva a compra PRIMEIRO (gera QR Codes automaticamente)
         Compra compra = iniciarCompraUseCase.executar(
             new ClienteId(request.getClienteId().intValue()),
             ingressos
         );
+
+        // Processar produtos da bomboniere (se houver) e associar à compra
+        if (request.getProdutos() != null && !request.getProdutos().isEmpty()) {
+            log.info("Processando {} produtos da bomboniere para compra {}", request.getProdutos().size(), compra.getCompraId().getId());
+            for (CriarCompraRequest.ItemProduto itemProduto : request.getProdutos()) {
+                Produto produto = produtoRepositorio.obterPorId(new ProdutoId(itemProduto.getProdutoId()));
+
+                if (produto == null) {
+                    throw new RecursoNaoEncontradoException("Produto", Long.valueOf(itemProduto.getProdutoId()));
+                }
+
+                // Reduzir estoque
+                log.info("Reduzindo estoque do produto {} em {} unidades", produto.getNome(), itemProduto.getQuantidade());
+                produto.reduzirEstoque(itemProduto.getQuantidade());
+                produtoRepositorio.salvar(produto);
+                log.info("Estoque atualizado: {} agora tem {} unidades", produto.getNome(), produto.getEstoque());
+
+                // Criar venda associada à compra
+                // Criar lista de produtos (repetidos pela quantidade)
+                List<Produto> produtosVenda = new ArrayList<>();
+                for (int i = 0; i < itemProduto.getQuantidade(); i++) {
+                    produtosVenda.add(produto);
+                }
+
+                Venda venda = new Venda(
+                    new VendaId(0), // Será gerado pelo banco
+                    produtosVenda,
+                    null, // Sem pagamento separado (incluído na compra)
+                    StatusVenda.CONFIRMADA
+                );
+
+                // Salvar venda associada à compra (usando reflexão para chamar método sobrecarregado)
+                try {
+                    java.lang.reflect.Method salvarComCompraId = vendaRepositorio.getClass()
+                        .getMethod("salvar", Venda.class, Integer.class);
+                    salvarComCompraId.invoke(vendaRepositorio, venda, compra.getCompraId().getId());
+                } catch (Exception e) {
+                    log.warn("Erro ao associar venda à compra via reflexão, salvando sem associação", e);
+                    vendaRepositorio.salvar(venda);
+                }
+                log.info("Venda de {} criada e associada à compra {}", produto.getNome(), compra.getCompraId().getId());
+            }
+        }
 
         // Busca a compra salva para obter os QR Codes gerados
         Compra compraCompleta = compraRepositorio.obterPorId(compra.getCompraId());
@@ -112,13 +167,20 @@ public class CompraController {
     public ResponseEntity<Map<String, Object>> cancelarCompra(@PathVariable Integer id) {
         log.info("Cancelando compra ID: {}", id);
 
-        cancelarCompraUseCase.executar(new CompraId(id));
-
-        log.info("Compra {} cancelada com sucesso", id);
-        return ResponseEntity.ok(Map.of(
-            "mensagem", "Compra cancelada com sucesso",
-            "compraId", id
-        ));
+        try {
+            cancelarCompraUseCase.executar(new CompraId(id));
+            log.info("Compra {} cancelada com sucesso", id);
+            return ResponseEntity.ok(Map.of(
+                "mensagem", "Compra cancelada com sucesso",
+                "compraId", id
+            ));
+        } catch (IllegalArgumentException e) {
+            log.warn("Erro ao cancelar compra {}: {}", id, e.getMessage());
+            return ResponseEntity.status(404).body(Map.of(
+                "erro", e.getMessage(),
+                "compraId", id
+            ));
+        }
     }
 
     /**

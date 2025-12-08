@@ -1755,3 +1755,49 @@
   }
 }
 
+
+/* Bomboniere no ingresso */
+.ingresso-bomboniere {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.ingresso-bomboniere h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.produtos-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.produtos-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 12px;
+  background: rgba(42, 31, 71, 0.4);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.produtos-lista li span:first-child {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.produtos-lista li span:last-child {
+  font-weight: 600;
+  color: #10b981;
+}

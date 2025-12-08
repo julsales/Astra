@@ -35,6 +35,14 @@ public class RegistrarClienteUseCase {
             throw new IllegalArgumentException("Email já cadastrado");
         }
 
+        // Verificar se o CPF já está em uso (se fornecido)
+        if (dados.getCpf() != null && !dados.getCpf().trim().isEmpty()) {
+            Cliente clienteExistente = clienteRepositorio.obterPorCpf(dados.getCpf());
+            if (clienteExistente != null) {
+                throw new IllegalArgumentException("CPF já cadastrado");
+            }
+        }
+
         // Criar o usuário para login
         Usuario novoUsuario = new Usuario(
                 null, // ID será gerado pelo banco
@@ -59,7 +67,8 @@ public class RegistrarClienteUseCase {
         Cliente novoCliente = new Cliente(
                 new ClienteId(usuarioSalvo.getId().getValor()),
                 dados.getNome(),
-                dados.getEmail()
+                dados.getEmail(),
+                dados.getCpf()
         );
 
         // Salvar o cliente
@@ -84,6 +93,56 @@ public class RegistrarClienteUseCase {
         if (dados.getSenha() == null || dados.getSenha().length() < 6) {
             throw new IllegalArgumentException("Senha deve ter no mínimo 6 caracteres");
         }
+
+        // Validar CPF se fornecido
+        if (dados.getCpf() != null && !dados.getCpf().trim().isEmpty()) {
+            String cpfLimpo = dados.getCpf().replaceAll("[^0-9]", "");
+            if (cpfLimpo.length() != 11) {
+                throw new IllegalArgumentException("CPF deve conter 11 dígitos");
+            }
+            if (!validarCpf(cpfLimpo)) {
+                throw new IllegalArgumentException("CPF inválido");
+            }
+        }
+    }
+
+    private boolean validarCpf(String cpf) {
+        // Remove caracteres não numéricos
+        cpf = cpf.replaceAll("[^0-9]", "");
+
+        // Verifica se tem 11 dígitos
+        if (cpf.length() != 11) {
+            return false;
+        }
+
+        // Verifica se todos os dígitos são iguais (CPF inválido)
+        if (cpf.matches("(\\d)\\1{10}")) {
+            return false;
+        }
+
+        // Validação do primeiro dígito verificador
+        int soma = 0;
+        for (int i = 0; i < 9; i++) {
+            soma += Character.getNumericValue(cpf.charAt(i)) * (10 - i);
+        }
+        int primeiroDigito = 11 - (soma % 11);
+        if (primeiroDigito >= 10) {
+            primeiroDigito = 0;
+        }
+        if (primeiroDigito != Character.getNumericValue(cpf.charAt(9))) {
+            return false;
+        }
+
+        // Validação do segundo dígito verificador
+        soma = 0;
+        for (int i = 0; i < 10; i++) {
+            soma += Character.getNumericValue(cpf.charAt(i)) * (11 - i);
+        }
+        int segundoDigito = 11 - (soma % 11);
+        if (segundoDigito >= 10) {
+            segundoDigito = 0;
+        }
+        return segundoDigito == Character.getNumericValue(cpf.charAt(10));
     }
 
     // Classes auxiliares
@@ -91,11 +150,18 @@ public class RegistrarClienteUseCase {
         private final String nome;
         private final String email;
         private final String senha;
+        private final String cpf;
 
-        public DadosRegistro(String nome, String email, String senha) {
+        public DadosRegistro(String nome, String email, String senha, String cpf) {
             this.nome = nome;
             this.email = email;
             this.senha = senha;
+            this.cpf = cpf;
+        }
+
+        // Construtor para compatibilidade (sem CPF)
+        public DadosRegistro(String nome, String email, String senha) {
+            this(nome, email, senha, null);
         }
 
         public String getNome() {
@@ -108,6 +174,10 @@ public class RegistrarClienteUseCase {
 
         public String getSenha() {
             return senha;
+        }
+
+        public String getCpf() {
+            return cpf;
         }
     }
 

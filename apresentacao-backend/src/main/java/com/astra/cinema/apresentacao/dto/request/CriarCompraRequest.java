@@ -22,6 +22,8 @@ public class CriarCompraRequest {
 
     private String tipoIngresso; // "INTEIRA", "MEIA", "PROMOCAO"
 
+    private List<ItemProduto> produtos; // Produtos da bomboniere
+
     public Long getClienteId() {
         return clienteId;
     }
@@ -52,5 +54,35 @@ public class CriarCompraRequest {
 
     public void setTipoIngresso(String tipoIngresso) {
         this.tipoIngresso = tipoIngresso;
+    }
+
+    public List<ItemProduto> getProdutos() {
+        return produtos;
+    }
+
+    public void setProdutos(List<ItemProduto> produtos) {
+        this.produtos = produtos;
+    }
+
+    // Classe interna para representar um item da bomboniere
+    public static class ItemProduto {
+        private Integer produtoId;
+        private Integer quantidade;
+
+        public Integer getProdutoId() {
+            return produtoId;
+        }
+
+        public void setProdutoId(Integer produtoId) {
+            this.produtoId = produtoId;
+        }
+
+        public Integer getQuantidade() {
+            return quantidade;
+        }
+
+        public void setQuantidade(Integer quantidade) {
+            this.quantidade = quantidade;
+        }
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ClienteJpaRepository extends JpaRepository<ClienteJpa, Integer> {
-    Optional<ClienteJpa> findByEmail(String email);
-    Optional<ClienteJpa> findByCpf(String cpf);
+public interface SalaJpaRepository extends JpaRepository<SalaJpa, Integer> {
+    Optional<SalaJpa> findByNome(String nome);
 }

@@ -4,6 +4,7 @@ import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
 import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
 import com.astra.cinema.dominio.comum.AssentoId;
 import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.compra.StatusIngresso;
@@ -11,9 +12,14 @@ import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
+import com.astra.cinema.dominio.bomboniere.Venda;
+import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
+import com.astra.cinema.dominio.bomboniere.Produto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,17 +35,20 @@ public class IngressoController {
     private final CompraRepositorio compraRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
+    private final VendaRepositorio vendaRepositorio;
 
     public IngressoController(ValidarIngressoUseCase validarIngressoUseCase,
                              RemarcarIngressoUseCase remarcarIngressoUseCase,
                              CompraRepositorio compraRepositorio,
                              SessaoRepositorio sessaoRepositorio,
-                             FilmeRepositorio filmeRepositorio) {
+                             FilmeRepositorio filmeRepositorio,
+                             VendaRepositorio vendaRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
+        this.vendaRepositorio = vendaRepositorio;
     }
 
     @PostMapping("/validar")
@@ -113,59 +122,119 @@ public class IngressoController {
         }
     }
 
-    @GetMapping("/ativos")
-    public ResponseEntity<?> buscarIngressosAtivos(@RequestParam(required = false) Integer clienteId) {
+    // Método auxiliar para buscar produtos de uma compra
+    private List<Map<String, Object>> buscarProdutosDaCompra(com.astra.cinema.dominio.comum.CompraId compraId) {
         try {
-            List<Ingresso> ingressos;
-            
-            // Se clienteId foi fornecido, busca apenas os ingressos deste cliente
-            if (clienteId != null) {
-                ingressos = compraRepositorio.buscarIngressosAtivosPorCliente(new com.astra.cinema.dominio.comum.ClienteId(clienteId));
-            } else {
-                // Se não fornecido, busca todos (comportamento antigo, para compatibilidade)
-                ingressos = compraRepositorio.buscarIngressosAtivos();
+            List<Venda> vendas = vendaRepositorio.buscarPorCompra(compraId);
+            List<Map<String, Object>> produtos = new ArrayList<>();
+
+            for (Venda venda : vendas) {
+                // Contar produtos por nome (agrupar por produto)
+                Map<String, Integer> contagemPorProduto = new HashMap<>();
+                Map<String, Produto> produtoPorNome = new HashMap<>();
+
+                for (Produto produto : venda.getProdutos()) {
+                    String nome = produto.getNome();
+                    contagemPorProduto.put(nome, contagemPorProduto.getOrDefault(nome, 0) + 1);
+                    produtoPorNome.put(nome, produto);
+                }
+
+                // Adicionar produtos únicos com quantidade
+                for (Map.Entry<String, Integer> entry : contagemPorProduto.entrySet()) {
+                    String nome = entry.getKey();
+                    Integer quantidade = entry.getValue();
+                    Produto produto = produtoPorNome.get(nome);
+
+                    Map<String, Object> produtoMap = new HashMap<>();
+                    produtoMap.put("id", produto.getProdutoId().getId());
+                    produtoMap.put("nome", produto.getNome());
+                    produtoMap.put("preco", produto.getPreco());
+                    produtoMap.put("quantidade", quantidade);
+                    produtos.add(produtoMap);
+                }
             }
 
-            List<Map<String, Object>> response = ingressos.stream()
-                .map(i -> {
+            return produtos;
+        } catch (Exception e) {
+            return new ArrayList<>(); // Retorna lista vazia em caso de erro
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> buscarIngressos(@RequestParam(required = false) Integer clienteId) {
+        try {
+            List<Compra> compras;
+
+            // Se clienteId foi fornecido, busca TODAS as compras deste cliente (incluindo canceladas)
+            if (clienteId != null) {
+                compras = compraRepositorio.buscarPorCliente(new com.astra.cinema.dominio.comum.ClienteId(clienteId));
+            } else {
+                // Se não fornecido, precisa buscar todas as compras
+                // Por enquanto, retorna lista vazia (ou poderia buscar todas)
+                compras = new ArrayList<>();
+            }
+
+            // PROCESSAR CADA COMPRA (não cada ingresso individualmente!)
+            List<Map<String, Object>> response = compras.stream()
+                .map(compra -> {
+                    List<Ingresso> grupo = compra.getIngressos();
+                    if (grupo.isEmpty()) return null;
+
+                    // Pega o ingresso com menor ID como representante para garantir estabilidade
+                    Ingresso i = grupo.stream()
+                        .min(Comparator.comparing(ing -> ing.getIngressoId().getId()))
+                        .orElse(grupo.get(0));
+                    
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", i.getIngressoId().getId());
                     map.put("qrCode", i.getQrCode());
+                    map.put("codigo", i.getQrCode()); // Adiciona código também
                     map.put("sessaoId", i.getSessaoId().getId());
 
-                    // Buscar TODOS os assentos da compra (não apenas deste ingresso)
-                    try {
-                        var compra = compraRepositorio.buscarCompraPorQrCode(i.getQrCode());
-                        if (compra != null && compra.getIngressos() != null) {
-                            String todosAssentos = compra.getIngressos().stream()
-                                .map(ing -> ing.getAssentoId().getValor())
-                                .collect(Collectors.joining(", "));
-                            map.put("assento", todosAssentos);  // TODOS os assentos
-                            
-                            // Calcular valor total baseado no número de ingressos e tipo
-                            double valorTotal = compra.getIngressos().stream()
-                                .mapToDouble(ing -> {
-                                    // Preço base: R$ 35,00 para inteira, R$ 17,50 para meia
-                                    return ing.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5;
-                                })
-                                .sum();
-                            map.put("total", valorTotal);
-                        } else {
-                            map.put("assento", i.getAssentoId().getValor());  // Fallback
-                            map.put("total", i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5);
-                        }
-                    } catch (Exception e) {
-                        map.put("assento", i.getAssentoId().getValor());  // Fallback
-                        map.put("total", i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5);
-                    }
+                    // Usar o GRUPO para pegar todos os assentos (solução de duplicatas!)
+                    String todosAssentos = grupo.stream()
+                        .map(ing -> ing.getAssentoId().getValor())
+                        .collect(Collectors.joining(", "));
+                    map.put("assento", todosAssentos);  // TODOS os assentos
+                    map.put("assentos", grupo.stream()
+                        .map(ing -> ing.getAssentoId().getValor())
+                        .collect(Collectors.toList())); // Array de assentos
 
-                    map.put("assentoIndividual", i.getAssentoId().getValor());  // Assento individual
+                    // Calcular valor total baseado no número de ingressos e tipo
+                    double valorTotal = grupo.stream()
+                        .mapToDouble(ing -> {
+                            // Preço base: R$ 35,00 para inteira, R$ 17,50 para meia
+                            return ing.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5;
+                        })
+                        .sum();
+                    map.put("total", valorTotal);
+
+                    // Adiciona array com detalhes de cada ingresso (assento + tipo)
+                    List<Map<String, String>> ingressosDetalhados = grupo.stream()
+                        .map(ing -> {
+                            Map<String, String> ingressoDetalhe = new HashMap<>();
+                            ingressoDetalhe.put("assento", ing.getAssentoId().getValor());
+                            ingressoDetalhe.put("tipo", ing.getTipo().name());
+                            return ingressoDetalhe;
+                        })
+                        .collect(Collectors.toList());
+                    map.put("ingressosDetalhados", ingressosDetalhados);
+
+                    map.put("assentoIndividual", i.getAssentoId().getValor());  // Primeiro assento
                     map.put("tipo", i.getTipo().name());
                     map.put("status", i.getStatus().name());
 
                     // Adicionar flag foiValidado (true se status é VALIDADO)
                     boolean foiValidado = i.getStatus() == StatusIngresso.VALIDADO;
                     map.put("foiValidado", foiValidado);
+
+                    // Buscar produtos da bomboniere associados a esta compra
+                    try {
+                        List<Map<String, Object>> produtosDaCompra = buscarProdutosDaCompra(compra.getCompraId());
+                        map.put("produtos", produtosDaCompra);
+                    } catch (Exception e) {
+                        map.put("produtos", new ArrayList<>());
+                    }
 
                     // Buscar informações da sessão
                     try {
@@ -197,6 +266,132 @@ public class IngressoController {
 
                     return map;
                 })
+                .filter(map -> map != null)  // Remove nulls (compras vazias)
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("erro", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/ativos")
+    public ResponseEntity<?> buscarIngressosAtivos(@RequestParam(required = false) Integer clienteId) {
+        try {
+            List<Compra> compras;
+
+            // Se clienteId foi fornecido, busca compras deste cliente e filtra por ingressos ativos
+            if (clienteId != null) {
+                compras = compraRepositorio.buscarPorCliente(new com.astra.cinema.dominio.comum.ClienteId(clienteId));
+            } else {
+                // Se não fornecido, busca todas as compras
+                compras = compraRepositorio.listarTodas();
+            }
+
+            // Filtrar compras que tenham pelo menos um ingresso ativo
+            compras = compras.stream()
+                .filter(compra -> compra.getIngressos().stream()
+                    .anyMatch(ing -> ing.getStatus() == StatusIngresso.ATIVO))
+                .collect(Collectors.toList());
+
+            // PROCESSAR CADA COMPRA (não cada ingresso individualmente!)
+            List<Map<String, Object>> response = compras.stream()
+                .map(compra -> {
+                    // Pega apenas os ingressos ativos desta compra
+                    List<Ingresso> grupo = compra.getIngressos().stream()
+                        .filter(ing -> ing.getStatus() == StatusIngresso.ATIVO)
+                        .collect(Collectors.toList());
+
+                    if (grupo.isEmpty()) return null;
+
+                    // Pega o ingresso com menor ID como representante para garantir estabilidade
+                    Ingresso i = grupo.stream()
+                        .min(Comparator.comparing(ing -> ing.getIngressoId().getId()))
+                        .orElse(grupo.get(0));
+
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", i.getIngressoId().getId());
+                    map.put("qrCode", i.getQrCode());
+                    map.put("codigo", i.getQrCode());
+                    map.put("sessaoId", i.getSessaoId().getId());
+
+                    // Usar o GRUPO para pegar todos os assentos (solução de duplicatas!)
+                    String todosAssentos = grupo.stream()
+                        .map(ing -> ing.getAssentoId().getValor())
+                        .collect(Collectors.joining(", "));
+                    map.put("assento", todosAssentos);  // TODOS os assentos
+                    map.put("assentos", grupo.stream()
+                        .map(ing -> ing.getAssentoId().getValor())
+                        .collect(Collectors.toList())); // Array de assentos
+
+                    // Calcular valor total baseado no número de ingressos e tipo
+                    double valorTotal = grupo.stream()
+                        .mapToDouble(ing -> {
+                            // Preço base: R$ 35,00 para inteira, R$ 17,50 para meia
+                            return ing.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5;
+                        })
+                        .sum();
+                    map.put("total", valorTotal);
+
+                    // Adiciona array com detalhes de cada ingresso (assento + tipo)
+                    List<Map<String, String>> ingressosDetalhados = grupo.stream()
+                        .map(ing -> {
+                            Map<String, String> ingressoDetalhe = new HashMap<>();
+                            ingressoDetalhe.put("assento", ing.getAssentoId().getValor());
+                            ingressoDetalhe.put("tipo", ing.getTipo().name());
+                            return ingressoDetalhe;
+                        })
+                        .collect(Collectors.toList());
+                    map.put("ingressosDetalhados", ingressosDetalhados);
+
+                    map.put("assentoIndividual", i.getAssentoId().getValor());  // Primeiro assento
+                    map.put("tipo", i.getTipo().name());
+                    map.put("status", i.getStatus().name());
+
+                    // Adicionar flag foiValidado (true se status é VALIDADO)
+                    boolean foiValidado = i.getStatus() == StatusIngresso.VALIDADO;
+                    map.put("foiValidado", foiValidado);
+
+                    // Buscar produtos da bomboniere associados a esta compra
+                    try {
+                        List<Map<String, Object>> produtosDaCompra = buscarProdutosDaCompra(compra.getCompraId());
+                        map.put("produtos", produtosDaCompra);
+                    } catch (Exception e) {
+                        map.put("produtos", new ArrayList<>());
+                    }
+
+                    // Buscar informações da sessão
+                    try {
+                        Sessao sessao = sessaoRepositorio.obterPorId(i.getSessaoId());
+                        if (sessao != null) {
+                            map.put("horario", sessao.getHorario().toString());
+                            map.put("salaId", sessao.getSalaId().getId());
+                            map.put("sala", "Sala " + sessao.getSalaId().getId());
+
+                            // Buscar informações do filme
+                            try {
+                                Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
+                                if (filme != null) {
+                                    Map<String, Object> filmeMap = new HashMap<>();
+                                    filmeMap.put("id", filme.getFilmeId().getId());
+                                    filmeMap.put("titulo", filme.getTitulo());
+                                    filmeMap.put("sinopse", filme.getSinopse());
+                                    filmeMap.put("classificacaoEtaria", filme.getClassificacaoEtaria());
+                                    filmeMap.put("duracao", filme.getDuracao());
+                                    map.put("filme", filmeMap);
+                                }
+                            } catch (Exception e) {
+                                // Se não encontrar filme, continua sem adicionar
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Se não encontrar sessão, continua sem adicionar
+                    }
+
+                    return map;
+                })
+                .filter(map -> map != null)  // Remove nulls (compras vazias)
                 .collect(Collectors.toList());
 
             return ResponseEntity.ok(response);

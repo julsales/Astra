@@ -22,6 +22,7 @@ public class SessaoController {
 
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
+    private final SalaRepositorio salaRepositorio;
     private final CriarSessaoUseCase criarSessaoUseCase;
     private final ModificarSessaoUseCase modificarSessaoUseCase;
     private final RemoverSessaoUseCase removerSessaoUseCase;
@@ -29,12 +30,14 @@ public class SessaoController {
 
     public SessaoController(SessaoRepositorio sessaoRepositorio,
                            FilmeRepositorio filmeRepositorio,
+                           SalaRepositorio salaRepositorio,
                            CriarSessaoUseCase criarSessaoUseCase,
                            ModificarSessaoUseCase modificarSessaoUseCase,
                            RemoverSessaoUseCase removerSessaoUseCase,
                            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase) {
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
+        this.salaRepositorio = salaRepositorio;
         this.criarSessaoUseCase = criarSessaoUseCase;
         this.modificarSessaoUseCase = modificarSessaoUseCase;
         this.removerSessaoUseCase = removerSessaoUseCase;
@@ -277,9 +280,16 @@ public class SessaoController {
                         .body(Map.of("erro", "ID da sala é obrigatório"));
             }
 
-            int capacidade = request.getCapacidade() != null && request.getCapacidade() > 0 ?
-                    request.getCapacidade() : 50;
             SalaId salaId = new SalaId(request.getSalaId());
+
+            // Busca a capacidade real da sala
+            Sala sala = salaRepositorio.obterPorId(salaId);
+            if (sala == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("erro", "Sala não encontrada com ID: " + request.getSalaId()));
+            }
+
+            int capacidade = sala.getCapacidade();
 
             Sessao sessao = criarSessaoUseCase.executar(
                     new FilmeId(request.getFilmeId()),
@@ -384,17 +394,19 @@ public class SessaoController {
     }
 
     /**
-     * Calcula a ocupação percentual de uma sessão
+     * Calcula a ocupação percentual de uma sessão baseada na capacidade real da sala
      */
     private double calcularOcupacao(Sessao sessao) {
-        if (sessao.getCapacidade() == 0) return 0.0;
+        // Busca a capacidade real da sala
+        Sala sala = salaRepositorio.obterPorId(sessao.getSalaId());
+        if (sala == null || sala.getCapacidade() == 0) return 0.0;
 
         long assentosOcupados = sessao.getMapaAssentosDisponiveis().values().stream()
                 .filter(disponivel -> !disponivel)
                 .count();
 
-        // Retorna fração entre 0.0 e 1.0 (ex: 0.08 para 8%)
-        return (double) assentosOcupados / (double) sessao.getCapacidade();
+        // Retorna fração entre 0.0 e 1.0 (ex: 0.08 para 8%) usando capacidade real da sala
+        return (double) assentosOcupados / (double) sala.getCapacidade();
     }
 
     /**
@@ -407,8 +419,14 @@ public class SessaoController {
         dto.put("horario", sessao.getHorario());
         dto.put("status", sessao.getStatus().name());
         dto.put("salaId", sessao.getSalaId().getId());
-        dto.put("sala", "Sala " + sessao.getSalaId().getId()); // Temporário
-        dto.put("capacidade", sessao.getCapacidade());
+
+        // Busca a capacidade real da sala
+        Sala sala = salaRepositorio.obterPorId(sessao.getSalaId());
+        int capacidadeReal = sala != null ? sala.getCapacidade() : sessao.getCapacidade();
+        String nomeSala = sala != null ? sala.getNome() : "Sala " + sessao.getSalaId().getId();
+
+        dto.put("sala", nomeSala);
+        dto.put("capacidade", capacidadeReal);
 
         // Adiciona informações do filme (inclui campo filmeTitulo para compatibilidade)
         try {
@@ -429,11 +447,11 @@ public class SessaoController {
             dto.put("filmeTitulo", "Filme #" + sessao.getFilmeId().getId());
         }
 
-        // Adiciona estatísticas de ocupação
+        // Adiciona estatísticas de ocupação baseadas na capacidade real da sala
         long assentosDisponiveis = sessao.getMapaAssentosDisponiveis().values().stream()
                 .filter(disponivel -> disponivel)
                 .count();
-        long assentosOcupados = sessao.getCapacidade() - assentosDisponiveis;
+        long assentosOcupados = capacidadeReal - assentosDisponiveis;
 
         dto.put("assentosDisponiveis", assentosDisponiveis);
         dto.put("assentosOcupados", assentosOcupados);

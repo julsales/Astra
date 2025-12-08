@@ -69,9 +69,6 @@ class PagamentoJpa {
 /**
  * Interface Spring Data JPA para Pagamento
  */
-interface PagamentoJpaRepository extends JpaRepository<PagamentoJpa, Integer> {
-    List<PagamentoJpa> findByStatus(StatusPagamento status);
-}
 
 /**
  * Implementação do repositório de domínio usando JPA
