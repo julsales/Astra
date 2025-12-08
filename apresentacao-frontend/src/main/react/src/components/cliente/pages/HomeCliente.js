@@ -227,8 +227,22 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
       {abaAtiva === 'ingressos' && (
         <section className="secao-ingressos">
           <div className="ingressos-header">
-            <h2>Meus Ingressos</h2>
-            <p>Gerencie seus ingressos comprados</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2>Meus Ingressos</h2>
+                <p>Gerencie seus ingressos comprados</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setCarregando(true);
+                  sincronizarComBackend().finally(() => setCarregando(false));
+                }} 
+                className="btn-secondary-novo"
+                disabled={carregando}
+              >
+                {carregando ? 'Atualizando...' : 'Atualizar Lista'}
+              </button>
+            </div>
           </div>
 
           {ingressos.length === 0 ? (

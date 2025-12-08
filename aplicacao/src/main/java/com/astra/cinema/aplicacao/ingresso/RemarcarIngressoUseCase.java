@@ -20,6 +20,8 @@ public class RemarcarIngressoUseCase {
     }
 
     public void executar(String qrCode, SessaoId novaSessaoId, AssentoId novoAssentoId) {
+        System.out.println("Iniciando remarcação. QRCode: " + qrCode + ", Nova Sessão: " + novaSessaoId + ", Novo Assento: " + novoAssentoId);
+
         exigirNaoNulo(qrCode, "O QR Code não pode ser nulo");
         exigirNaoNulo(novaSessaoId, "A nova sessão não pode ser nula");
         exigirNaoNulo(novoAssentoId, "O novo assento não pode ser nulo");
@@ -27,6 +29,10 @@ public class RemarcarIngressoUseCase {
         // Buscar ingresso
         Ingresso ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
         exigirNaoNulo(ingresso, "Ingresso não encontrado");
+
+        System.out.println("Ingresso encontrado: ID=" + ingresso.getIngressoId().getId() + 
+            ", Sessão Atual=" + ingresso.getSessaoId().getId() + 
+            ", Assento Atual=" + ingresso.getAssentoId().getValor());
 
         // Buscar sessões
         Sessao sessaoAntiga = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
@@ -42,6 +48,7 @@ public class RemarcarIngressoUseCase {
         AssentoId assentoAntigo = ingresso.getAssentoId();
         sessaoAntiga.liberarAssento(assentoAntigo);
         sessaoRepositorio.salvar(sessaoAntiga);
+        System.out.println("Assento antigo " + assentoAntigo + " liberado na sessão " + sessaoAntiga.getSessaoId());
 
         // Verificar disponibilidade do assento na nova sessão
         exigirEstado(novaSessao.assentoDisponivel(novoAssentoId),
@@ -50,9 +57,11 @@ public class RemarcarIngressoUseCase {
         // Reservar assento na nova sessão
         novaSessao.reservarAssento(novoAssentoId);
         sessaoRepositorio.salvar(novaSessao);
+        System.out.println("Novo assento " + novoAssentoId + " reservado na sessão " + novaSessao.getSessaoId());
 
         // Remarcar ingresso
         ingresso.remarcarSessao(novaSessaoId, novoAssentoId);
         compraRepositorio.atualizarIngresso(ingresso);
+        System.out.println("Ingresso atualizado no repositório");
     }
 }

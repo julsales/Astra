@@ -125,10 +125,12 @@ export const useMeusIngressos = (usuario) => {
     const sincronizarComBackend = useCallback(async () => {
       if (!usuario || !usuario.clienteId) return;
       try {
+        console.log('Sincronizando ingressos com backend...');
         // Busca TODOS os ingressos (ativos E cancelados) do usuário logado
-        const res = await fetch(`/api/ingressos?clienteId=${usuario.clienteId}`);
+        const res = await fetch(`/api/ingressos?clienteId=${usuario.clienteId}&_t=${Date.now()}`);
         if (!res.ok) return;
         const dados = await res.json();
+        console.log('Dados recebidos do backend:', dados);
 
         // AGRUPAR ingressos por compra (mesmo qrCode = mesma compra)
         // Backend retorna 1 ingresso por assento, mas frontend trata como 1 compra com múltiplos assentos
@@ -185,6 +187,8 @@ export const useMeusIngressos = (usuario) => {
 
           return Promise.all(promises);
         })();
+
+        console.log('Compras processadas do backend:', compras);
 
         persistir((listaAtual) => {
           // Remove todos os ingressos que vieram do backend (evita duplicação)
