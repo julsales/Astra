@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Film, Clock, Users, AlertTriangle, CheckCircle, Calendar, MapPin, Search, ChevronRight, ChevronDown, Armchair } from 'lucide-react';
+import { RefreshCw, Film, Clock, Users, AlertTriangle, CheckCircle, Calendar, MapPin, Search, ChevronRight, ChevronDown, Armchair, X, Ticket, ArrowRight, Printer, Share2 } from 'lucide-react';
 import Modal from '../shared/Modal';
-import { formatarDataHora } from '../../utils/formatters';
+import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
 import './RemarcarNovo.css';
 
 /**
@@ -128,6 +128,10 @@ const RemarcarNovo = () => {
   // Estados de mapa de assentos
   const [mapaAssentos, setMapaAssentos] = useState({});
   const [assentosSelecionados, setAssentosSelecionados] = useState([]);
+
+  // Estados para modal de sucesso
+  const [modalSucesso, setModalSucesso] = useState(false);
+  const [dadosRemarcacao, setDadosRemarcacao] = useState(null);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -278,8 +282,25 @@ const RemarcarNovo = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(`${remarcacoes.length} ingresso(s) remarcado(s) com sucesso!`);
-        resetarFluxo();
+        // Preparar dados para o modal de sucesso
+        const filmeDestino = filmes.find(f => f.id === sessaoDestino.filmeId);
+        setDadosRemarcacao({
+          quantidade: remarcacoes.length,
+          ingressos: ingressosSelecionados.map((ing, idx) => ({
+            qrCode: ing.qrCode,
+            assentoOriginal: ing.assento,
+            novoAssento: assentosSelecionados[idx]
+          })),
+          sessaoOriginal: compraSelecionada?.sessaoInfo,
+          sessaoDestino: {
+            ...sessaoDestino,
+            filmeTitulo: filmeDestino?.titulo || `Filme #${sessaoDestino.filmeId}`
+          },
+          motivo: motivoTecnico,
+          dataRemarcacao: new Date().toISOString(),
+          clienteNome: compraSelecionada?.clienteNome || 'Cliente'
+        });
+        setModalSucesso(true);
       } else {
         alert(`Erro: ${data.erro || 'Falha ao remarcar ingressos'}`);
       }
@@ -289,6 +310,12 @@ const RemarcarNovo = () => {
     } finally {
       setCarregando(false);
     }
+  };
+
+  const fecharModalSucesso = () => {
+    setModalSucesso(false);
+    setDadosRemarcacao(null);
+    resetarFluxo();
   };
 
   const resetarFluxo = () => {
@@ -727,6 +754,117 @@ const RemarcarNovo = () => {
         {etapa === 3 && renderEtapa3()}
         {etapa === 4 && renderEtapa4()}
       </div>
+
+      {/* Modal de Sucesso da Remarcação */}
+      {modalSucesso && dadosRemarcacao && (
+        <div className="modal-sucesso-overlay" onClick={fecharModalSucesso}>
+          <div className="modal-sucesso-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={fecharModalSucesso}>
+              <X size={24} />
+            </button>
+
+            <div className="modal-sucesso-header">
+              <div className="sucesso-icon-wrapper">
+                <CheckCircle size={64} />
+              </div>
+              <h2>Remarcação Concluída!</h2>
+              <p>{dadosRemarcacao.quantidade} ingresso(s) remarcado(s) com sucesso</p>
+            </div>
+
+            <div className="modal-sucesso-body">
+              {/* Resumo da Transição */}
+              <div className="transicao-visual">
+                <div className="sessao-box origem">
+                  <span className="sessao-label">Sessão Original</span>
+                  <div className="sessao-info-box">
+                    <Film size={18} />
+                    <span>{dadosRemarcacao.sessaoOriginal?.filme?.titulo || dadosRemarcacao.sessaoOriginal?.filmeTitulo || 'Filme'}</span>
+                  </div>
+                  <div className="sessao-info-box">
+                    <Calendar size={16} />
+                    <span>{formatarDataHora(dadosRemarcacao.sessaoOriginal?.horario)}</span>
+                  </div>
+                  <div className="sessao-info-box">
+                    <MapPin size={16} />
+                    <span>{dadosRemarcacao.sessaoOriginal?.sala}</span>
+                  </div>
+                </div>
+
+                <div className="transicao-seta">
+                  <ArrowRight size={32} />
+                </div>
+
+                <div className="sessao-box destino">
+                  <span className="sessao-label">Nova Sessão</span>
+                  <div className="sessao-info-box">
+                    <Film size={18} />
+                    <span>{dadosRemarcacao.sessaoDestino?.filmeTitulo}</span>
+                  </div>
+                  <div className="sessao-info-box">
+                    <Calendar size={16} />
+                    <span>{formatarDataHora(dadosRemarcacao.sessaoDestino?.horario)}</span>
+                  </div>
+                  <div className="sessao-info-box">
+                    <MapPin size={16} />
+                    <span>{dadosRemarcacao.sessaoDestino?.sala}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de Ingressos Remarcados */}
+              <div className="ingressos-remarcados-lista">
+                <h4><Ticket size={18} /> Ingressos Remarcados</h4>
+                {dadosRemarcacao.ingressos.map((ing, idx) => (
+                  <div key={idx} className="ingresso-remarcado-item">
+                    <span className="qr-badge">{ing.qrCode}</span>
+                    <span className="assento-transicao">
+                      <span className="assento-original">{ing.assentoOriginal}</span>
+                      <ArrowRight size={14} />
+                      <span className="assento-novo">{ing.novoAssento}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Informações Adicionais */}
+              <div className="info-adicional">
+                <div className="info-row">
+                  <span className="info-label">Cliente:</span>
+                  <span className="info-valor">{dadosRemarcacao.clienteNome}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Motivo:</span>
+                  <span className="info-valor">{dadosRemarcacao.motivo}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">Data/Hora:</span>
+                  <span className="info-valor">{formatarDataHora(dadosRemarcacao.dataRemarcacao)}</span>
+                </div>
+              </div>
+
+              {/* Aviso ao Cliente */}
+              <div className="aviso-cliente-box">
+                <AlertTriangle size={20} />
+                <div>
+                  <strong>Importante:</strong>
+                  <p>O cliente pode visualizar o ingresso atualizado na aba "Meus Ingressos" do aplicativo.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-sucesso-footer">
+              <button className="btn-imprimir" onClick={() => window.print()}>
+                <Printer size={18} />
+                Imprimir Comprovante
+              </button>
+              <button className="btn-nova-remarcacao" onClick={fecharModalSucesso}>
+                <RefreshCw size={18} />
+                Nova Remarcação
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

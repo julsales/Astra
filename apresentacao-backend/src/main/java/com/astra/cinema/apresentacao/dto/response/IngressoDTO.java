@@ -8,6 +8,8 @@ public class IngressoDTO {
     private String assento;
     private String tipo;
     private String status;
+    private Boolean remarcado;
+    private HistoricoRemarcacaoDTO historicoRemarcacao;
 
     public IngressoDTO() {
     }
@@ -78,5 +80,21 @@ public class IngressoDTO {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Boolean getRemarcado() {
+        return remarcado;
+    }
+
+    public void setRemarcado(Boolean remarcado) {
+        this.remarcado = remarcado;
+    }
+
+    public HistoricoRemarcacaoDTO getHistoricoRemarcacao() {
+        return historicoRemarcacao;
+    }
+
+    public void setHistoricoRemarcacao(HistoricoRemarcacaoDTO historicoRemarcacao) {
+        this.historicoRemarcacao = historicoRemarcacao;
     }
 }

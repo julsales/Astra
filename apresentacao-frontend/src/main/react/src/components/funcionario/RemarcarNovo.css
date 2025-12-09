@@ -1019,3 +1019,346 @@
   color: rgba(16, 185, 129, 1);
   flex-shrink: 0;
 }
+
+/* ===== MODAL DE SUCESSO DA REMARCAÇÃO ===== */
+.modal-sucesso-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-sucesso-content {
+  background: linear-gradient(135deg, #1e1438 0%, #0f0a1f 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.modal-sucesso-header {
+  text-align: center;
+  padding: 40px 30px 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sucesso-icon-wrapper {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  animation: pulseSuccess 2s infinite;
+}
+
+@keyframes pulseSuccess {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+}
+
+.sucesso-icon-wrapper svg {
+  color: white;
+}
+
+.modal-sucesso-header h2 {
+  color: #10B981;
+  font-size: 28px;
+  margin: 0 0 8px 0;
+}
+
+.modal-sucesso-header p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: 16px;
+}
+
+.modal-sucesso-body {
+  padding: 24px 30px;
+}
+
+/* Transição Visual */
+.transicao-visual {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sessao-box {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sessao-box.origem {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.sessao-box.destino {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.sessao-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sessao-box.origem .sessao-label {
+  color: #ef4444;
+}
+
+.sessao-box.destino .sessao-label {
+  color: #10B981;
+}
+
+.sessao-info-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.sessao-info-box svg {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+.transicao-seta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(139, 92, 246, 0.8);
+}
+
+/* Lista de Ingressos Remarcados */
+.ingressos-remarcados-lista {
+  background: rgba(30, 20, 60, 0.5);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.ingressos-remarcados-lista h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.ingresso-remarcado-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.ingresso-remarcado-item:last-child {
+  margin-bottom: 0;
+}
+
+.qr-badge {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.assento-transicao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.assento-original {
+  color: #ef4444;
+  font-weight: 600;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.assento-novo {
+  color: #10B981;
+  font-weight: 600;
+}
+
+/* Info Adicional */
+.info-adicional {
+  background: rgba(30, 20, 60, 0.5);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.info-adicional .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-adicional .info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.info-valor {
+  color: white;
+  font-weight: 500;
+}
+
+/* Aviso ao Cliente */
+.aviso-cliente-box {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+}
+
+.aviso-cliente-box svg {
+  color: #fbbf24;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.aviso-cliente-box strong {
+  color: #fbbf24;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.aviso-cliente-box p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Footer do Modal */
+.modal-sucesso-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 30px 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-imprimir {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-imprimir:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-nova-remarcacao {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-nova-remarcacao:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* Responsividade do Modal */
+@media (max-width: 600px) {
+  .transicao-visual {
+    flex-direction: column;
+  }
+
+  .transicao-seta {
+    transform: rotate(90deg);
+    padding: 8px 0;
+  }
+
+  .modal-sucesso-footer {
+    flex-direction: column;
+  }
+}

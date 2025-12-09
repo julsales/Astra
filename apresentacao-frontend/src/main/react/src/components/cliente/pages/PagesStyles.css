@@ -932,3 +932,114 @@
     flex-direction: column;
   }
 }
+
+/* ========================================
+   BADGE E HISTÓRICO DE REMARCAÇÃO
+   ======================================== */
+
+.badge-remarcado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  animation: pulseRemarcado 2s ease-in-out infinite;
+}
+
+@keyframes pulseRemarcado {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0);
+  }
+}
+
+.badge-remarcado svg {
+  color: #10b981;
+}
+
+.historico-remarcacao {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 20, 60, 0.5) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.remarcacao-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.remarcacao-header svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.remarcacao-header h5 {
+  margin: 0;
+  color: #10b981;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.remarcacao-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.remarcacao-linha {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.remarcacao-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.remarcacao-valor {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.remarcacao-valor.destaque-original {
+  color: #ef4444;
+  font-weight: 600;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+/* Responsividade do histórico */
+@media (max-width: 768px) {
+  .historico-remarcacao {
+    padding: 12px;
+  }
+
+  .remarcacao-header h5 {
+    font-size: 12px;
+  }
+
+  .remarcacao-valor {
+    font-size: 13px;
+  }
+}

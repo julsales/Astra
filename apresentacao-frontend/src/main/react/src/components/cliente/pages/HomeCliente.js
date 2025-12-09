@@ -263,6 +263,15 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                     <div>
                       <h3>{ingresso.filme?.titulo || 'Filme'}</h3>
                       <p className="ingresso-codigo-pequeno">Código: {ingresso.codigo}</p>
+                      {ingresso.remarcado && (
+                        <div className="badge-remarcado">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 4v6h6M23 20v-6h-6" />
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                          </svg>
+                          Remarcado
+                        </div>
+                      )}
                     </div>
                     <span className={`badge-status ${ingresso.status === 'VALIDADO' ? 'validado' : ingresso.status?.toLowerCase()}`}>
                       {ingresso.status === 'VALIDADO' ? 'VALIDADO' :
@@ -291,6 +300,47 @@ const HomeCliente = ({ usuario, onIniciarCompra }) => {
                       <span className="valor">{ingresso.assentos?.join(', ') || 'D5'}</span>
                     </div>
                   </div>
+
+                  {/* Informações de Remarcação */}
+                  {ingresso.remarcado && ingresso.historicoRemarcacao && (
+                    <div className="historico-remarcacao">
+                      <div className="remarcacao-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <h5>Histórico de Remarcação</h5>
+                      </div>
+                      <div className="remarcacao-info">
+                        <div className="remarcacao-linha">
+                          <span className="remarcacao-label">Sessão Original:</span>
+                          <span className="remarcacao-valor">
+                            {ingresso.historicoRemarcacao.sessaoOriginal?.filme || 'Filme'} - 
+                            {formatarData(ingresso.historicoRemarcacao.sessaoOriginal?.horario || ingresso.dataCompra)} 
+                            às {formatarHora(ingresso.historicoRemarcacao.sessaoOriginal?.horario || ingresso.dataCompra)}
+                          </span>
+                        </div>
+                        {ingresso.historicoRemarcacao.assentoOriginal && (
+                          <div className="remarcacao-linha">
+                            <span className="remarcacao-label">Assento Original:</span>
+                            <span className="remarcacao-valor destaque-original">{ingresso.historicoRemarcacao.assentoOriginal}</span>
+                          </div>
+                        )}
+                        <div className="remarcacao-linha">
+                          <span className="remarcacao-label">Data da Remarcação:</span>
+                          <span className="remarcacao-valor">
+                            {formatarData(ingresso.historicoRemarcacao.dataRemarcacao || ingresso.dataCompra)}
+                          </span>
+                        </div>
+                        {ingresso.historicoRemarcacao.motivo && (
+                          <div className="remarcacao-linha">
+                            <span className="remarcacao-label">Motivo:</span>
+                            <span className="remarcacao-valor">{ingresso.historicoRemarcacao.motivo}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {ingresso.produtos && ingresso.produtos.length > 0 && (
                     <div className="ingresso-bomboniere">
