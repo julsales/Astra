@@ -11,16 +11,12 @@ import com.astra.cinema.dominio.compra.*;
 import com.astra.cinema.dominio.compra.StatusIngresso;
 import com.astra.cinema.dominio.bomboniere.Produto;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
-import com.astra.cinema.dominio.bomboniere.StatusVenda;
-import com.astra.cinema.dominio.bomboniere.Venda;
-import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,20 +38,17 @@ public class CompraController {
     private final CompraRepositorio compraRepositorio;
     private final IngressoMapper ingressoMapper;
     private final ProdutoRepositorio produtoRepositorio;
-    private final VendaRepositorio vendaRepositorio;
 
     public CompraController(IniciarCompraUseCase iniciarCompraUseCase,
                            CancelarCompraUseCase cancelarCompraUseCase,
                            CompraRepositorio compraRepositorio,
                            IngressoMapper ingressoMapper,
-                           ProdutoRepositorio produtoRepositorio,
-                           VendaRepositorio vendaRepositorio) {
+                           ProdutoRepositorio produtoRepositorio) {
         this.iniciarCompraUseCase = iniciarCompraUseCase;
         this.cancelarCompraUseCase = cancelarCompraUseCase;
         this.compraRepositorio = compraRepositorio;
         this.ingressoMapper = ingressoMapper;
         this.produtoRepositorio = produtoRepositorio;
-        this.vendaRepositorio = vendaRepositorio;
     }
 
     /**
@@ -108,32 +101,7 @@ public class CompraController {
                 log.info("Reduzindo estoque do produto {} em {} unidades", produto.getNome(), itemProduto.getQuantidade());
                 produto.reduzirEstoque(itemProduto.getQuantidade());
                 produtoRepositorio.salvar(produto);
-                log.info("Estoque atualizado: {} agora tem {} unidades", produto.getNome(), produto.getEstoque());
-
-                // Criar venda associada à compra
-                // Criar lista de produtos (repetidos pela quantidade)
-                List<Produto> produtosVenda = new ArrayList<>();
-                for (int i = 0; i < itemProduto.getQuantidade(); i++) {
-                    produtosVenda.add(produto);
-                }
-
-                Venda venda = new Venda(
-                    new VendaId(0), // Será gerado pelo banco
-                    produtosVenda,
-                    null, // Sem pagamento separado (incluído na compra)
-                    StatusVenda.CONFIRMADA
-                );
-
-                // Salvar venda associada à compra (usando reflexão para chamar método sobrecarregado)
-                try {
-                    java.lang.reflect.Method salvarComCompraId = vendaRepositorio.getClass()
-                        .getMethod("salvar", Venda.class, Integer.class);
-                    salvarComCompraId.invoke(vendaRepositorio, venda, compra.getCompraId().getId());
-                } catch (Exception e) {
-                    log.warn("Erro ao associar venda à compra via reflexão, salvando sem associação", e);
-                    vendaRepositorio.salvar(venda);
-                }
-                log.info("Venda de {} criada e associada à compra {}", produto.getNome(), compra.getCompraId().getId());
+                log.info("Estoque atualizado: {} agora tem {} unidades (compra {})", produto.getNome(), produto.getEstoque(), compra.getCompraId().getId());
             }
         }
 
