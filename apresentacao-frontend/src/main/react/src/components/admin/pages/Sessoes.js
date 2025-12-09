@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
-import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ViewIcon, SaveIcon, CancelIcon } from '../Icons';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon, SaveIcon, CancelIcon } from '../Icons';
 
 const statusOptions = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -29,17 +29,11 @@ const Sessoes = ({ usuario }) => {
   const [indicadores, setIndicadores] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showRemarcarModal, setShowRemarcarModal] = useState(false);
-  const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
   const [editando, setEditando] = useState(null);
   const [formData, setFormData] = useState({
     filmeId: '',
     horario: '',
     salaId: ''
-  });
-  const [remarcacaoForm, setRemarcacaoForm] = useState({
-    novoHorario: '',
-    assentos: ''
   });
   const [filtros, setFiltros] = useState({
     filmeId: 'TODOS',
@@ -125,16 +119,6 @@ const Sessoes = ({ usuario }) => {
       });
     }
     setShowModal(true);
-  };
-
-  const abrirRemarcacaoModal = (sessao) => {
-    setSessaoSelecionada(sessao);
-    setRemarcacaoForm({
-      novoHorario: new Date(sessao.horario).toISOString().slice(0, 16),
-      estrategia: 'MASSA',
-      assentos: ''
-    });
-    setShowRemarcarModal(true);
   };
 
   const fecharModal = () => {
@@ -223,46 +207,6 @@ const Sessoes = ({ usuario }) => {
     } catch (error) {
       console.error('Erro:', error);
       alert('Erro ao cancelar sessão');
-    }
-  };
-
-  const handleRemarcacaoSubmit = async (e) => {
-    e.preventDefault();
-    if (!sessaoSelecionada) return;
-
-    try {
-
-      if (!remarcacaoForm.novoHorario) {
-        alert('Informe o novo horário');
-        return;
-      }
-
-      const payload = {
-        novoHorario: new Date(remarcacaoForm.novoHorario).toISOString(),
-        assentosAfetados: remarcacaoForm.assentos
-          ? remarcacaoForm.assentos.split(',').map(a => a.trim()).filter(Boolean)
-          : [],
-        funcionario: getFuncionarioPayload()
-      };
-
-      const response = await fetch(`/api/sessoes/${sessaoSelecionada.id}/remarcar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        alert('Ingressos remarcados com sucesso!');
-        setShowRemarcarModal(false);
-        setSessaoSelecionada(null);
-        carregarDados({});
-      } else {
-        const error = await response.json();
-        alert(error.mensagem || 'Erro ao remarcar ingressos');
-      }
-    } catch (error) {
-      console.error('Erro ao remarcar ingressos:', error);
-      alert('Erro ao remarcar ingressos');
     }
   };
 
@@ -435,22 +379,15 @@ const Sessoes = ({ usuario }) => {
                     </td>
                     <td>
                       <div className="table-actions">
-                        <button 
-                          className="btn-secondary" 
+                        <button
+                          className="btn-secondary"
                           onClick={() => abrirModal(sessao)}
                           style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
                         >
                           <EditIcon size={14} /> Modificar
                         </button>
-                        <button 
-                          className="btn-tertiary"
-                          onClick={() => abrirRemarcacaoModal(sessao)}
-                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
-                        >
-                          <ViewIcon size={14} /> Remarcar
-                        </button>
-                        <button 
-                          className="btn-danger" 
+                        <button
+                          className="btn-danger"
                           onClick={() => removerSessao(sessao.id)}
                           style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
                         >
@@ -526,48 +463,6 @@ const Sessoes = ({ usuario }) => {
                 </button>
                 <button type="submit" className="btn-primary">
                   <SaveIcon size={16} /> {editando ? 'Salvar Alterações' : 'Criar Sessão'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Remarcar Sessão */}
-      {showRemarcarModal && sessaoSelecionada && (
-        <div className="modal-overlay" onClick={() => setShowRemarcarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Remarcar Ingressos da Sessão #{sessaoSelecionada.id}</h2>
-              <button className="modal-close" onClick={() => setShowRemarcarModal(false)}></button>
-            </div>
-
-            <form onSubmit={handleRemarcacaoSubmit}>
-              <div className="form-group">
-                <label>Novo Horário *</label>
-                <input
-                  type="datetime-local"
-                  value={remarcacaoForm.novoHorario}
-                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, novoHorario: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Assentos (opcional — separados por vírgula)</label>
-                <textarea
-                  placeholder="A1, A2, B3"
-                  value={remarcacaoForm.assentos}
-                  onChange={(e) => setRemarcacaoForm({ ...remarcacaoForm, assentos: e.target.value })}
-                />
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setShowRemarcarModal(false)}>
-                  <CancelIcon size={16} /> Fechar
-                </button>
-                <button type="submit" className="btn-primary">
-                  <SaveIcon size={16} /> Confirmar Remarcação
                 </button>
               </div>
             </form>
