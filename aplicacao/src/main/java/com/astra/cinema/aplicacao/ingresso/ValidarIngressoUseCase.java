@@ -27,7 +27,7 @@ public class ValidarIngressoUseCase {
             // Se houver erro na busca, retorna resultado inválido
             return new ResultadoValidacao(false, "Código inválido: " + e.getMessage(), null, null);
         }
-        
+
         if (ingresso == null) {
             return new ResultadoValidacao(false, "Ingresso não encontrado. Verifique se o código está correto.", null, null);
         }
@@ -43,10 +43,24 @@ public class ValidarIngressoUseCase {
 
         // Validação liberada para qualquer horário (modo cinema flexível)
 
-        // Ação: ATIVO -> VALIDADO
+        // Buscar a compra completa para validar TODOS os ingressos juntos
+        com.astra.cinema.dominio.compra.Compra compra = compraRepositorio.buscarCompraPorQrCode(qrCode);
+
+        // Ação: ATIVO -> VALIDADO para TODOS os ingressos da compra
         if (ingresso.getStatus() == StatusIngresso.ATIVO) {
-            ingresso.setStatus(StatusIngresso.VALIDADO);
-            compraRepositorio.atualizarIngresso(ingresso);
+            // Se a compra tem múltiplos ingressos, valida todos
+            if (compra != null && compra.getIngressos() != null && compra.getIngressos().size() > 1) {
+                for (Ingresso ing : compra.getIngressos()) {
+                    if (ing.getStatus() == StatusIngresso.ATIVO) {
+                        ing.setStatus(StatusIngresso.VALIDADO);
+                        compraRepositorio.atualizarIngresso(ing);
+                    }
+                }
+            } else {
+                // Apenas um ingresso
+                ingresso.setStatus(StatusIngresso.VALIDADO);
+                compraRepositorio.atualizarIngresso(ingresso);
+            }
             return new ResultadoValidacao(true, "Ingresso validado - Pronto para uso", ingresso, sessao);
         } else if (ingresso.getStatus() == StatusIngresso.VALIDADO) {
             // Já está VALIDADO

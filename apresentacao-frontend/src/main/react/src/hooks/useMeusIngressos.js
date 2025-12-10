@@ -176,7 +176,7 @@ export const useMeusIngressos = (usuario) => {
               filme: { titulo: (i.filme && i.filme.titulo) || '' },
               sessao: { id: i.sessaoId, horario: i.horario || new Date().toISOString(), sala: i.sala || 'Sala 1' },
               assentos: assentos,
-              produtos: [],
+              produtos: Array.isArray(i.produtos) ? i.produtos : [],
               total: i.total ?? 0,
               metodoPagamento: 'NAO_INFORMADO',
               status: i.status || 'ATIVO',

@@ -18,12 +18,13 @@ import static com.astra.cinema.dominio.comum.ValidacaoDominio.*;
 public class ValidarIngressoFuncionarioUseCase {
     private final ValidarIngressoUseCase validarIngressoUseCase;
     private final ValidacaoIngressoRepositorio validacaoIngressoRepositorio;
+    private final CompraRepositorio compraRepositorio;
 
     public ValidarIngressoFuncionarioUseCase(
             CompraRepositorio compraRepositorio,
             SessaoRepositorio sessaoRepositorio,
             ValidacaoIngressoRepositorio validacaoIngressoRepositorio) {
-        exigirNaoNulo(compraRepositorio, "O repositório de compras não pode ser nulo");
+        this.compraRepositorio = exigirNaoNulo(compraRepositorio, "O repositório de compras não pode ser nulo");
         this.validarIngressoUseCase = new ValidarIngressoUseCase(compraRepositorio, sessaoRepositorio);
         this.validacaoIngressoRepositorio = exigirNaoNulo(validacaoIngressoRepositorio,
             "O repositório de validações não pode ser nulo");
@@ -31,6 +32,8 @@ public class ValidarIngressoFuncionarioUseCase {
 
     /**
      * Valida um ingresso e registra a operação no histórico.
+     * Se o ingresso faz parte de uma compra com múltiplos ingressos,
+     * TODOS os ingressos da compra serão validados e registrados no histórico.
      *
      * @param qrCode QR Code do ingresso
      * @param funcionarioId ID do funcionário que está validando
@@ -43,17 +46,52 @@ public class ValidarIngressoFuncionarioUseCase {
         // Executar validação padrão
         ValidarIngressoUseCase.ResultadoValidacao resultado = validarIngressoUseCase.executar(qrCode);
 
-        // Registrar a validação no histórico
+        // Registrar a validação no histórico para TODOS os ingressos da compra
         if (resultado.getIngresso() != null) {
-            ValidacaoIngresso validacao = new ValidacaoIngresso(
-                null, // ID será gerado pelo banco
-                resultado.getIngresso().getIngressoId(),
-                funcionarioId,
-                new Date(),
-                resultado.isValido(),
-                resultado.getMensagem()
-            );
-            validacaoIngressoRepositorio.salvar(validacao);
+            // Buscar a compra completa com todos os ingressos
+            com.astra.cinema.dominio.compra.Compra compra = compraRepositorio.buscarCompraPorQrCode(qrCode);
+
+            System.out.println("=== DEBUG ValidarIngressoFuncionarioUseCase ===");
+            System.out.println("QR Code: " + qrCode);
+            System.out.println("Compra encontrada: " + (compra != null));
+
+            if (compra != null) {
+                System.out.println("Quantidade de ingressos na compra: " + (compra.getIngressos() != null ? compra.getIngressos().size() : "null"));
+                if (compra.getIngressos() != null) {
+                    for (com.astra.cinema.dominio.compra.Ingresso ing : compra.getIngressos()) {
+                        System.out.println("  - Ingresso ID: " + ing.getIngressoId().getId() + ", Assento: " + ing.getAssentoId().getValor());
+                    }
+                }
+            }
+            System.out.println("===========================================");
+
+            if (compra != null && compra.getIngressos() != null) {
+                // Validar e registrar TODOS os ingressos da compra no histórico
+                for (com.astra.cinema.dominio.compra.Ingresso ingresso : compra.getIngressos()) {
+                    ValidacaoIngresso validacao = new ValidacaoIngresso(
+                        null, // ID será gerado pelo banco
+                        ingresso.getIngressoId(),
+                        funcionarioId,
+                        new Date(),
+                        resultado.isValido(),
+                        resultado.getMensagem()
+                    );
+                    validacaoIngressoRepositorio.salvar(validacao);
+                    System.out.println("Salvou validação para ingresso: " + ingresso.getAssentoId().getValor());
+                }
+            } else {
+                // Fallback: se não conseguir buscar a compra, salva apenas o ingresso individual
+                System.out.println("FALLBACK: Salvando apenas 1 ingresso");
+                ValidacaoIngresso validacao = new ValidacaoIngresso(
+                    null,
+                    resultado.getIngresso().getIngressoId(),
+                    funcionarioId,
+                    new Date(),
+                    resultado.isValido(),
+                    resultado.getMensagem()
+                );
+                validacaoIngressoRepositorio.salvar(validacao);
+            }
         }
 
         return new ResultadoValidacaoFuncionario(

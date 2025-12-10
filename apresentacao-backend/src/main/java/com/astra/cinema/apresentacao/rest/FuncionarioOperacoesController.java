@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -114,9 +112,41 @@ public class FuncionarioOperacoesController {
             List<ConsultarHistoricoFuncionarioUseCase.ItemHistorico> historico =
                 consultarHistoricoUseCase.listarTodasValidacoes();
 
-            List<Map<String, Object>> response = historico.stream()
-                .map(this::mapearItemHistorico)
-                .collect(Collectors.toList());
+            // Agrupar por compra + data/hora para mostrar múltiplos assentos juntos
+            Map<String, List<ConsultarHistoricoFuncionarioUseCase.ItemHistorico>> agrupadoPorCompraEHora = historico.stream()
+                .filter(item -> item.getCompraId() != null)
+                .collect(Collectors.groupingBy(item ->
+                    item.getCompraId() + "_" + item.getDataHora().getTime()
+                ));
+
+            List<Map<String, Object>> response = new ArrayList<>();
+            Set<Integer> validacoesProcessadas = new HashSet<>();
+
+            for (ConsultarHistoricoFuncionarioUseCase.ItemHistorico item : historico) {
+                if (validacoesProcessadas.contains(item.getValidacaoId())) {
+                    continue; // Já processado
+                }
+
+                String chave = item.getCompraId() + "_" + item.getDataHora().getTime();
+                List<ConsultarHistoricoFuncionarioUseCase.ItemHistorico> grupo = agrupadoPorCompraEHora.get(chave);
+
+                Map<String, Object> map = mapearItemHistorico(item);
+
+                // Se houver múltiplos ingressos da mesma compra validados juntos, adiciona array de assentos
+                if (grupo != null && grupo.size() > 1) {
+                    List<String> assentos = grupo.stream()
+                        .map(ConsultarHistoricoFuncionarioUseCase.ItemHistorico::getAssento)
+                        .collect(Collectors.toList());
+                    map.put("assentos", assentos);
+
+                    // Marca todos do grupo como processados
+                    grupo.forEach(g -> validacoesProcessadas.add(g.getValidacaoId()));
+                } else {
+                    validacoesProcessadas.add(item.getValidacaoId());
+                }
+
+                response.add(map);
+            }
 
             return ResponseEntity.ok(response);
 

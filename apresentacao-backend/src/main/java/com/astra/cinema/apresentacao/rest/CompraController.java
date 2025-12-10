@@ -11,6 +11,8 @@ import com.astra.cinema.dominio.compra.*;
 import com.astra.cinema.dominio.compra.StatusIngresso;
 import com.astra.cinema.dominio.bomboniere.Produto;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpa;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,17 +40,20 @@ public class CompraController {
     private final CompraRepositorio compraRepositorio;
     private final IngressoMapper ingressoMapper;
     private final ProdutoRepositorio produtoRepositorio;
+    private final VendaJpaRepository vendaJpaRepository;
 
     public CompraController(IniciarCompraUseCase iniciarCompraUseCase,
                            CancelarCompraUseCase cancelarCompraUseCase,
                            CompraRepositorio compraRepositorio,
                            IngressoMapper ingressoMapper,
-                           ProdutoRepositorio produtoRepositorio) {
+                           ProdutoRepositorio produtoRepositorio,
+                           VendaJpaRepository vendaJpaRepository) {
         this.iniciarCompraUseCase = iniciarCompraUseCase;
         this.cancelarCompraUseCase = cancelarCompraUseCase;
         this.compraRepositorio = compraRepositorio;
         this.ingressoMapper = ingressoMapper;
         this.produtoRepositorio = produtoRepositorio;
+        this.vendaJpaRepository = vendaJpaRepository;
     }
 
     /**
@@ -102,6 +107,21 @@ public class CompraController {
                 produto.reduzirEstoque(itemProduto.getQuantidade());
                 produtoRepositorio.salvar(produto);
                 log.info("Estoque atualizado: {} agora tem {} unidades (compra {})", produto.getNome(), produto.getEstoque(), compra.getCompraId().getId());
+
+                // Criar e salvar venda para cada produto (associada à compra)
+                // Para cada unidade do produto, cria uma linha na tabela venda
+                for (int i = 0; i < itemProduto.getQuantidade(); i++) {
+                    VendaJpa vendaJpa = new VendaJpa();
+                    vendaJpa.setProdutoId(produto.getProdutoId().getId());
+                    vendaJpa.setQuantidade(1);
+                    vendaJpa.setPagamentoId(null); // Opcional, compra já tem pagamento
+                    vendaJpa.setStatus("CONFIRMADA");
+                    vendaJpa.setCompraId(compra.getCompraId().getId()); // Associa à compra
+                    vendaJpa.setCriadoEm(java.time.LocalDateTime.now());
+                    vendaJpaRepository.save(vendaJpa);
+                    log.info("Venda criada: produto {} (ID {}) associado à compra {}",
+                        produto.getNome(), vendaJpa.getId(), compra.getCompraId().getId());
+                }
             }
         }
 
@@ -111,9 +131,9 @@ public class CompraController {
             throw new RecursoNaoEncontradoException("Compra", Long.valueOf(compra.getCompraId().getId()));
         }
 
-        // Mapeia ingressos com QR Codes
+        // Mapeia ingressos com QR Codes e produtos da bomboniere
         List<IngressoDTO> ingressosDTO = compraCompleta.getIngressos().stream()
-            .map(ingressoMapper::toDTO)
+            .map(ingresso -> ingressoMapper.toDTOComProdutos(ingresso, compraCompleta.getCompraId().getId()))
             .collect(Collectors.toList());
 
         // Monta resposta com compatibilidade de campos
@@ -163,9 +183,9 @@ public class CompraController {
             throw new RecursoNaoEncontradoException("Compra", Long.valueOf(id));
         }
 
-        // Mapeia ingressos usando IngressoMapper
+        // Mapeia ingressos com produtos da bomboniere
         List<IngressoDTO> ingressosDTO = compra.getIngressos().stream()
-            .map(ingressoMapper::toDTO)
+            .map(ingresso -> ingressoMapper.toDTOComProdutos(ingresso, compra.getCompraId().getId()))
             .collect(Collectors.toList());
 
         Map<String, Object> response = Map.of(
@@ -176,6 +196,51 @@ public class CompraController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Obtém detalhes de um ingresso específico por QR Code
+     * Inclui informações sobre produtos da bomboniere comprados
+     */
+    @GetMapping("/ingresso/{qrCode}")
+    public ResponseEntity<?> obterIngressoPorQrCode(@PathVariable String qrCode) {
+        log.info("Buscando ingresso por QR Code: {}", qrCode);
+
+        try {
+            // Buscar ingresso pelo QR Code
+            Ingresso ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
+            
+            if (ingresso == null) {
+                throw new RecursoNaoEncontradoException("Ingresso com QR Code " + qrCode + " não encontrado");
+            }
+            
+            // Buscar compra associada ao ingresso
+            CompraId compraId = compraRepositorio.obterCompraIdPorIngresso(ingresso.getIngressoId());
+            Compra compra = compraRepositorio.obterPorId(compraId);
+            
+            if (compra == null) {
+                throw new RecursoNaoEncontradoException("Compra do ingresso não encontrada");
+            }
+            
+            // Mapeia ingresso com produtos da bomboniere
+            IngressoDTO ingressoDTO = ingressoMapper.toDTOComProdutos(ingresso, compra.getCompraId().getId());
+            
+            Map<String, Object> response = Map.of(
+                "ingresso", ingressoDTO,
+                "compraId", compra.getCompraId().getId(),
+                "clienteId", compra.getClienteId().getId()
+            );
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RecursoNaoEncontradoException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Erro ao buscar ingresso por QR Code: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of(
+                "erro", "Erro interno ao buscar ingresso: " + e.getMessage()
+            ));
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 package com.astra.cinema.apresentacao.dto.response;
 
+import java.util.List;
+
 public class IngressoDTO {
     private Integer id;
     private String qrCode;
@@ -10,6 +12,7 @@ public class IngressoDTO {
     private String status;
     private Boolean remarcado;
     private HistoricoRemarcacaoDTO historicoRemarcacao;
+    private List<ItemProdutoDTO> produtosBomboniere;
 
     public IngressoDTO() {
     }
@@ -96,5 +99,13 @@ public class IngressoDTO {
 
     public void setHistoricoRemarcacao(HistoricoRemarcacaoDTO historicoRemarcacao) {
         this.historicoRemarcacao = historicoRemarcacao;
+    }
+
+    public List<ItemProdutoDTO> getProdutosBomboniere() {
+        return produtosBomboniere;
+    }
+
+    public void setProdutosBomboniere(List<ItemProdutoDTO> produtosBomboniere) {
+        this.produtosBomboniere = produtosBomboniere;
     }
 }

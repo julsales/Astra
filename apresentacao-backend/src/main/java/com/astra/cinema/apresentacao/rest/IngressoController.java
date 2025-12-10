@@ -343,10 +343,10 @@ public class IngressoController {
             .map(ing -> ing.getAssentoId().getValor())
             .collect(Collectors.toList()));
 
-        double valorTotal = grupo.stream()
+        // Calcula total dos ingressos
+        double valorIngressos = grupo.stream()
             .mapToDouble(ing -> ing.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 35.0 : 17.5)
             .sum();
-        map.put("total", valorTotal);
 
         List<Map<String, String>> ingressosDetalhados = grupo.stream()
             .map(ing -> {
@@ -365,12 +365,26 @@ public class IngressoController {
         boolean foiValidado = i.getStatus() == StatusIngresso.VALIDADO;
         map.put("foiValidado", foiValidado);
 
+        // Busca produtos e calcula total dos produtos
+        double valorProdutos = 0.0;
         try {
             List<Map<String, Object>> produtosDaCompra = buscarProdutosDaCompra(compra.getCompraId());
             map.put("produtos", produtosDaCompra);
+
+            // Soma o valor total dos produtos
+            valorProdutos = produtosDaCompra.stream()
+                .mapToDouble(p -> {
+                    double preco = p.get("preco") != null ? (double) p.get("preco") : 0.0;
+                    int quantidade = p.get("quantidade") != null ? (int) p.get("quantidade") : 0;
+                    return preco * quantidade;
+                })
+                .sum();
         } catch (Exception e) {
             map.put("produtos", new ArrayList<>());
         }
+
+        // Total = ingressos + produtos
+        map.put("total", valorIngressos + valorProdutos);
 
         try {
             Sessao sessao = sessaoRepositorio.obterPorId(i.getSessaoId());
