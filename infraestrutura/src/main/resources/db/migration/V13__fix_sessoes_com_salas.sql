@@ -3,6 +3,9 @@
 -- ===============================================
 
 -- Remove todas as sessões antigas (criadas sem sala_id na V2)
+-- IMPORTANTE: Deletar na ordem correta para respeitar constraints de FK
+DELETE FROM ingresso;
+DELETE FROM compra;
 DELETE FROM sessao_assento;
 DELETE FROM sessao;
 

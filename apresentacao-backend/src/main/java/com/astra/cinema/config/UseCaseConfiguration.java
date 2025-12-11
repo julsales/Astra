@@ -17,19 +17,24 @@ import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemoverSessaoUseCase;
+import com.astra.cinema.aplicacao.servicos.*;
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
 import com.astra.cinema.aplicacao.usuario.RegistrarClienteUseCase;
 import com.astra.cinema.aplicacao.usuario.funcionario.GerenciarFuncionariosUseCase;
+import com.astra.cinema.apresentacao.servicos.VendaProdutoServiceImpl;
 import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
+import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
 import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
+import com.astra.cinema.dominio.sessao.SalaRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.ClienteRepositorio;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -178,5 +183,105 @@ public class UseCaseConfiguration {
             FuncionarioRepositorio funcionarioRepositorio,
             UsuarioRepositorio usuarioRepositorio) {
         return new GerenciarFuncionariosUseCase(funcionarioRepositorio, usuarioRepositorio);
+    }
+
+    // ========== NOVOS SERVIÇOS DE APLICAÇÃO ==========
+
+    @Bean
+    public VendaProdutoService vendaProdutoService(VendaJpaRepository vendaJpaRepository) {
+        return new VendaProdutoServiceImpl(vendaJpaRepository);
+    }
+
+    @Bean
+    public IngressoService ingressoService(
+            ValidarIngressoUseCase validarIngressoUseCase,
+            RemarcarIngressoUseCase remarcarIngressoUseCase,
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio,
+            VendaRepositorio vendaRepositorio,
+            RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio) {
+        return new IngressoService(
+                validarIngressoUseCase,
+                remarcarIngressoUseCase,
+                compraRepositorio,
+                sessaoRepositorio,
+                filmeRepositorio,
+                vendaRepositorio,
+                remarcacaoSessaoRepositorio
+        );
+    }
+
+    @Bean
+    public BomboniereService bomboniereService(
+            ProdutoRepositorio produtoRepositorio,
+            VendaRepositorio vendaRepositorio) {
+        return new BomboniereService(produtoRepositorio, vendaRepositorio);
+    }
+
+    @Bean
+    public FilmeService filmeService(
+            FilmeRepositorio filmeRepositorio,
+            SessaoRepositorio sessaoRepositorio,
+            AdicionarFilmeUseCase adicionarFilmeUseCase,
+            AlterarFilmeUseCase alterarFilmeUseCase,
+            RemoverFilmeUseCase removerFilmeUseCase) {
+        return new FilmeService(
+                filmeRepositorio,
+                sessaoRepositorio,
+                adicionarFilmeUseCase,
+                alterarFilmeUseCase,
+                removerFilmeUseCase
+        );
+    }
+
+    @Bean
+    public SessaoService sessaoService(
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio,
+            SalaRepositorio salaRepositorio,
+            CriarSessaoUseCase criarSessaoUseCase,
+            ModificarSessaoUseCase modificarSessaoUseCase,
+            RemoverSessaoUseCase removerSessaoUseCase,
+            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase) {
+        return new SessaoService(
+                sessaoRepositorio,
+                filmeRepositorio,
+                salaRepositorio,
+                criarSessaoUseCase,
+                modificarSessaoUseCase,
+                removerSessaoUseCase,
+                remarcarIngressosSessaoUseCase
+        );
+    }
+
+    @Bean
+    public ClienteService clienteService(
+            UsuarioRepositorio usuarioRepositorio,
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio) {
+        return new ClienteService(
+                usuarioRepositorio,
+                compraRepositorio,
+                sessaoRepositorio,
+                filmeRepositorio
+        );
+    }
+
+    @Bean
+    public CompraAppService compraAppService(
+            IniciarCompraUseCase iniciarCompraUseCase,
+            CancelarCompraUseCase cancelarCompraUseCase,
+            CompraRepositorio compraRepositorio,
+            ProdutoRepositorio produtoRepositorio,
+            VendaProdutoService vendaProdutoService) {
+        return new CompraAppService(
+                iniciarCompraUseCase,
+                cancelarCompraUseCase,
+                compraRepositorio,
+                produtoRepositorio,
+                vendaProdutoService
+        );
     }
 }

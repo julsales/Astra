@@ -1,13 +1,6 @@
 package com.astra.cinema.apresentacao.rest;
 
-import com.astra.cinema.aplicacao.filme.AdicionarFilmeUseCase;
-import com.astra.cinema.aplicacao.filme.AlterarFilmeUseCase;
-import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
-import com.astra.cinema.dominio.comum.FilmeId;
-import com.astra.cinema.dominio.filme.Filme;
-import com.astra.cinema.dominio.filme.FilmeRepositorio;
-import com.astra.cinema.dominio.filme.StatusFilme;
-import com.astra.cinema.dominio.sessao.SessaoRepositorio;
+import com.astra.cinema.aplicacao.servicos.FilmeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,29 +11,17 @@ import java.util.stream.Collectors;
 
 /**
  * Controller REST para operações de Filme
- * Padrão: Front Controller (Spring MVC)
+ * REFATORADO: Agora usa apenas FilmeService (sem acesso direto a repositórios)
  */
 @RestController
 @RequestMapping("/api/filmes")
 @CrossOrigin(origins = "*")
 public class FilmeController {
 
-    private final FilmeRepositorio filmeRepositorio;
-    private final SessaoRepositorio sessaoRepositorio;
-    private final AdicionarFilmeUseCase adicionarFilmeUseCase;
-    private final AlterarFilmeUseCase alterarFilmeUseCase;
-    private final RemoverFilmeUseCase removerFilmeUseCase;
+    private final FilmeService filmeService;
 
-    public FilmeController(FilmeRepositorio filmeRepositorio,
-                          SessaoRepositorio sessaoRepositorio,
-                          AdicionarFilmeUseCase adicionarFilmeUseCase,
-                          AlterarFilmeUseCase alterarFilmeUseCase,
-                          RemoverFilmeUseCase removerFilmeUseCase) {
-        this.filmeRepositorio = filmeRepositorio;
-        this.sessaoRepositorio = sessaoRepositorio;
-        this.adicionarFilmeUseCase = adicionarFilmeUseCase;
-        this.alterarFilmeUseCase = alterarFilmeUseCase;
-        this.removerFilmeUseCase = removerFilmeUseCase;
+    public FilmeController(FilmeService filmeService) {
+        this.filmeService = filmeService;
     }
 
     /**
@@ -51,31 +32,10 @@ public class FilmeController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String busca) {
         try {
-            List<Filme> filmes;
-
-            if (status != null && !status.isEmpty()) {
-                StatusFilme statusFilme = StatusFilme.valueOf(status.toUpperCase());
-                if (statusFilme == StatusFilme.EM_CARTAZ) {
-                    filmes = filmeRepositorio.listarFilmesEmCartaz();
-                } else {
-                    filmes = filmeRepositorio.listarTodos().stream()
-                            .filter(f -> f.getStatus() == statusFilme)
-                            .collect(Collectors.toList());
-                }
-            } else {
-                filmes = filmeRepositorio.listarTodos();
-            }
-
-            // Filtro de busca por título
-            if (busca != null && !busca.isEmpty()) {
-                String buscaLower = busca.toLowerCase();
-                filmes = filmes.stream()
-                        .filter(f -> f.getTitulo().toLowerCase().contains(buscaLower))
-                        .collect(Collectors.toList());
-            }
+            List<FilmeService.FilmeDTO> filmes = filmeService.listarFilmes(status, busca);
 
             List<Map<String, Object>> response = filmes.stream()
-                    .map(this::mapearFilmeParaDTO)
+                    .map(this::mapearFilmeParaMap)
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(response);
@@ -91,9 +51,9 @@ public class FilmeController {
     @GetMapping("/em-cartaz")
     public ResponseEntity<List<Map<String, Object>>> listarFilmesEmCartaz() {
         try {
-            List<Filme> filmes = filmeRepositorio.listarFilmesEmCartaz();
+            List<FilmeService.FilmeDTO> filmes = filmeService.listarFilmesEmCartaz();
             List<Map<String, Object>> response = filmes.stream()
-                    .map(this::mapearFilmeParaDTO)
+                    .map(this::mapearFilmeParaMap)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -108,12 +68,11 @@ public class FilmeController {
     @GetMapping("/{id}")
     public ResponseEntity<?> obterFilme(@PathVariable Integer id) {
         try {
-            Filme filme = filmeRepositorio.obterPorId(new FilmeId(id));
-            if (filme == null) {
-                return ResponseEntity.status(404)
-                        .body(Map.of("erro", "Filme não encontrado"));
-            }
-            return ResponseEntity.ok(mapearFilmeParaDTO(filme));
+            FilmeService.FilmeDTO filme = filmeService.obterFilme(id);
+            return ResponseEntity.ok(mapearFilmeParaMap(filme));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("erro", "Filme não encontrado"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500)
@@ -137,15 +96,14 @@ public class FilmeController {
                         .body(Map.of("erro", "Duração deve ser positiva"));
             }
 
-            // Executa o use case com parâmetros individuais
-            Filme filmeSalvo = adicionarFilmeUseCase.executar(
+            FilmeService.FilmeDTO filmeSalvo = filmeService.adicionarFilme(
                     request.getTitulo(),
                     request.getSinopse(),
                     request.getClassificacaoEtaria(),
                     request.getDuracao(),
                     request.getImagemUrl()
             );
-            return ResponseEntity.status(201).body(mapearFilmeParaDTO(filmeSalvo));
+            return ResponseEntity.status(201).body(mapearFilmeParaMap(filmeSalvo));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("erro", e.getMessage()));
@@ -173,16 +131,15 @@ public class FilmeController {
                         .body(Map.of("erro", "Duração deve ser positiva"));
             }
 
-            // Executa o use case com parâmetros individuais
-            Filme filmeAtualizado = alterarFilmeUseCase.executar(
-                    new FilmeId(id),
+            FilmeService.FilmeDTO filmeAtualizado = filmeService.atualizarFilme(
+                    id,
                     request.getTitulo(),
                     request.getSinopse(),
                     request.getClassificacaoEtaria(),
                     request.getDuracao(),
                     request.getImagemUrl()
             );
-            return ResponseEntity.ok(mapearFilmeParaDTO(filmeAtualizado));
+            return ResponseEntity.ok(mapearFilmeParaMap(filmeAtualizado));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("erro", e.getMessage()));
@@ -199,7 +156,7 @@ public class FilmeController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> removerFilme(@PathVariable Integer id) {
         try {
-            removerFilmeUseCase.executar(new FilmeId(id));
+            filmeService.removerFilme(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest()
@@ -217,16 +174,14 @@ public class FilmeController {
     @GetMapping("/{id}/pode-remover")
     public ResponseEntity<Map<String, Object>> podeRemover(@PathVariable Integer id) {
         try {
-            List<com.astra.cinema.dominio.sessao.Sessao> sessoes =
-                sessaoRepositorio.buscarPorFilme(new FilmeId(id));
+            FilmeService.VerificacaoRemocao verificacao = filmeService.verificarPodeRemover(id);
 
-            boolean podeRemover = sessoes.isEmpty();
             Map<String, Object> response = new HashMap<>();
-            response.put("podeRemover", podeRemover);
-            response.put("totalSessoes", sessoes.size());
+            response.put("podeRemover", verificacao.podeRemover());
+            response.put("totalSessoes", verificacao.totalSessoes());
 
-            if (!podeRemover) {
-                response.put("mensagem", "O filme possui " + sessoes.size() + " sessão(ões) cadastrada(s)");
+            if (!verificacao.podeRemover()) {
+                response.put("mensagem", verificacao.mensagem());
             }
 
             return ResponseEntity.ok(response);
@@ -238,17 +193,17 @@ public class FilmeController {
     }
 
     /**
-     * Mapeia Filme para DTO (Map)
+     * Mapeia FilmeDTO para Map
      */
-    private Map<String, Object> mapearFilmeParaDTO(Filme filme) {
+    private Map<String, Object> mapearFilmeParaMap(FilmeService.FilmeDTO filme) {
         Map<String, Object> dto = new HashMap<>();
-        dto.put("id", filme.getFilmeId().getId());
-        dto.put("titulo", filme.getTitulo());
-        dto.put("sinopse", filme.getSinopse());
-        dto.put("classificacaoEtaria", filme.getClassificacaoEtaria());
-        dto.put("duracao", filme.getDuracao());
-        dto.put("imagemUrl", filme.getImagemUrl());
-        dto.put("status", filme.getStatus().name());
+        dto.put("id", filme.id());
+        dto.put("titulo", filme.titulo());
+        dto.put("sinopse", filme.sinopse());
+        dto.put("classificacaoEtaria", filme.classificacaoEtaria());
+        dto.put("duracao", filme.duracao());
+        dto.put("imagemUrl", filme.imagemUrl());
+        dto.put("status", filme.status());
         return dto;
     }
 
