@@ -75,9 +75,14 @@ public class CriarSessaoUseCase {
     public Sessao executar(FilmeId filmeId, Date horario, SalaId salaId, int capacidadeSala) {
         // Validação de parâmetros
         validarParametros(filmeId, horario, capacidadeSala);
-        
+
         if (salaId == null) {
             throw new IllegalArgumentException("O id da sala não pode ser nulo");
+        }
+
+        // Verificar conflito de horário
+        if (sessaoRepositorio.existeConflitoHorario(salaId, horario, null)) {
+            throw new IllegalStateException("Já existe uma sessão agendada para esta sala neste horário ou próximo a ele");
         }
 
         // Busca o filme

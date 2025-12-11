@@ -49,13 +49,14 @@ public class ModificarSessaoUseCase {
             throw new IllegalStateException("Não é possível modificar uma sessão cancelada");
         }
 
-        // Apenas verifica se o novo horário não é nulo (permite modificar para qualquer horário)
-        // A validação de horário passado será feita apenas no momento da criação
-
         // Determina valores atualizados (aceita nulls --> mantém o valor atual)
         Date horarioAtualizado = (novoHorario != null) ? novoHorario : sessao.getHorario();
         SalaId salaAtualizada = (novaSala != null) ? novaSala : sessao.getSalaId();
-        // Nota: novaCapacidade é ignorada - a capacidade vem da Sala
+
+        // Verificar conflito de horário (excluindo a própria sessão da verificação)
+        if (sessaoRepositorio.existeConflitoHorario(salaAtualizada, horarioAtualizado, sessaoId)) {
+            throw new IllegalStateException("Já existe uma sessão agendada para esta sala neste horário ou próximo a ele");
+        }
 
         Sessao sessaoModificada = new Sessao(
             sessao.getSessaoId(),

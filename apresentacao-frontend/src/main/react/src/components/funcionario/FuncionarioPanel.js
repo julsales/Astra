@@ -380,8 +380,9 @@ const FuncionarioPanel = ({ onLogout }) => {
   };
 
   const finalizarVenda = async () => {
-    if (carrinho.length === 0) return;
+    if (carrinho.length === 0 || carregando) return;
 
+    setCarregando(true);
     try {
       const response = await fetch('/api/funcionario/bomboniere/venda', {
         method: 'POST',
@@ -407,6 +408,8 @@ const FuncionarioPanel = ({ onLogout }) => {
     } catch (error) {
       console.error('Erro ao finalizar venda:', error);
       alert('Erro de conexão com o servidor');
+    } finally {
+      setCarregando(false);
     }
   };
 
@@ -953,9 +956,19 @@ const FuncionarioPanel = ({ onLogout }) => {
                 <button
                   className="func-btn-finalizar"
                   onClick={finalizarVenda}
+                  disabled={carregando}
                 >
-                  <Check size={20} />
-                  Finalizar Venda
+                  {carregando ? (
+                    <>
+                      <div className="func-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={20} />
+                      Finalizar Venda
+                    </>
+                  )}
                 </button>
               </div>
             </>

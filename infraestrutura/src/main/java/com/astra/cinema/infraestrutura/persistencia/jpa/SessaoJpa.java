@@ -1,6 +1,7 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
 import com.astra.cinema.dominio.comum.FilmeId;
+import com.astra.cinema.dominio.comum.SalaId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
@@ -194,5 +195,35 @@ class SessaoRepositorioJpaImpl implements SessaoRepositorio {
         return repository.findAll().stream()
                 .map(mapeador::mapearParaSessao)
                 .toList();
+    }
+
+    @Override
+    public boolean existeConflitoHorario(SalaId salaId, Date horario, SessaoId sessaoIdExcluir) {
+        if (salaId == null || horario == null) {
+            return false;
+        }
+
+        // Buscar todas as sessões da sala
+        List<SessaoJpa> sessoesNaSala = repository.findAll().stream()
+                .filter(s -> s.getSala() != null && s.getSala().getId().equals(salaId.getId()))
+                .filter(s -> !s.getStatus().equals(StatusSessao.CANCELADA))
+                .toList();
+
+        // Verificar conflito de horário (considera margem de 30 minutos antes e depois)
+        long margemMs = 30 * 60 * 1000; // 30 minutos em milissegundos
+
+        for (SessaoJpa sessao : sessoesNaSala) {
+            // Pular a própria sessão se estiver editando
+            if (sessaoIdExcluir != null && sessao.getId().equals(sessaoIdExcluir.getId())) {
+                continue;
+            }
+
+            long diferencaMs = Math.abs(horario.getTime() - sessao.getHorario().getTime());
+            if (diferencaMs < margemMs) {
+                return true; // Conflito detectado
+            }
+        }
+
+        return false;
     }
 }

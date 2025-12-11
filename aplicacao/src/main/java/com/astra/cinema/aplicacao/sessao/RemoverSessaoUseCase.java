@@ -1,26 +1,36 @@
 package com.astra.cinema.aplicacao.sessao;
 
+import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.filme.Filme;
+import com.astra.cinema.dominio.filme.FilmeRepositorio;
+import com.astra.cinema.dominio.filme.StatusFilme;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.sessao.StatusSessao;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Caso de uso: Remover (cancelar) uma sessão
  * Responsabilidade: Orquestrar o cancelamento de sessão
- * 
+ *
  * Padrão: Command (encapsula a operação de remoção)
  */
 public class RemoverSessaoUseCase {
     private final SessaoRepositorio sessaoRepositorio;
+    private final FilmeRepositorio filmeRepositorio;
 
-    public RemoverSessaoUseCase(SessaoRepositorio sessaoRepositorio) {
+    public RemoverSessaoUseCase(SessaoRepositorio sessaoRepositorio, FilmeRepositorio filmeRepositorio) {
         if (sessaoRepositorio == null) {
             throw new IllegalArgumentException("O repositório de sessões não pode ser nulo");
         }
+        if (filmeRepositorio == null) {
+            throw new IllegalArgumentException("O repositório de filmes não pode ser nulo");
+        }
         this.sessaoRepositorio = sessaoRepositorio;
+        this.filmeRepositorio = filmeRepositorio;
     }
 
     /**
@@ -63,6 +73,39 @@ public class RemoverSessaoUseCase {
 
         // Persiste
         sessaoRepositorio.salvar(sessaoCancelada);
+
+        // Verifica se todas as sessões do filme foram canceladas
+        verificarEAtualizarStatusFilme(sessao.getFilmeId());
+    }
+
+    /**
+     * Verifica se todas as sessões de um filme foram canceladas e atualiza o status do filme se necessário
+     */
+    private void verificarEAtualizarStatusFilme(FilmeId filmeId) {
+        // Buscar todas as sessões do filme
+        List<Sessao> sessoesDoFilme = sessaoRepositorio.buscarPorFilme(filmeId);
+
+        // Verificar se todas as sessões estão canceladas
+        boolean todasCanceladas = sessoesDoFilme.stream()
+                .allMatch(s -> s.getStatus() == StatusSessao.CANCELADA);
+
+        // Se todas as sessões foram canceladas e o filme está EM_CARTAZ, mudar para RETIRADO
+        if (todasCanceladas && !sessoesDoFilme.isEmpty()) {
+            Filme filme = filmeRepositorio.obterPorId(filmeId);
+            if (filme != null && filme.getStatus() == StatusFilme.EM_CARTAZ) {
+                // Criar nova instância do filme com status RETIRADO
+                Filme filmeRetirado = new Filme(
+                    filme.getFilmeId(),
+                    filme.getTitulo(),
+                    filme.getSinopse(),
+                    filme.getClassificacaoEtaria(),
+                    filme.getDuracao(),
+                    filme.getImagemUrl(),
+                    StatusFilme.RETIRADO
+                );
+                filmeRepositorio.salvar(filmeRetirado);
+            }
+        }
     }
 
     /**

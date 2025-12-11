@@ -137,8 +137,8 @@ public class UseCaseConfiguration {
     }
 
     @Bean
-    public RemoverSessaoUseCase removerSessaoUseCase(SessaoRepositorio sessaoRepositorio) {
-        return new RemoverSessaoUseCase(sessaoRepositorio);
+    public RemoverSessaoUseCase removerSessaoUseCase(SessaoRepositorio sessaoRepositorio, FilmeRepositorio filmeRepositorio) {
+        return new RemoverSessaoUseCase(sessaoRepositorio, filmeRepositorio);
     }
 
     @Bean

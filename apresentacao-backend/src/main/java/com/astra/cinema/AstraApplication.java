@@ -2,6 +2,8 @@ package com.astra.cinema;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import jakarta.annotation.PostConstruct;
+import java.util.TimeZone;
 
 /**
  * Classe principal da aplicação Astra Cinema
@@ -15,6 +17,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 public class AstraApplication {
+
+    @PostConstruct
+    public void init() {
+        // Define o timezone padrão da JVM para Brasília (UTC-3)
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Sao_Paulo"));
+        System.out.println("🌎 Timezone configurado: " + TimeZone.getDefault().getID());
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(AstraApplication.class, args);
