@@ -56,13 +56,19 @@ public class RemarcarIngressoFuncionarioUseCase {
             FuncionarioId funcionarioId,
             String motivoTecnico) {
 
+        System.out.println("🎬 RemarcarIngressoFuncionarioUseCase.executar() chamado");
+        System.out.println("   IngressoId: " + ingressoId + ", NovaSessaoId: " + novaSessaoId);
+        
         exigirNaoNulo(ingressoId, "O ID do ingresso não pode ser nulo");
 
         // Buscar ingresso e obter QR Code
+        System.out.println("   Buscando ingresso por ID...");
         Ingresso ingresso = compraRepositorio.buscarIngressoPorId(ingressoId);
+        System.out.println("   Ingresso encontrado: " + (ingresso != null ? ingresso.getQrCode() : "NULL"));
         exigirNaoNulo(ingresso, "Ingresso não encontrado");
 
         // Delegar para o método que usa QR Code
+        System.out.println("   Delegando para método com QR Code: " + ingresso.getQrCode());
         return executar(ingresso.getQrCode(), novaSessaoId, novoAssentoId, funcionarioId, motivoTecnico);
     }
 
@@ -96,8 +102,11 @@ public class RemarcarIngressoFuncionarioUseCase {
         // Buscar sessão original para validação de tempo
         Sessao sessaoOriginal = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
         exigirNaoNulo(sessaoOriginal, "Sessão original não encontrada");
+        System.out.println("   Sessão original encontrada: " + sessaoOriginal.getSessaoId());
 
-        // Validar prazo de 2h antes da sessão
+        // NOTA: Validação de 2h antes temporariamente desabilitada para funcionários
+        // O funcionário pode remarcar mesmo próximo ao horário da sessão
+        /*
         Date agora = new Date();
         long duasHorasEmMs = 2 * 60 * 60 * 1000;
         Date limiteRemarcacao = new Date(sessaoOriginal.getHorario().getTime() - duasHorasEmMs);
@@ -106,19 +115,24 @@ public class RemarcarIngressoFuncionarioUseCase {
             throw new IllegalArgumentException(
                 "Não é possível remarcar com menos de 2 horas antes do início da sessão");
         }
+        */
 
         // Guardar dados originais para histórico
         SessaoId sessaoOriginalId = ingresso.getSessaoId();
         AssentoId assentoOriginal = ingresso.getAssentoId();
         IngressoId ingressoId = ingresso.getIngressoId();
+        Date agora = new Date(); // Data atual para registro da remarcação
 
+        System.out.println("   Executando remarcação base...");
         // Executar remarcação base (validações + lógica de assentos)
         remarcarIngressoUseCase.executar(qrCode, novaSessaoId, novoAssentoId);
+        System.out.println("   Remarcação base concluída!");
 
         // Buscar nova sessão para retorno
         Sessao novaSessao = sessaoRepositorio.obterPorId(novaSessaoId);
 
         // Registrar a remarcação no histórico
+        System.out.println("   Registrando histórico de remarcação...");
         RemarcacaoSessao remarcacao = new RemarcacaoSessao(
             null, // ID será gerado pelo banco
             ingressoId,

@@ -14,6 +14,7 @@ import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpaRepository;
 import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpa;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -456,6 +457,7 @@ public class FuncionarioOperacoesController {
      * Remarca múltiplos ingressos de uma só vez.
      */
     @PostMapping("/ingressos/remarcar-multiplos")
+    @Transactional
     public ResponseEntity<?> remarcarMultiplosIngressos(@RequestBody RemarcarMultiplosRequest request) {
         try {
             FuncionarioId funcionarioId = new FuncionarioId(1);

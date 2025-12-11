@@ -40,9 +40,11 @@ public class RemarcarIngressoUseCase {
         exigirNaoNulo(sessaoAntiga, "Sessão antiga não encontrada");
         exigirNaoNulo(novaSessao, "Nova sessão não encontrada");
 
-        // Verificar filme (deve ser o mesmo)
-        exigirEstado(sessaoAntiga.getFilmeId().equals(novaSessao.getFilmeId()),
-            "As sessões devem ser do mesmo filme");
+        // Permitir remarcação para qualquer filme (regra de negócio flexibilizada)
+        // O funcionário pode remarcar para qualquer sessão disponível
+        System.out.println("Remarcando de sessão " + sessaoAntiga.getSessaoId() + 
+            " (filme: " + sessaoAntiga.getFilmeId() + ") para sessão " + novaSessao.getSessaoId() +
+            " (filme: " + novaSessao.getFilmeId() + ")");
 
         // Liberar assento da sessão antiga PRIMEIRO
         AssentoId assentoAntigo = ingresso.getAssentoId();
@@ -60,8 +62,16 @@ public class RemarcarIngressoUseCase {
         System.out.println("Novo assento " + novoAssentoId + " reservado na sessão " + novaSessao.getSessaoId());
 
         // Remarcar ingresso
-        ingresso.remarcarSessao(novaSessaoId, novoAssentoId);
-        compraRepositorio.atualizarIngresso(ingresso);
-        System.out.println("Ingresso atualizado no repositório");
+        try {
+            System.out.println("Chamando ingresso.remarcarSessao()...");
+            ingresso.remarcarSessao(novaSessaoId, novoAssentoId);
+            System.out.println("remarcarSessao() concluído. Chamando atualizarIngresso()...");
+            compraRepositorio.atualizarIngresso(ingresso);
+            System.out.println("✅ Ingresso atualizado no repositório com sucesso!");
+        } catch (Exception e) {
+            System.err.println("❌ ERRO ao atualizar ingresso: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 }

@@ -301,6 +301,9 @@ const RemarcarNovo = () => {
           clienteNome: compraSelecionada?.clienteNome || 'Cliente'
         });
         setModalSucesso(true);
+        
+        // Recarregar lista de compras ativas após remarcação bem-sucedida
+        await carregarComprasAtivas();
       } else {
         alert(`Erro: ${data.erro || 'Falha ao remarcar ingressos'}`);
       }
@@ -844,10 +847,13 @@ const RemarcarNovo = () => {
 
               {/* Aviso ao Cliente */}
               <div className="aviso-cliente-box">
-                <AlertTriangle size={20} />
+                <AlertTriangle size={24} />
                 <div>
-                  <strong>Importante:</strong>
-                  <p>O cliente pode visualizar o ingresso atualizado na aba "Meus Ingressos" do aplicativo.</p>
+                  <strong>✓ Remarcação Confirmada!</strong>
+                  <p>Os ingressos foram atualizados com sucesso. O cliente já pode visualizar as alterações na aba <strong>"Meus Ingressos"</strong> do aplicativo.</p>
+                  <p style={{marginTop: '8px', fontSize: '0.9em', color: '#666'}}>
+                    Os novos assentos e horário da sessão aparecem automaticamente nos ingressos do cliente.
+                  </p>
                 </div>
               </div>
             </div>

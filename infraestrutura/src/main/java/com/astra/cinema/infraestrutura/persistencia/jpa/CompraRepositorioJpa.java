@@ -123,6 +123,9 @@ public class CompraRepositorioJpa implements CompraRepositorio {
             throw new IllegalArgumentException("O ID do cliente não pode ser nulo");
         }
 
+        // Limpar cache do EntityManager para garantir dados frescos do banco
+        entityManager.clear();
+
         List<CompraJpa> comprasJpa = compraJpaRepository.findByClienteId(clienteId.getId());
         List<Compra> compras = new ArrayList<>();
 
@@ -223,6 +226,11 @@ public class CompraRepositorioJpa implements CompraRepositorio {
         }
 
         ingressoJpaRepository.save(ingressoJpa);
+        entityManager.flush(); // Força a gravação imediata no banco
+        
+        System.out.println("✅ Ingresso " + ingresso.getIngressoId().getId() + 
+            " atualizado: sessão=" + ingresso.getSessaoId().getId() + 
+            ", assento=" + ingresso.getAssentoId().getValor());
     }
 
     @Override

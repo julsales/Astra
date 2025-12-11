@@ -15,6 +15,8 @@ import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.bomboniere.Venda;
 import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.bomboniere.Produto;
+import com.astra.cinema.dominio.operacao.RemarcacaoSessao;
+import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,19 +42,22 @@ public class IngressoController {
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
     private final VendaRepositorio vendaRepositorio;
+    private final RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio;
 
     public IngressoController(ValidarIngressoUseCase validarIngressoUseCase,
                              RemarcarIngressoUseCase remarcarIngressoUseCase,
                              CompraRepositorio compraRepositorio,
                              SessaoRepositorio sessaoRepositorio,
                              FilmeRepositorio filmeRepositorio,
-                             VendaRepositorio vendaRepositorio) {
+                             VendaRepositorio vendaRepositorio,
+                             RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
         this.vendaRepositorio = vendaRepositorio;
+        this.remarcacaoSessaoRepositorio = remarcacaoSessaoRepositorio;
     }
 
     @PostMapping("/validar")
@@ -407,6 +412,52 @@ public class IngressoController {
                 } catch (Exception e) {}
             }
         } catch (Exception e) {}
+
+        // Buscar histórico de remarcação
+        try {
+            List<RemarcacaoSessao> remarcacoes = remarcacaoSessaoRepositorio.listarPorIngresso(i.getIngressoId());
+            if (!remarcacoes.isEmpty()) {
+                map.put("remarcado", true);
+                
+                // Pega a remarcação mais recente
+                RemarcacaoSessao remarcacaoRecente = remarcacoes.stream()
+                    .max(Comparator.comparing(RemarcacaoSessao::getDataHoraRemarcacao))
+                    .orElse(remarcacoes.get(0));
+                
+                Map<String, Object> historicoMap = new HashMap<>();
+                historicoMap.put("dataRemarcacao", remarcacaoRecente.getDataHoraRemarcacao().toString());
+                historicoMap.put("motivo", remarcacaoRecente.getMotivoTecnico());
+                
+                if (remarcacaoRecente.getAssentoOriginal() != null) {
+                    historicoMap.put("assentoOriginal", remarcacaoRecente.getAssentoOriginal().getValor());
+                }
+                
+                // Buscar sessão original
+                try {
+                    Sessao sessaoOriginal = sessaoRepositorio.obterPorId(remarcacaoRecente.getSessaoOriginal());
+                    if (sessaoOriginal != null) {
+                        Map<String, Object> sessaoOriginalMap = new HashMap<>();
+                        sessaoOriginalMap.put("horario", sessaoOriginal.getHorario().toString());
+                        sessaoOriginalMap.put("sala", "Sala " + sessaoOriginal.getSalaId().getId());
+                        
+                        try {
+                            Filme filmeOriginal = filmeRepositorio.obterPorId(sessaoOriginal.getFilmeId());
+                            if (filmeOriginal != null) {
+                                sessaoOriginalMap.put("filme", filmeOriginal.getTitulo());
+                            }
+                        } catch (Exception e) {}
+                        
+                        historicoMap.put("sessaoOriginal", sessaoOriginalMap);
+                    }
+                } catch (Exception e) {}
+                
+                map.put("historicoRemarcacao", historicoMap);
+            } else {
+                map.put("remarcado", false);
+            }
+        } catch (Exception e) {
+            map.put("remarcado", false);
+        }
 
         return map;
     }
