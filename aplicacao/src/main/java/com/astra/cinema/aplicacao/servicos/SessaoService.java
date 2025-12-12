@@ -51,18 +51,18 @@ public class SessaoService {
     }
 
     /**
-     * Atualiza automaticamente o status da sessão para INDISPONIVEL se já passou
+     * Atualiza automaticamente o status da sessão para CONCLUIDA se já passou
      */
     private Sessao atualizarStatusSeNecessario(Sessao sessao) {
         if (sessao.getStatus() == StatusSessao.DISPONIVEL || sessao.getStatus() == StatusSessao.ESGOTADA) {
             Date agora = new Date();
             if (sessao.getHorario().before(agora)) {
-                // Sessão já começou, marcar como INDISPONIVEL
+                // Sessão já começou, marcar como CONCLUIDA
                 Sessao sessaoAtualizada = new Sessao(
                     sessao.getSessaoId(),
                     sessao.getFilmeId(),
                     sessao.getHorario(),
-                    StatusSessao.INDISPONIVEL,
+                    StatusSessao.CONCLUIDA,
                     sessao.getMapaAssentosDisponiveis(),
                     sessao.getSalaId()
                 );
@@ -269,6 +269,7 @@ public class SessaoService {
      */
     public SessaoDTO criarSessao(Integer filmeId, Date horario, Integer salaId) {
         SalaId salaIdObj = new SalaId(salaId);
+        FilmeId filmeIdObj = new FilmeId(filmeId);
 
         // Busca a capacidade real da sala
         Sala sala = salaRepositorio.obterPorId(salaIdObj);
@@ -276,10 +277,19 @@ public class SessaoService {
             throw new IllegalArgumentException("Sala não encontrada com ID: " + salaId);
         }
 
+        // Busca o filme para verificar duração
+        Filme filme = filmeRepositorio.obterPorId(filmeIdObj);
+        if (filme == null) {
+            throw new IllegalArgumentException("Filme não encontrado com ID: " + filmeId);
+        }
+
+        // Validar se há conflito de horário na mesma sala
+        validarConflitoSala(salaIdObj, horario, filme.getDuracao(), null);
+
         int capacidade = sala.getCapacidade();
 
         Sessao sessao = criarSessaoUseCase.executar(
-                new FilmeId(filmeId),
+                filmeIdObj,
                 horario,
                 salaIdObj,
                 capacidade
@@ -287,11 +297,64 @@ public class SessaoService {
 
         return mapearSessaoParaDTO(sessao);
     }
+    
+    /**
+     * Valida se há conflito de horário na mesma sala
+     */
+    private void validarConflitoSala(SalaId salaId, Date novoHorario, int duracaoFilme, SessaoId sessaoAtualId) {
+        List<Sessao> sessoesDaSala = sessaoRepositorio.buscarPorFilme(new FilmeId(0)); // Buscar todas
+        sessoesDaSala = sessoesDaSala.stream()
+                .filter(s -> s.getSalaId().equals(salaId))
+                .filter(s -> s.getStatus() != StatusSessao.CANCELADA && s.getStatus() != StatusSessao.CONCLUIDA)
+                .filter(s -> sessaoAtualId == null || !s.getSessaoId().equals(sessaoAtualId))
+                .collect(Collectors.toList());
+        
+        long novoHorarioInicio = novoHorario.getTime();
+        long novoHorarioFim = novoHorarioInicio + (duracaoFilme * 60 * 1000); // duração em minutos -> milissegundos
+        
+        for (Sessao sessao : sessoesDaSala) {
+            long horarioExistenteInicio = sessao.getHorario().getTime();
+            
+            // Buscar duração do filme da sessão existente
+            Filme filmeExistente = filmeRepositorio.obterPorId(sessao.getFilmeId());
+            if (filmeExistente == null) continue;
+            
+            long horarioExistenteFim = horarioExistenteInicio + (filmeExistente.getDuracao() * 60 * 1000);
+            
+            // Verificar sobreposição
+            boolean haConflito = (novoHorarioInicio < horarioExistenteFim) && (novoHorarioFim > horarioExistenteInicio);
+            
+            if (haConflito) {
+                throw new IllegalStateException("Conflito de horário: a sala já possui uma sessão agendada neste horário");
+            }
+        }
+    }
 
     /**
      * Modifica uma sessão existente
      */
     public SessaoDTO modificarSessao(Integer id, Date novoHorario, Integer novaSalaId) {
+        Sessao sessao = sessaoRepositorio.obterPorId(new SessaoId(id));
+        if (sessao == null) {
+            throw new IllegalArgumentException("Sessão não encontrada");
+        }
+        
+        // Validar se sessão pode ser modificada (apenas DISPONIVEL)
+        if (sessao.getStatus() != StatusSessao.DISPONIVEL) {
+            throw new IllegalStateException("Apenas sessões disponíveis podem ser modificadas");
+        }
+        
+        // Se mudou horário ou sala, validar conflito
+        if (novoHorario != null || novaSalaId != null) {
+            SalaId salaId = novaSalaId != null ? new SalaId(novaSalaId) : sessao.getSalaId();
+            Date horario = novoHorario != null ? novoHorario : sessao.getHorario();
+            
+            Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
+            if (filme != null) {
+                validarConflitoSala(salaId, horario, filme.getDuracao(), sessao.getSessaoId());
+            }
+        }
+        
         SalaId novaSala = novaSalaId != null ? new SalaId(novaSalaId) : null;
 
         modificarSessaoUseCase.executar(
@@ -326,6 +389,16 @@ public class SessaoService {
      * Remove (cancela) uma sessão
      */
     public void removerSessao(Integer id) {
+        Sessao sessao = sessaoRepositorio.obterPorId(new SessaoId(id));
+        if (sessao == null) {
+            throw new IllegalArgumentException("Sessão não encontrada");
+        }
+        
+        // Validar se sessão pode ser cancelada (apenas DISPONIVEL ou ESGOTADA)
+        if (sessao.getStatus() != StatusSessao.DISPONIVEL && sessao.getStatus() != StatusSessao.ESGOTADA) {
+            throw new IllegalStateException("Apenas sessões disponíveis ou esgotadas podem ser canceladas");
+        }
+        
         removerSessaoUseCase.executar(new SessaoId(id));
     }
 

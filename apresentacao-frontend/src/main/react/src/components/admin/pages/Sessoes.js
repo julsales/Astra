@@ -6,7 +6,7 @@ const statusOptions = [
   { label: 'Todos os status', value: 'TODOS' },
   { label: 'Disponíveis', value: 'DISPONIVEL' },
   { label: 'Esgotadas', value: 'ESGOTADA' },
-  { label: 'Indisponíveis', value: 'INDISPONIVEL' },
+  { label: 'Concluídas', value: 'CONCLUIDA' },
   { label: 'Canceladas', value: 'CANCELADA' }
 ];
 

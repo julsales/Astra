@@ -4,6 +4,6 @@ public enum StatusSessao {
     DISPONIVEL,
     ESGOTADA,
     CANCELADA,
-    INDISPONIVEL,
+    CONCLUIDA,
     PROBLEMA_TECNICO
 }
