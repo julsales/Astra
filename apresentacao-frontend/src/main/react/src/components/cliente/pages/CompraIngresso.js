@@ -262,30 +262,26 @@ const CompraIngresso = ({ sessao, filme, usuario, onVoltar, onConcluir }) => {
           };
         })
       );
-
-      const totalBomboniereCompra = totalBomboniere;
-      const totalIngressosCompra = precoIngressos;
       
-      // Usa o primeiro QR Code para compatibilidade (ou pode mostrar todos)
-      const primeiroIngresso = ingressosComQrCode[0];
-      
-      // NÃO registra localmente - deixa a sincronização automática do HomeCliente fazer isso
-      // Isso evita duplicatas (registro local + sincronização backend)
+      // Preparar dados para a tela de sucesso
+      const dadosCompra = {
+        codigo: compraBackend.id || Math.random().toString(36).substring(2, 10).toUpperCase(),
+        filme: filme,
+        sessao: sessao,
+        assentos: assentosSelecionados,
+        produtos: itensBomboniereSelecionados,
+        total: totalGeral,
+        qrCode: ingressosComQrCode[0]?.qrCodeDataUrl || '',
+        metodoPagamento: metodoPagamento
+      };
 
       setAssentosSelecionados([]);
       setItensBomboniere({});
       setEtapa(1);
-
-      setTimeout(async () => {
-        setProcessando(false);
-        // Força sincronização imediata antes de voltar
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500)); // Aguarda backend processar
-        } catch (e) {
-          console.error('Erro ao aguardar sincronização', e);
-        }
-        onConcluir(); // Volta para HomeCliente que vai sincronizar automaticamente
-      }, 1500);
+      setProcessando(false);
+      
+      // Vai para tela de sucesso em vez de voltar direto para home
+      onConcluir(dadosCompra);
     } catch (error) {
       console.error('Erro ao finalizar compra:', error);
       setProcessando(false);

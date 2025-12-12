@@ -367,20 +367,24 @@ const Sessoes = ({ usuario }) => {
                     </td>
                     <td>
                       <div className="table-actions">
-                        <button
-                          className="btn-secondary"
-                          onClick={() => abrirModal(sessao)}
-                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
-                        >
-                          <EditIcon size={14} /> Modificar
-                        </button>
-                        <button
-                          className="btn-danger"
-                          onClick={() => removerSessao(sessao.id)}
-                          style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
-                        >
-                          <DeleteIcon size={14} /> Cancelar
-                        </button>
+                        {sessao.status === 'DISPONIVEL' && (
+                          <>
+                            <button
+                              className="btn-secondary"
+                              onClick={() => abrirModal(sessao)}
+                              style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
+                            >
+                              <EditIcon size={14} /> Modificar
+                            </button>
+                            <button
+                              className="btn-danger"
+                              onClick={() => removerSessao(sessao.id)}
+                              style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}
+                            >
+                              <DeleteIcon size={14} /> Cancelar
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

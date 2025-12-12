@@ -538,7 +538,7 @@ const FuncionarioPanel = ({ onLogout }) => {
           </div>
           <div className="func-stat-info">
             <h3>{estatisticasHoje.vendas}</h3>
-            <p>Vendas Hoje</p>
+            <p>Itens Vendidos Hoje</p>
           </div>
         </div>
 
@@ -832,7 +832,7 @@ const FuncionarioPanel = ({ onLogout }) => {
           </div>
           <div className="func-stat-info">
             <h3>{estatisticasHoje.vendas || 0}</h3>
-            <p>Vendas Hoje</p>
+            <p>Itens Vendidos Hoje</p>
           </div>
         </div>
 

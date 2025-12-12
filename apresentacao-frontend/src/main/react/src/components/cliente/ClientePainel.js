@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import './ClienteNovo.css';
 import HomeCliente from './pages/HomeCliente';
 import CompraIngresso from './pages/CompraIngresso';
+import Sucesso from './pages/Sucesso';
 import Stars from '../Stars';
 import logo from '../unnamed-removebg-preview.png';
 
 const ClientePainel = ({ usuario, onLogout }) => {
-  const [tela, setTela] = useState('home'); // 'home' ou 'compraIngresso'
+  const [tela, setTela] = useState('home'); // 'home', 'compraIngresso', 'sucesso'
   const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
   const [filmeSelecionado, setFilmeSelecionado] = useState(null);
+  const [compraConcluida, setCompraConcluida] = useState(null);
 
   const handleIniciarCompra = (sessao, filme) => {
     setSessaoSelecionada(sessao);
@@ -20,6 +22,12 @@ const ClientePainel = ({ usuario, onLogout }) => {
     setTela('home');
     setSessaoSelecionada(null);
     setFilmeSelecionado(null);
+    setCompraConcluida(null);
+  };
+
+  const handleCompraConcluida = (compra) => {
+    setCompraConcluida(compra);
+    setTela('sucesso');
   };
 
   return (
@@ -60,7 +68,15 @@ const ClientePainel = ({ usuario, onLogout }) => {
             filme={filmeSelecionado}
             usuario={usuario}
             onVoltar={handleVoltarHome}
-            onConcluir={handleVoltarHome}
+            onConcluir={handleCompraConcluida}
+          />
+        )}
+        
+        {tela === 'sucesso' && compraConcluida && (
+          <Sucesso 
+            compra={compraConcluida}
+            onVoltarInicio={handleVoltarHome}
+            onAbrirIngressos={handleVoltarHome}
           />
         )}
       </main>

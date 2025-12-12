@@ -127,7 +127,7 @@ const Overview = ({ usuario }) => {
           valor: vendasHoje,
           variacao: '-',
           tipo: 'neutro',
-          descricao: 'vendas bomboniere - hoje'
+          descricao: 'itens vendidos - bomboniere hoje'
         },
         totalVendas: {
           valor: totalVendas,
