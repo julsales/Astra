@@ -95,6 +95,9 @@ public class SessaoService {
         long sessoesEsgotadas = todasSessoes.stream()
                 .filter(s -> s.getStatus() == StatusSessao.ESGOTADA)
                 .count();
+        long sessoesCanceladas = todasSessoes.stream()
+                .filter(s -> s.getStatus() == StatusSessao.CANCELADA)
+                .count();
 
         // Calcula ocupação média
         double ocupacaoMedia = todasSessoes.stream()
@@ -138,6 +141,7 @@ public class SessaoService {
                 totalSessoes,
                 sessoesDisponiveis,
                 sessoesEsgotadas,
+                sessoesCanceladas,
                 sessoesHoje,
                 sessoesSemana,
                 Math.round(ocupacaoMedia * 100.0) / 100.0,
@@ -357,6 +361,7 @@ public class SessaoService {
     public record IndicadoresSessao(
             long total,
             long ativas,
+            long esgotadas,
             long canceladas,
             long sessoesHoje,
             long sessoesSemana,
