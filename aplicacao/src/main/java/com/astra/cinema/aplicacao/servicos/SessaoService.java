@@ -51,6 +51,29 @@ public class SessaoService {
     }
 
     /**
+     * Atualiza automaticamente o status da sessão para INDISPONIVEL se já passou
+     */
+    private Sessao atualizarStatusSeNecessario(Sessao sessao) {
+        if (sessao.getStatus() == StatusSessao.DISPONIVEL || sessao.getStatus() == StatusSessao.ESGOTADA) {
+            Date agora = new Date();
+            if (sessao.getHorario().before(agora)) {
+                // Sessão já começou, marcar como INDISPONIVEL
+                Sessao sessaoAtualizada = new Sessao(
+                    sessao.getSessaoId(),
+                    sessao.getFilmeId(),
+                    sessao.getHorario(),
+                    StatusSessao.INDISPONIVEL,
+                    sessao.getMapaAssentosDisponiveis(),
+                    sessao.getSalaId()
+                );
+                sessaoRepositorio.salvar(sessaoAtualizada);
+                return sessaoAtualizada;
+            }
+        }
+        return sessao;
+    }
+
+    /**
      * Lista sessões com filtros opcionais
      */
     public List<SessaoDTO> listarSessoes(Integer filmeId, String status, boolean apenasAtivas) {
@@ -61,6 +84,11 @@ public class SessaoService {
         } else {
             sessoes = sessaoRepositorio.listarTodas();
         }
+
+        // Atualizar status de sessões que já passaram
+        sessoes = sessoes.stream()
+                .map(this::atualizarStatusSeNecessario)
+                .collect(Collectors.toList());
 
         // Filtro por status
         if (status != null && !status.isEmpty()) {
@@ -87,6 +115,11 @@ public class SessaoService {
      */
     public IndicadoresSessao obterIndicadores() {
         List<Sessao> todasSessoes = sessaoRepositorio.listarTodas();
+        
+        // Atualizar status de sessões que já passaram
+        todasSessoes = todasSessoes.stream()
+                .map(this::atualizarStatusSeNecessario)
+                .collect(Collectors.toList());
 
         long totalSessoes = todasSessoes.size();
         long sessoesDisponiveis = todasSessoes.stream()
@@ -99,8 +132,9 @@ public class SessaoService {
                 .filter(s -> s.getStatus() == StatusSessao.CANCELADA)
                 .count();
 
-        // Calcula ocupação média
+        // Calcula ocupação média APENAS de sessões DISPONIVEL
         double ocupacaoMedia = todasSessoes.stream()
+                .filter(s -> s.getStatus() == StatusSessao.DISPONIVEL)
                 .mapToDouble(this::calcularOcupacao)
                 .average()
                 .orElse(0.0);
@@ -125,13 +159,16 @@ public class SessaoService {
                             && now.get(Calendar.WEEK_OF_YEAR) == st.get(Calendar.WEEK_OF_YEAR);
                 }).count();
 
+        // Contar ingressos apenas de sessões DISPONIVEL
         long ingressosReservados = todasSessoes.stream()
+                .filter(s -> s.getStatus() == StatusSessao.DISPONIVEL)
                 .mapToLong(s -> s.getMapaAssentosDisponiveis().values().stream()
                         .filter(d -> !d)
                         .count()
                 ).sum();
 
         long ingressosDisponiveis = todasSessoes.stream()
+                .filter(s -> s.getStatus() == StatusSessao.DISPONIVEL)
                 .mapToLong(s -> s.getMapaAssentosDisponiveis().values().stream()
                         .filter(d -> d)
                         .count()
@@ -155,6 +192,12 @@ public class SessaoService {
      */
     public List<SessaoDTO> listarSessoesPorFilme(Integer filmeId) {
         List<Sessao> sessoes = sessaoRepositorio.buscarPorFilme(new FilmeId(filmeId));
+        
+        // Atualizar status de sessões que já passaram
+        sessoes = sessoes.stream()
+                .map(this::atualizarStatusSeNecessario)
+                .collect(Collectors.toList());
+        
         return sessoes.stream()
                 .map(this::mapearSessaoParaDTO)
                 .collect(Collectors.toList());
@@ -168,6 +211,10 @@ public class SessaoService {
         if (sessao == null) {
             throw new IllegalArgumentException("Sessão não encontrada");
         }
+        
+        // Atualizar status se necessário
+        sessao = atualizarStatusSeNecessario(sessao);
+        
         return mapearSessaoParaDTO(sessao);
     }
 
@@ -197,6 +244,14 @@ public class SessaoService {
         Sessao sessao = sessaoRepositorio.obterPorId(new SessaoId(id));
         if (sessao == null) {
             throw new IllegalArgumentException("Sessão não encontrada");
+        }
+        
+        // Atualizar status se necessário
+        sessao = atualizarStatusSeNecessario(sessao);
+        
+        // Validar se sessão está disponível para venda
+        if (sessao.getStatus() != StatusSessao.DISPONIVEL) {
+            throw new IllegalStateException("Esta sessão não está mais disponível para compra de ingressos");
         }
 
         // Reserva cada assento
