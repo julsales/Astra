@@ -1,27 +1,42 @@
 package com.astra.cinema.apresentacao.rest;
 
-import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCase;
-import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
-import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
-import com.astra.cinema.dominio.comum.*;
-import com.astra.cinema.dominio.compra.Compra;
-import com.astra.cinema.dominio.compra.CompraRepositorio;
-import com.astra.cinema.dominio.compra.Ingresso;
-import com.astra.cinema.dominio.sessao.Sessao;
-import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
-import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpa;
-import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpaRepository;
-import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpa;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCase;
+import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
+import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
+import com.astra.cinema.dominio.compra.Compra;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.comum.AssentoId;
+import com.astra.cinema.dominio.comum.FuncionarioId;
+import com.astra.cinema.dominio.comum.IngressoId;
+import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.sessao.Sessao;
+import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpa;
+import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpaRepository;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpa;
+import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
 
 /**
  * Controller REST para operações de funcionários.
@@ -460,6 +475,8 @@ public class FuncionarioOperacoesController {
     @Transactional
     public ResponseEntity<?> remarcarMultiplosIngressos(@RequestBody RemarcarMultiplosRequest request) {
         try {
+            System.out.println("🎫 Iniciando remarcação de múltiplos ingressos: " + request.remarcacoes.size() + " ingresso(s)");
+            
             FuncionarioId funcionarioId = new FuncionarioId(1);
             List<Map<String, Object>> resultados = new java.util.ArrayList<>();
             int sucessos = 0;
@@ -467,6 +484,10 @@ public class FuncionarioOperacoesController {
 
             for (RemarcarIngressoRequest remarcacao : request.remarcacoes) {
                 try {
+                    System.out.println("   Processando remarcação - Ingresso: " + remarcacao.ingressoId + 
+                        ", Nova Sessão: " + remarcacao.novaSessaoId + 
+                        ", Novo Assento: " + remarcacao.novoAssentoId);
+                    
                     IngressoId ingressoId = new IngressoId(remarcacao.ingressoId);
                     SessaoId novaSessaoId = new SessaoId(remarcacao.novaSessaoId);
                     AssentoId novoAssentoId = remarcacao.novoAssentoId != null ?
@@ -489,14 +510,19 @@ public class FuncionarioOperacoesController {
 
                     if (resultado.isSucesso()) {
                         sucessos++;
+                        System.out.println("   ✅ Remarcação bem-sucedida!");
                     } else {
                         falhas++;
+                        System.out.println("   ❌ Remarcação falhou: " + resultado.getMensagem());
                     }
                 } catch (Exception e) {
+                    System.err.println("   ❌ EXCEÇÃO ao remarcar ingresso " + remarcacao.ingressoId + ": " + e.getMessage());
+                    e.printStackTrace();
+                    
                     Map<String, Object> itemResultado = new HashMap<>();
                     itemResultado.put("ingressoId", remarcacao.ingressoId);
                     itemResultado.put("sucesso", false);
-                    itemResultado.put("mensagem", e.getMessage());
+                    itemResultado.put("mensagem", e.getMessage() != null ? e.getMessage() : "Erro desconhecido ao remarcar");
                     resultados.add(itemResultado);
                     falhas++;
                 }
@@ -507,11 +533,15 @@ public class FuncionarioOperacoesController {
             response.put("falhas", falhas);
             response.put("resultados", resultados);
 
+            System.out.println("🎫 Remarcação concluída: " + sucessos + " sucesso(s), " + falhas + " falha(s)");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            System.err.println("❌ ERRO GERAL ao remarcar ingressos: " + e.getMessage());
+            e.printStackTrace();
+            
             Map<String, Object> erro = new HashMap<>();
-            erro.put("erro", "Erro ao remarcar ingressos: " + e.getMessage());
+            erro.put("erro", "Erro ao remarcar ingressos: " + (e.getMessage() != null ? e.getMessage() : "Erro desconhecido"));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
         }
     }
@@ -617,8 +647,11 @@ public class FuncionarioOperacoesController {
                 .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
                 .filter(c -> c.getPagamentoId() != null)
                 .mapToDouble(c -> {
-                    // Aproximadamente R$ 25 por ingresso (valor médio)
-                    return c.getIngressos() != null ? c.getIngressos().size() * 25.0 : 0.0;
+                    // Calcular preço real dos ingressos (inteira R$ 25, meia R$ 12.50)
+                    if (c.getIngressos() == null) return 0.0;
+                    return c.getIngressos().stream()
+                        .mapToDouble(i -> i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5)
+                        .sum();
                 })
                 .sum();
 

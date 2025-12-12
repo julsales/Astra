@@ -263,8 +263,15 @@ const RemarcarNovo = () => {
       return;
     }
 
+    if (!motivoTecnico || motivoTecnico.trim() === '') {
+      alert('Por favor, informe o motivo técnico da remarcação');
+      return;
+    }
+
     setCarregando(true);
     try {
+      console.log('🎫 Iniciando remarcação de', ingressosSelecionados.length, 'ingresso(s)');
+      
       // Remarcar cada ingresso
       const remarcacoes = ingressosSelecionados.map((ingresso, index) => ({
         ingressoId: ingresso.id,
@@ -273,6 +280,8 @@ const RemarcarNovo = () => {
         motivoTecnico: motivoTecnico
       }));
 
+      console.log('Enviando payload:', JSON.stringify({ remarcacoes }, null, 2));
+
       const response = await fetch('/api/funcionario/ingressos/remarcar-multiplos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -280,36 +289,53 @@ const RemarcarNovo = () => {
       });
 
       const data = await response.json();
+      console.log('Resposta recebida:', data);
 
       if (response.ok) {
-        // Preparar dados para o modal de sucesso
-        const filmeDestino = filmes.find(f => f.id === sessaoDestino.filmeId);
-        setDadosRemarcacao({
-          quantidade: remarcacoes.length,
-          ingressos: ingressosSelecionados.map((ing, idx) => ({
-            qrCode: ing.qrCode,
-            assentoOriginal: ing.assento,
-            novoAssento: assentosSelecionados[idx]
-          })),
-          sessaoOriginal: compraSelecionada?.sessaoInfo,
-          sessaoDestino: {
-            ...sessaoDestino,
-            filmeTitulo: filmeDestino?.titulo || `Filme #${sessaoDestino.filmeId}`
-          },
-          motivo: motivoTecnico,
-          dataRemarcacao: new Date().toISOString(),
-          clienteNome: compraSelecionada?.clienteNome || 'Cliente'
-        });
-        setModalSucesso(true);
+        // Verifica se houve alguma falha
+        if (data.falhas > 0) {
+          // Monta mensagem detalhada dos erros
+          const erros = data.resultados
+            .filter(r => !r.sucesso)
+            .map(r => `Ingresso #${r.ingressoId}: ${r.mensagem}`)
+            .join('\n');
+          
+          alert(`Remarcação concluída com erros:\n\n${data.sucessos} sucesso(s), ${data.falhas} falha(s)\n\nDetalhes:\n${erros}`);
+        }
         
-        // Recarregar lista de compras ativas após remarcação bem-sucedida
-        await carregarComprasAtivas();
+        // Se teve pelo menos um sucesso, mostra o modal
+        if (data.sucessos > 0) {
+          // Preparar dados para o modal de sucesso
+          const filmeDestino = filmes.find(f => f.id === sessaoDestino.filmeId);
+          setDadosRemarcacao({
+            quantidade: data.sucessos,
+            ingressos: ingressosSelecionados.map((ing, idx) => ({
+              qrCode: ing.qrCode,
+              assentoOriginal: ing.assento,
+              novoAssento: assentosSelecionados[idx]
+            })),
+            sessaoOriginal: compraSelecionada?.sessaoInfo,
+            sessaoDestino: {
+              ...sessaoDestino,
+              filmeTitulo: filmeDestino?.titulo || `Filme #${sessaoDestino.filmeId}`
+            },
+            motivo: motivoTecnico,
+            dataRemarcacao: new Date().toISOString(),
+            clienteNome: compraSelecionada?.clienteNome || 'Cliente'
+          });
+          setModalSucesso(true);
+          
+          // Recarregar lista de compras ativas após remarcação bem-sucedida
+          await carregarComprasAtivas();
+        }
       } else {
-        alert(`Erro: ${data.erro || 'Falha ao remarcar ingressos'}`);
+        const mensagemErro = data.erro || data.mensagem || 'Falha ao remarcar ingressos';
+        console.error('Erro HTTP:', response.status, mensagemErro);
+        alert(`Erro ao remarcar: ${mensagemErro}`);
       }
     } catch (error) {
       console.error('Erro ao remarcar:', error);
-      alert('Erro de conexão com o servidor');
+      alert('Erro de conexão com o servidor. Verifique se o backend está em execução.');
     } finally {
       setCarregando(false);
     }

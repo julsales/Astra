@@ -148,14 +148,12 @@ const Sessoes = ({ usuario }) => {
       const payload = editando
         ? {
             horario: horarioISO,
-            salaId: parseInt(formData.salaId),
-            funcionario: getFuncionarioPayload()
+            salaId: parseInt(formData.salaId)
           }
         : {
             filmeId: parseInt(formData.filmeId),
             horario: horarioISO,
-            salaId: parseInt(formData.salaId),
-            funcionario: getFuncionarioPayload()
+            salaId: parseInt(formData.salaId)
           };
 
       const response = await fetch(editando ? `/api/sessoes/${editando.id}` : '/api/sessoes', {
@@ -170,11 +168,11 @@ const Sessoes = ({ usuario }) => {
         carregarDados();
       } else {
         const error = await response.json();
-        alert(error.mensagem || 'Erro ao salvar sessão');
+        alert(error.erro || error.mensagem || 'Erro ao salvar sessão');
       }
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao salvar sessão');
+      alert('Erro ao salvar sessão: ' + error.message);
     }
   };
 

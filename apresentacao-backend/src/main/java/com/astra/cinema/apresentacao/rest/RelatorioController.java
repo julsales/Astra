@@ -1,19 +1,26 @@
 package com.astra.cinema.apresentacao.rest;
 
-import com.astra.cinema.dominio.operacao.RemarcacaoSessao;
-import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
-import com.astra.cinema.dominio.compra.CompraRepositorio;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.astra.cinema.dominio.compra.Compra;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
-import com.astra.cinema.dominio.sessao.Sessao;
-import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import com.astra.cinema.dominio.operacao.RemarcacaoSessao;
+import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
+import com.astra.cinema.dominio.sessao.Sessao;
+import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 
 @RestController
 @RequestMapping("/api/funcionario/relatorios")
@@ -115,8 +122,9 @@ public class RelatorioController {
         try {
             List<Compra> todasCompras = compraRepositorio.listarTodas();
             
-            // Contar ingressos por filme
+            // Contar ingressos por filme e calcular receita
             Map<Integer, Integer> ingressosPorFilme = new HashMap<>();
+            Map<Integer, Double> receitaPorFilme = new HashMap<>();
             Map<Integer, String> nomesFilmes = new HashMap<>();
             
             for (Compra compra : todasCompras) {
@@ -126,6 +134,10 @@ public class RelatorioController {
                         if (sessao != null) {
                             int filmeId = sessao.getFilmeId().getId();
                             ingressosPorFilme.put(filmeId, ingressosPorFilme.getOrDefault(filmeId, 0) + 1);
+                            
+                            // Calcular receita do ingresso (R$ 25 inteira, R$ 12.50 meia)
+                            double precoIngresso = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5;
+                            receitaPorFilme.put(filmeId, receitaPorFilme.getOrDefault(filmeId, 0.0) + precoIngresso);
                             
                             if (!nomesFilmes.containsKey(filmeId)) {
                                 Filme filme = filmeRepositorio.obterPorId(sessao.getFilmeId());
@@ -145,6 +157,7 @@ public class RelatorioController {
                 filme.put("filmeId", entry.getKey());
                 filme.put("titulo", nomesFilmes.getOrDefault(entry.getKey(), "Filme Desconhecido"));
                 filme.put("totalIngressos", entry.getValue());
+                filme.put("receita", Math.round(receitaPorFilme.getOrDefault(entry.getKey(), 0.0) * 100) / 100.0);
                 filmes.add(filme);
             }
             

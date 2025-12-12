@@ -271,13 +271,16 @@ export const useMeusIngressos = (usuario) => {
           )
         );
 
+        // Sincronizar com backend para atualizar a lista
+        await sincronizarComBackend();
+
         return { sucesso: true };
       } catch (error) {
         console.error('Erro ao cancelar compra:', error);
         return { sucesso: false, erro: error.message };
       }
     },
-    [persistir]
+    [persistir, sincronizarComBackend]
   );
 
   const limparHistorico = useCallback(() => {

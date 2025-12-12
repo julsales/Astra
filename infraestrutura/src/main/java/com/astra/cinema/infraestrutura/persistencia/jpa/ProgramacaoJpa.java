@@ -1,17 +1,29 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
-import com.astra.cinema.dominio.comum.ProgramacaoId;
-import com.astra.cinema.dominio.comum.SessaoId;
-import com.astra.cinema.dominio.programacao.Programacao;
-import com.astra.cinema.dominio.programacao.ProgramacaoRepositorio;
-import jakarta.persistence.*;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Repository;
+
+import com.astra.cinema.dominio.comum.ProgramacaoId;
+import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.programacao.Programacao;
+import com.astra.cinema.dominio.programacao.ProgramacaoRepositorio;
+
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 /**
  * Entidade JPA para Programação
@@ -92,10 +104,21 @@ class ProgramacaoRepositorioJpaImpl implements ProgramacaoRepositorio {
             throw new IllegalArgumentException("A programação não pode ser nula");
         }
 
-        ProgramacaoJpa jpa = new ProgramacaoJpa();
+        ProgramacaoJpa jpa;
+        
+        // Se o ID existe e é válido, buscar a entidade existente para atualizar
         if (programacao.getProgramacaoId() != null && programacao.getProgramacaoId().getId() > 0) {
-            jpa.setId(programacao.getProgramacaoId().getId());
+            jpa = repository.findById(programacao.getProgramacaoId().getId())
+                    .orElse(new ProgramacaoJpa());
+            if (jpa.getId() == null) {
+                // ID não existe no banco, criar nova entidade sem setar o ID
+                jpa = new ProgramacaoJpa();
+            }
+        } else {
+            // Nova programação
+            jpa = new ProgramacaoJpa();
         }
+        
         jpa.setPeriodoInicio(programacao.getPeriodoInicio());
         jpa.setPeriodoFim(programacao.getPeriodoFim());
         jpa.setSessaoIds(programacao.getSessoes().stream()

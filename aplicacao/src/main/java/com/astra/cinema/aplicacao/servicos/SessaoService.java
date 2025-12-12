@@ -1,5 +1,12 @@
 package com.astra.cinema.aplicacao.servicos;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
@@ -15,9 +22,6 @@ import com.astra.cinema.dominio.sessao.SalaRepositorio;
 import com.astra.cinema.dominio.sessao.Sessao;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.sessao.StatusSessao;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Serviço de Aplicação para operações de Sessão
@@ -302,8 +306,8 @@ public class SessaoService {
      * Valida se há conflito de horário na mesma sala
      */
     private void validarConflitoSala(SalaId salaId, Date novoHorario, int duracaoFilme, SessaoId sessaoAtualId) {
-        List<Sessao> sessoesDaSala = sessaoRepositorio.buscarPorFilme(new FilmeId(0)); // Buscar todas
-        sessoesDaSala = sessoesDaSala.stream()
+        // Buscar todas as sessões da sala
+        List<Sessao> sessoesDaSala = sessaoRepositorio.listarTodas().stream()
                 .filter(s -> s.getSalaId().equals(salaId))
                 .filter(s -> s.getStatus() != StatusSessao.CANCELADA && s.getStatus() != StatusSessao.CONCLUIDA)
                 .filter(s -> sessaoAtualId == null || !s.getSessaoId().equals(sessaoAtualId))
