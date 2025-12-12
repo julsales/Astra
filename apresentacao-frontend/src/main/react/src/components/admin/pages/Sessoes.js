@@ -37,8 +37,7 @@ const Sessoes = ({ usuario }) => {
   });
   const [filtros, setFiltros] = useState({
     filmeId: 'TODOS',
-    status: 'TODOS',
-    apenasAtivas: true
+    status: 'TODOS'
   });
 
   useEffect(() => {
@@ -56,9 +55,6 @@ const Sessoes = ({ usuario }) => {
       }
       if (filtrosAplicados.status && filtrosAplicados.status !== 'TODOS') {
         params.append('status', filtrosAplicados.status);
-      }
-      if (filtrosAplicados.apenasAtivas) {
-        params.append('apenasAtivas', 'true');
       }
 
       const [resFilmes, resSessoes, resIndicadores, resSalas] = await Promise.all([
@@ -216,7 +212,7 @@ const Sessoes = ({ usuario }) => {
   };
 
   const resetFiltros = () => {
-    const defaultFiltros = { filmeId: 'TODOS', status: 'TODOS', apenasAtivas: true };
+    const defaultFiltros = { filmeId: 'TODOS', status: 'TODOS' };
     carregarDados(defaultFiltros);
   };
 
@@ -304,15 +300,6 @@ const Sessoes = ({ usuario }) => {
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-
-        <label className="filter-toggle">
-          <input
-            type="checkbox"
-            checked={filtros.apenasAtivas}
-            onChange={(e) => handleFiltroChange('apenasAtivas', e.target.checked)}
-          />
-          <span>Mostrar apenas sessões ativas</span>
-        </label>
 
         <button type="button" className="btn-tertiary" onClick={resetFiltros}>
           <SearchIcon size={16} /> Limpar filtros
