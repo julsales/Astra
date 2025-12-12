@@ -272,7 +272,7 @@ const Sessoes = ({ usuario }) => {
           </div>
           <div className="stat-card">
             <div className="stat-header">
-              <span className="stat-label">Ocupação Média</span>
+              <span className="stat-label">Taxa Média de Ocupação</span>
               <div className="stat-icon-circle orange"></div>
             </div>
             <div className="stat-value">{(indicadores.ocupacaoMedia * 100).toFixed(0)}%</div>

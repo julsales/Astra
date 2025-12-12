@@ -37,6 +37,17 @@ const Overview = ({ usuario }) => {
         todasSessoes.push(...sessoes);
       }
 
+      // Filtrar apenas sessões de hoje
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      
+      const sessoesHoje = todasSessoes.filter(s => {
+        const horarioSessao = new Date(s.horario);
+        return horarioSessao >= hoje && horarioSessao < amanha;
+      });
+
       // Carregar clientes (com tratamento de erro)
       let clientes = [];
       try {
@@ -63,20 +74,22 @@ const Overview = ({ usuario }) => {
       const resProdutos = await fetch('/api/produtos');
       const produtos = await resProdutos.json();
 
-      // Calcular total de assentos
-      const totalAssentos = todasSessoes.reduce((acc, s) => 
-        acc + (s.totalAssentos || 0), 0
+      // Calcular total de assentos (soma das capacidades reais das salas) - APENAS HOJE
+      const totalAssentos = sessoesHoje.reduce((acc, s) => 
+        acc + (s.capacidade || 0), 0
       );
 
-      // Calcular assentos disponíveis (livres)
-      const assentosLivres = todasSessoes.reduce((acc, s) => 
+      // Calcular assentos disponíveis (livres) - APENAS HOJE
+      const assentosLivres = sessoesHoje.reduce((acc, s) => 
         acc + (s.assentosDisponiveis || 0), 0
       );
 
-      // Calcular assentos ocupados
-      const assentosOcupados = totalAssentos - assentosLivres;
+      // Calcular assentos ocupados - APENAS HOJE
+      const assentosOcupados = sessoesHoje.reduce((acc, s) => 
+        acc + (s.assentosOcupados || 0), 0
+      );
 
-      // Calcular ocupação média
+      // Calcular ocupação média - APENAS HOJE
       const ocupacaoPercentual = totalAssentos > 0 ? Math.round((assentosOcupados / totalAssentos) * 100) : 0;
 
       // Calcular valor total em estoque de produtos
@@ -200,7 +213,7 @@ const Overview = ({ usuario }) => {
         </div>
         <div className="stat-card ocupacao">
           <div className="stat-header">
-            <span className="stat-label">Taxa de Ocupação - Hoje</span>
+            <span className="stat-label">Ocupação de Hoje</span>
             <div className="stat-icon-circle orange"></div>
           </div>
           <div className="stat-value">{estatisticas.ocupacao.valor}%</div>

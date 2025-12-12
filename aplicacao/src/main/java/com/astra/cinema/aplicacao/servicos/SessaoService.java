@@ -123,14 +123,16 @@ public class SessaoService {
                 }).count();
 
         long ingressosReservados = todasSessoes.stream()
-                .mapToLong(s -> {
-                    long disponiveis = s.getMapaAssentosDisponiveis().values().stream().filter(d -> d).count();
-                    return s.getCapacidade() - disponiveis;
-                }).sum();
+                .mapToLong(s -> s.getMapaAssentosDisponiveis().values().stream()
+                        .filter(d -> !d)
+                        .count()
+                ).sum();
 
         long ingressosDisponiveis = todasSessoes.stream()
-                .mapToLong(Sessao::getCapacidade)
-                .sum() - ingressosReservados;
+                .mapToLong(s -> s.getMapaAssentosDisponiveis().values().stream()
+                        .filter(d -> d)
+                        .count()
+                ).sum();
 
         return new IndicadoresSessao(
                 totalSessoes,
@@ -310,11 +312,13 @@ public class SessaoService {
             }
         } catch (Exception ignored) {}
 
-        // Adiciona estatísticas de ocupação baseadas na capacidade real da sala
+        // Adiciona estatísticas de ocupação baseadas nos assentos realmente cadastrados
         long assentosDisponiveis = sessao.getMapaAssentosDisponiveis().values().stream()
                 .filter(disponivel -> disponivel)
                 .count();
-        long assentosOcupados = capacidadeReal - assentosDisponiveis;
+        long assentosOcupados = sessao.getMapaAssentosDisponiveis().values().stream()
+                .filter(disponivel -> !disponivel)
+                .count();
 
         return new SessaoDTO(
                 sessao.getSessaoId().getId(),
