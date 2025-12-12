@@ -114,7 +114,7 @@ const Overview = ({ usuario }) => {
           valor: vendasHoje,
           variacao: '-',
           tipo: 'neutro',
-          descricao: 'vendas hoje'
+          descricao: 'vendas bomboniere - hoje'
         },
         totalVendas: {
           valor: totalVendas,
@@ -180,7 +180,7 @@ const Overview = ({ usuario }) => {
       <div className="stats-grid-main">
         <div className="stat-card vendas">
           <div className="stat-header">
-            <span className="stat-label">Vendas Hoje</span>
+            <span className="stat-label">Vendas Bomboniere - Hoje</span>
             <div className="stat-icon-circle purple"></div>
           </div>
           <div className="stat-value">{estatisticas.vendasHoje.valor}</div>
@@ -200,7 +200,7 @@ const Overview = ({ usuario }) => {
         </div>
         <div className="stat-card ocupacao">
           <div className="stat-header">
-            <span className="stat-label">Taxa de Ocupação</span>
+            <span className="stat-label">Taxa de Ocupação - Hoje</span>
             <div className="stat-icon-circle orange"></div>
           </div>
           <div className="stat-value">{estatisticas.ocupacao.valor}%</div>
