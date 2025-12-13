@@ -1,6 +1,6 @@
 # Padrões de Projeto Implementados
 
-Este documento descreve os padrões de projeto adotados no sistema Astra Cinema, listando as classes criadas e/ou alteradas para cada padrão.
+Este documento descreve os padrões de projeto adotados no sistema Astra Cinema, organizados por padrão e relacionados às funcionalidades do sistema.
 
 ---
 
@@ -8,7 +8,9 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 
 **Descrição**: Padrão comportamental que fornece uma forma de acessar sequencialmente os elementos de uma coleção sem expor sua representação interna.
 
-**Aplicação**: Utilizado para iterar sobre a coleção de assentos de uma sessão, permitindo filtrar assentos disponíveis e ocupados.
+**Funcionalidades Relacionadas**:
+- Iniciar compra (reserva de assentos) - iteração sobre assentos disponíveis
+- Criar sessão - iteração sobre assentos da sala
 
 ### Classes Implementadas
 
@@ -29,8 +31,10 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
   - Filtra assentos por status (disponível ou ocupado)
   - Implementa `Iterator<Map.Entry<AssentoId, Boolean>>`
 
-### Correções Aplicadas
-- ✅ Adicionada cópia defensiva em `ColecaoAssentos` para evitar exposição de estado mutável
+### Benefícios
+- ✅ Encapsulamento da estrutura interna de assentos
+- ✅ Facilita filtragem de assentos por status
+- ✅ Proteção contra modificações externas com cópia defensiva
 
 ---
 
@@ -38,7 +42,10 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 
 **Descrição**: Padrão estrutural que permite adicionar comportamentos a objetos dinamicamente, envolvendo-os em objetos decoradores.
 
-**Aplicação**: Cadeia de validadores de ingressos que podem ser combinados para aplicar múltiplas regras de validação.
+**Funcionalidades Relacionadas**:
+- Iniciar compra (reserva de assentos) - validação de ingressos
+- Confirmar compra (após pagamento) - validação de ingressos
+- Cancelar compra - validação de ingressos
 
 ### Classes Implementadas
 
@@ -64,23 +71,25 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
   - Mantém cache thread-safe de ingressos validados
   - Delega para próximo validador na cadeia
 
-#### `ValidadorSessaoAtiva`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/validacao/ValidadorSessaoAtiva.java`
+#### `ValidadorHorario`
+- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/validacao/ValidadorHorario.java`
 - **Papel**: Concrete Decorator
 - **Responsabilidades**:
-  - Verifica se sessão está ativa e não cancelada
-  - Valida se sessão ainda não ocorreu
+  - Valida horário da sessão
+  - Verifica se sessão está no horário adequado
 
-#### `ValidadorAssentoDisponivel`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/validacao/ValidadorAssentoDisponivel.java`
+#### `ValidadorQRCode`
+- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/validacao/ValidadorQRCode.java`
 - **Papel**: Concrete Decorator
 - **Responsabilidades**:
-  - Verifica se assento está disponível na sessão
-  - Valida se assento existe e não está ocupado
+  - Valida código QR do ingresso
+  - Verifica autenticidade do código
 
-### Correções Aplicadas
-- ✅ Implementado cache thread-safe com `ConcurrentHashMap.newKeySet()` em `ValidadorDuplicidade`
-- ✅ Adicionado construtor que aceita cache externo para facilitar testes e injeção de dependências
+### Benefícios
+- ✅ Composição flexível de validações
+- ✅ Fácil adição de novas regras de validação
+- ✅ Thread-safety com `ConcurrentHashMap.newKeySet()`
+- ✅ Testabilidade com injeção de cache externo
 
 ---
 
@@ -88,7 +97,9 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 
 **Descrição**: Padrão comportamental que define uma dependência um-para-muitos entre objetos, onde mudanças em um objeto notificam automaticamente seus dependentes.
 
-**Aplicação**: Sistema de notificação de eventos de compra, permitindo múltiplos observadores reagirem a confirmações de compra.
+**Funcionalidades Relacionadas**:
+- Confirmar compra (após pagamento) - notificação de eventos
+- Confirmar venda na bomboniere - notificação de eventos
 
 ### Classes Implementadas
 
@@ -112,35 +123,29 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 - **Papel**: Concrete Event
 - **Responsabilidades**:
   - Carrega dados do evento de compra confirmada
-  - Contém `compraId`, `clienteId`, `quantidadeIngressos`, `timestamp`
+  - Contém `compraId`, `clienteId`, `quantidadeIngressos`
 
 #### `NotificadorEmailCompraImpl`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/eventos/NotificadorEmailCompraImpl.java`
+- **Localização**: `infraestrutura/src/main/java/com/astra/cinema/infraestrutura/eventos/NotificadorEmailCompraImpl.java`
 - **Papel**: Concrete Observer
 - **Responsabilidades**:
   - Simula envio de email quando compra é confirmada
   - Registra log de notificação
 
 #### `AtualizadorEstatisticasCompraImpl`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/eventos/AtualizadorEstatisticasCompraImpl.java`
+- **Localização**: `infraestrutura/src/main/java/com/astra/cinema/infraestrutura/eventos/AtualizadorEstatisticasCompraImpl.java`
 - **Papel**: Concrete Observer
 - **Responsabilidades**:
   - Atualiza estatísticas quando compra é confirmada
   - Registra log de atualização
-
-#### `ConfirmarCompraUseCase`
-- **Localização**: `aplicacao/src/main/java/com/astra/cinema/aplicacao/compra/ConfirmarCompraUseCase.java`
-- **Papel**: Publisher (usa PublicadorEventos)
-- **Modificações**:
-  - Injeta `PublicadorEventos` via construtor
-  - Publica `CompraConfirmadaEvento` após confirmar compra
 
 #### `CompraService`
 - **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/compra/CompraService.java`
 - **Papel**: Publisher (usa PublicadorEventos)
 - **Modificações**:
   - Injeta `PublicadorEventos` via construtor
-  - Publica eventos após operações de compra
+  - Publica `CompraConfirmadaEvento` após confirmar compra
+  - Método `confirmar()` dispara o evento
 
 ### Configuração
 
@@ -151,11 +156,11 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
   - Registra observadores (`NotificadorEmailCompraImpl`, `AtualizadorEstatisticasCompraImpl`)
   - Configura injeção de dependências via Spring
 
-### Correções Aplicadas
-- ✅ Removido padrão Singleton anti-pattern de `PublicadorEventos`
-- ✅ Implementada injeção de dependências via Spring
-- ✅ Adicionada thread-safety com `ConcurrentHashMap` e `CopyOnWriteArrayList`
-- ✅ Construtor público para permitir gerenciamento pelo container DI
+### Benefícios
+- ✅ Desacoplamento entre eventos e ações
+- ✅ Fácil adição de novos observadores
+- ✅ Thread-safety com coleções concorrentes
+- ✅ Gerenciamento via Spring DI (sem singleton anti-pattern)
 
 ---
 
@@ -163,36 +168,194 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 
 **Descrição**: Padrão comportamental que define o esqueleto de um algoritmo em uma classe base, permitindo que subclasses sobrescrevam etapas específicas sem alterar a estrutura geral.
 
-**Aplicação**: Processamento de pagamentos com diferentes métodos (PIX, Cartão), onde o fluxo geral é o mesmo mas detalhes de processamento variam.
+**Funcionalidades Relacionadas**:
+- Confirmar compra (após pagamento) - processamento de pagamentos
+- Confirmar venda na bomboniere - processamento de pagamentos
 
 ### Classes Implementadas
 
 #### `ProcessadorPagamento` (Classe Abstrata)
 - **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/pagamento/ProcessadorPagamento.java`
-- **Papel**: Template Method (classe abstrata)
+- **Papel**: Template Method (classe abstrata no domínio)
 - **Responsabilidades**:
-  - Define método template `processar(Pagamento pagamento)` (final)
-  - Orquestra etapas: validar → processar específico → confirmar
-  - Declara métodos abstratos para subclasses implementarem:
-    - `validarPagamento(Pagamento)`
-    - `processarEspecifico(Pagamento)`
-    - `confirmarPagamento(Pagamento)`
+  - Define método template `processar(Pagamento pagamento, BigDecimal valor)` (final)
+  - Orquestra etapas do algoritmo:
+    1. `validarDados()` - valida dados do pagamento
+    2. `verificarLimites()` - verifica limites de valor
+    3. `processarComGateway()` - processa com gateway (abstrato)
+    4. `tratarFalha()` - trata falhas
+    5. `confirmarTransacao()` - confirma transação
+    6. `gerarComprovante()` - gera comprovante
+  - Métodos abstratos para subclasses implementarem:
+    - `processarComGateway(Pagamento, BigDecimal)` - OBRIGATÓRIO
+    - `getNome()` - OBRIGATÓRIO
 
-#### `ProcessadorPagamentoPix`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/pagamento/ProcessadorPagamentoPix.java`
-- **Papel**: Concrete Implementation
+#### `ProcessadorPixImpl`
+- **Localização**: `infraestrutura/src/main/java/com/astra/cinema/infraestrutura/pagamento/ProcessadorPixImpl.java`
+- **Papel**: Concrete Implementation (na infraestrutura)
 - **Responsabilidades**:
-  - Implementa validação específica para PIX
-  - Processa pagamento via PIX
-  - Confirma pagamento PIX
+  - Implementa processamento específico para PIX
+  - Integração com APIs do Banco Central/PSPs
+  - Alta taxa de aprovação (95%)
+  - Sem limite por transação
+  - Comprovante específico do PIX
 
-#### `ProcessadorPagamentoCartao`
-- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/pagamento/ProcessadorPagamentoCartao.java`
-- **Papel**: Concrete Implementation
+#### `ProcessadorCartaoCreditoImpl`
+- **Localização**: `infraestrutura/src/main/java/com/astra/cinema/infraestrutura/pagamento/ProcessadorCartaoCreditoImpl.java`
+- **Papel**: Concrete Implementation (na infraestrutura)
 - **Responsabilidades**:
-  - Implementa validação específica para Cartão
-  - Processa pagamento via Cartão
-  - Confirma pagamento Cartão
+  - Implementa processamento específico para Cartão de Crédito
+  - Integração com gateways (Cielo, Rede, PagSeguro)
+  - Taxa de aprovação de 90%
+  - Limite de R$ 5.000 por transação
+  - Validação de bandeira e parcelas
+
+#### `ProcessadorDinheiroImpl`
+- **Localização**: `infraestrutura/src/main/java/com/astra/cinema/infraestrutura/pagamento/ProcessadorDinheiroImpl.java`
+- **Papel**: Concrete Implementation (na infraestrutura)
+- **Responsabilidades**:
+  - Implementa processamento específico para Dinheiro
+  - Validação de troco
+  - Aprovação instantânea
+
+### Benefícios
+- ✅ Reutilização do fluxo geral de processamento
+- ✅ Flexibilidade para diferentes métodos de pagamento
+- ✅ Facilita adição de novos métodos de pagamento
+- ✅ Algoritmo bem definido com pontos de extensão claros
+- ✅ Separação entre domínio (template) e infraestrutura (implementações)
+
+---
+
+## 5. State
+
+**Descrição**: Padrão comportamental que permite que um objeto altere seu comportamento quando seu estado interno muda, parecendo que a classe do objeto mudou.
+
+**Funcionalidades Relacionadas**:
+- Marcar sessão como esgotada - transição de estados da sessão
+- Criar sessão - inicialização com estado DISPONIVEL
+- Cancelar compra - transição de estados da compra
+
+### Classes Implementadas
+
+#### `StatusSessao` (Enum)
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/sessao/StatusSessao.java`
+- **Papel**: Estados possíveis da sessão
+- **Estados**:
+  - `DISPONIVEL` - sessão com assentos disponíveis
+  - `ESGOTADA` - todos os assentos reservados
+  - `CANCELADA` - sessão cancelada
+
+#### `Sessao`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/sessao/Sessao.java`
+- **Papel**: Context (contexto com estados)
+- **Responsabilidades**:
+  - Mantém estado atual (`StatusSessao status`)
+  - Implementa transições de estado:
+    - `reservarAssento()` → pode transicionar para ESGOTADA
+    - `liberarAssento()` → pode transicionar de ESGOTADA para DISPONIVEL
+    - `marcarComoEsgotada()` → transição explícita para ESGOTADA
+  - Valida transições de estado (ex: só marca esgotada se não há assentos disponíveis)
+
+#### `StatusCompra` (Enum)
+- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/compra/StatusCompra.java`
+- **Papel**: Estados possíveis da compra
+- **Estados**:
+  - `PENDENTE` - compra iniciada, aguardando pagamento
+  - `CONFIRMADA` - pagamento aprovado
+  - `CANCELADA` - compra cancelada
+
+#### `Compra`
+- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/compra/Compra.java`
+- **Papel**: Context (contexto com estados)
+- **Responsabilidades**:
+  - Mantém estado atual (`StatusCompra status`)
+  - Implementa transições de estado:
+    - `confirmar()` → PENDENTE para CONFIRMADA
+    - `cancelar()` → para CANCELADA
+  - Valida transições (ex: só pode cancelar se não estiver confirmada)
+
+### Benefícios
+- ✅ Transições de estado explícitas e validadas
+- ✅ Comportamento diferente por estado
+- ✅ Facilita adição de novos estados
+- ✅ Código mais legível e mantível
+
+---
+
+## 6. Strategy
+
+**Descrição**: Padrão comportamental que define uma família de algoritmos, encapsula cada um e os torna intercambiáveis, permitindo que o algoritmo varie independentemente dos clientes que o utilizam.
+
+**Funcionalidades Relacionadas**:
+- Criar programação semanal - validação de conflitos de horário
+- Remover filme do catálogo - diferentes estratégias de remoção
+- Gerenciar Cinema (controle de acesso) - diferentes estratégias de autorização
+
+### Classes Implementadas
+
+#### Estratégia de Validação de Programação
+
+##### `ProgramacaoService`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/programacao/ProgramacaoService.java`
+- **Papel**: Context que usa estratégia de validação
+- **Responsabilidades**:
+  - Método `criarProgramacao()` valida regras de negócio:
+    - RN11: Apenas gerentes podem criar programações
+    - RN12: Programação só pode conter sessões DISPONIVEL
+    - Validação de conflitos de horário na mesma sala
+    - Validação de período (não pode ser no passado)
+  - Método `validarConflitosDeHorario()` implementa estratégia de detecção de conflitos:
+    - Agrupa sessões por sala
+    - Ordena por horário
+    - Verifica sobreposição entre sessões consecutivas
+
+### Benefícios
+- ✅ Validações encapsuladas e reutilizáveis
+- ✅ Fácil substituição de algoritmos de validação
+- ✅ Testabilidade isolada de cada estratégia
+- ✅ Separação de responsabilidades
+
+---
+
+## 7. Repository
+
+**Descrição**: Padrão arquitetural que encapsula a lógica de acesso a dados, fornecendo uma interface de coleção para acessar objetos de domínio.
+
+**Funcionalidades Relacionadas**:
+- Todas as funcionalidades do sistema utilizam repositórios para persistência
+
+### Repositórios Implementados
+
+#### `CompraRepositorio`
+- **Localização**: `dominio-vendas/src/main/java/com/astra/cinema/dominio/compra/CompraRepositorio.java`
+- **Funcionalidades**: Iniciar compra, Confirmar compra, Cancelar compra
+
+#### `SessaoRepositorio`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/sessao/SessaoRepositorio.java`
+- **Funcionalidades**: Criar sessão, Marcar sessão como esgotada
+
+#### `FilmeRepositorio`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/filme/FilmeRepositorio.java`
+- **Funcionalidades**: Remover filme do catálogo
+
+#### `ProgramacaoRepositorio`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/programacao/ProgramacaoRepositorio.java`
+- **Funcionalidades**: Criar programação semanal
+
+#### `ProdutoRepositorio`
+- **Localização**: `dominio-bomboniere/src/main/java/com/astra/cinema/dominio/bomboniere/ProdutoRepositorio.java`
+- **Funcionalidades**: Vender produto na bomboniere
+
+#### `VendaRepositorio`
+- **Localização**: `dominio-bomboniere/src/main/java/com/astra/cinema/dominio/bomboniere/VendaRepositorio.java`
+- **Funcionalidades**: Confirmar venda na bomboniere
+
+### Benefícios
+- ✅ Abstração da camada de persistência
+- ✅ Facilita testes com mocks/stubs
+- ✅ Mudança de tecnologia de banco sem impactar domínio
+- ✅ Separação clara entre domínio e infraestrutura
 
 ---
 
@@ -243,15 +406,43 @@ Todos os controllers foram corrigidos para acessar apenas Services ou Use Cases:
 
 ## Resumo
 
-O projeto implementa **4 padrões de projeto GoF**:
+O projeto implementa **7 padrões de projeto**:
+
+### Padrões GoF (Gang of Four):
 
 1. ✅ **Iterator** - Iteração sobre coleção de assentos
-2. ✅ **Decorator** - Cadeia de validadores de ingressos
-3. ✅ **Observer** - Sistema de eventos de compra
-4. ✅ **Template Method** - Processamento de pagamentos
+   - Usado em: Iniciar compra, Criar sessão
 
-Todas as implementações seguem boas práticas:
-- Thread-safety onde necessário
-- Injeção de dependências via Spring
-- Separação clara de responsabilidades
-- Arquitetura em camadas respeitada (Controllers → Services/Use Cases → Repositories)
+2. ✅ **Decorator** - Cadeia de validadores de ingressos
+   - Usado em: Iniciar compra, Confirmar compra, Cancelar compra
+
+3. ✅ **Observer** - Sistema de eventos de compra
+   - Usado em: Confirmar compra, Confirmar venda na bomboniere
+
+4. ✅ **Template Method** - Processamento de pagamentos
+   - Usado em: Confirmar compra, Confirmar venda na bomboniere
+
+5. ✅ **State** - Gerenciamento de estados de sessão e compra
+   - Usado em: Marcar sessão como esgotada, Criar sessão, Cancelar compra
+
+6. ✅ **Strategy** - Validação de programações e controle de acesso
+   - Usado em: Criar programação semanal, Remover filme, Gerenciar Cinema
+
+### Padrões Arquiteturais:
+
+7. ✅ **Repository** - Abstração de acesso a dados
+   - Usado em: Todas as funcionalidades do sistema
+
+---
+
+## Boas Práticas Implementadas
+
+Todas as implementações seguem boas práticas de engenharia de software:
+
+- ✅ **Thread-safety** onde necessário (Iterator, Decorator, Observer)
+- ✅ **Injeção de dependências** via Spring Framework
+- ✅ **Separação clara de responsabilidades** (SRP - Single Responsibility Principle)
+- ✅ **Arquitetura em camadas** respeitada (Controllers → Services/Use Cases → Repositories)
+- ✅ **Clean Architecture** e **Domain-Driven Design (DDD)**
+- ✅ **Open/Closed Principle** - aberto para extensão, fechado para modificação
+- ✅ **Dependency Inversion Principle** - dependência de abstrações, não de implementações
