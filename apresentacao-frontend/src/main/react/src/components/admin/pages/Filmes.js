@@ -22,7 +22,8 @@ const Filmes = ({ usuario }) => {
     sinopse: '',
     classificacaoEtaria: '',
     duracao: '',
-    imagemUrl: ''
+    imagemUrl: '',
+    status: 'EM_CARTAZ'
   });
   const [filtros, setFiltros] = useState({ status: 'TODOS', busca: '' });
 
@@ -82,7 +83,8 @@ const Filmes = ({ usuario }) => {
         sinopse: filme.sinopse,
         classificacaoEtaria: filme.classificacaoEtaria,
         duracao: filme.duracao,
-        imagemUrl: filme.imagemUrl || ''
+        imagemUrl: filme.imagemUrl || '',
+        status: filme.status || 'EM_CARTAZ'
       });
     } else {
       setEditando(null);
@@ -91,7 +93,8 @@ const Filmes = ({ usuario }) => {
         sinopse: '',
         classificacaoEtaria: '',
         duracao: '',
-        imagemUrl: ''
+        imagemUrl: '',
+        status: 'EM_CARTAZ'
       });
     }
     setShowModal(true);
@@ -105,7 +108,8 @@ const Filmes = ({ usuario }) => {
       sinopse: '',
       classificacaoEtaria: '',
       duracao: '',
-      imagemUrl: ''
+      imagemUrl: '',
+      status: 'EM_CARTAZ'
     });
   };
 
@@ -454,6 +458,24 @@ const Filmes = ({ usuario }) => {
                     placeholder="120"
                   />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Status do Filme *</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  required
+                >
+                  <option value="EM_CARTAZ">Em Cartaz</option>
+                  <option value="EM_BREVE">Em Breve</option>
+                  <option value="RETIRADO">Retirado</option>
+                </select>
+                <p className="help-text">
+                  {formData.status === 'EM_CARTAZ' && '✅ O filme estará visível para os clientes comprarem ingressos'}
+                  {formData.status === 'EM_BREVE' && '🕒 O filme aparecerá como "em breve" e não poderá ter sessões criadas ainda'}
+                  {formData.status === 'RETIRADO' && '❌ O filme não aparecerá mais para os clientes'}
+                </p>
               </div>
 
               <div className="modal-footer">

@@ -30,9 +30,10 @@ public class AdicionarFilmeUseCase {
      * @param classificacaoEtaria Classificação etária
      * @param duracao Duração em minutos
      * @param imagemUrl URL da imagem (opcional)
+     * @param status Status inicial do filme (EM_CARTAZ, EM_BREVE, RETIRADO)
      * @return Filme criado
      */
-    public Filme executar(String titulo, String sinopse, String classificacaoEtaria, int duracao, String imagemUrl) {
+    public Filme executar(String titulo, String sinopse, String classificacaoEtaria, int duracao, String imagemUrl, StatusFilme status) {
         // Validações
         if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("O título do filme não pode ser vazio");
@@ -43,8 +44,11 @@ public class AdicionarFilmeUseCase {
         if (classificacaoEtaria == null || classificacaoEtaria.isBlank()) {
             throw new IllegalArgumentException("A classificação etária não pode ser vazia");
         }
+        if (status == null) {
+            throw new IllegalArgumentException("O status não pode ser nulo");
+        }
 
-        // Cria o filme com status EM_CARTAZ (sem ID - será gerado pelo banco)
+        // Cria o filme com o status informado (sem ID - será gerado pelo banco)
         Filme novoFilme = new Filme(
             null,  // ID será gerado automaticamente pelo banco via IDENTITY
             titulo,
@@ -52,7 +56,7 @@ public class AdicionarFilmeUseCase {
             classificacaoEtaria,
             duracao,
             validarImagem(imagemUrl),
-            StatusFilme.EM_CARTAZ
+            status
         );
 
         // Persiste e retorna o filme com ID gerado pelo banco

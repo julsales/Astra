@@ -94,22 +94,29 @@ public class FilmeService {
     /**
      * Adiciona um novo filme
      */
-    public FilmeDTO adicionarFilme(String titulo, String sinopse, String classificacaoEtaria, Integer duracao, String imagemUrl) {
-        Filme filmeSalvo = adicionarFilmeUseCase.executar(titulo, sinopse, classificacaoEtaria, duracao, imagemUrl);
+    public FilmeDTO adicionarFilme(String titulo, String sinopse, String classificacaoEtaria, Integer duracao, String imagemUrl, String status) {
+        StatusFilme statusFilme = status != null && !status.isEmpty() 
+            ? StatusFilme.valueOf(status.toUpperCase()) 
+            : StatusFilme.EM_CARTAZ;
+        Filme filmeSalvo = adicionarFilmeUseCase.executar(titulo, sinopse, classificacaoEtaria, duracao, imagemUrl, statusFilme);
         return mapearFilmeParaDTO(filmeSalvo);
     }
 
     /**
      * Atualiza um filme existente
      */
-    public FilmeDTO atualizarFilme(Integer id, String titulo, String sinopse, String classificacaoEtaria, Integer duracao, String imagemUrl) {
+    public FilmeDTO atualizarFilme(Integer id, String titulo, String sinopse, String classificacaoEtaria, Integer duracao, String imagemUrl, String status) {
+        StatusFilme statusFilme = status != null && !status.isEmpty() 
+            ? StatusFilme.valueOf(status.toUpperCase()) 
+            : null;
         Filme filmeAtualizado = alterarFilmeUseCase.executar(
                 new FilmeId(id),
                 titulo,
                 sinopse,
                 classificacaoEtaria,
                 duracao,
-                imagemUrl
+                imagemUrl,
+                statusFilme
         );
         return mapearFilmeParaDTO(filmeAtualizado);
     }

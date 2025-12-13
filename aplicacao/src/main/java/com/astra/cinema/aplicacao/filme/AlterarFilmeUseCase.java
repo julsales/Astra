@@ -31,10 +31,12 @@ public class AlterarFilmeUseCase {
      * @param novaClassificacao Nova classificação (null mantém a atual)
      * @param novaDuracao Nova duração (0 ou negativo mantém a atual)
     * @param novaImagemUrl Nova URL da imagem (null mantém a atual)
+    * @param novoStatus Novo status (null mantém o atual)
     * @return Filme atualizado
     */
     public Filme executar(FilmeId filmeId, String novoTitulo, String novaSinopse, 
-                     String novaClassificacao, int novaDuracao, String novaImagemUrl) {
+                     String novaClassificacao, int novaDuracao, String novaImagemUrl, 
+                     com.astra.cinema.dominio.filme.StatusFilme novoStatus) {
         if (filmeId == null) {
             throw new IllegalArgumentException("O ID do filme não pode ser nulo");
         }
@@ -61,7 +63,7 @@ public class AlterarFilmeUseCase {
             novaClassificacao != null && !novaClassificacao.isBlank() ? novaClassificacao : filme.getClassificacaoEtaria(),
             novaDuracao > 0 ? novaDuracao : filme.getDuracao(),
             novaImagemUrl != null ? validarImagem(novaImagemUrl) : filme.getImagemUrl(),
-            filme.getStatus()
+            novoStatus != null ? novoStatus : filme.getStatus()
         );
 
         // Persiste e retorna o filme atualizado

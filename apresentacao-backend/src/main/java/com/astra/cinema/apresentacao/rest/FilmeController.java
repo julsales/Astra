@@ -101,7 +101,8 @@ public class FilmeController {
                     request.getSinopse(),
                     request.getClassificacaoEtaria(),
                     request.getDuracao(),
-                    request.getImagemUrl()
+                    request.getImagemUrl(),
+                    request.getStatus()
             );
             return ResponseEntity.status(201).body(mapearFilmeParaMap(filmeSalvo));
         } catch (IllegalArgumentException e) {
@@ -137,7 +138,8 @@ public class FilmeController {
                     request.getSinopse(),
                     request.getClassificacaoEtaria(),
                     request.getDuracao(),
-                    request.getImagemUrl()
+                    request.getImagemUrl(),
+                    request.getStatus()
             );
             return ResponseEntity.ok(mapearFilmeParaMap(filmeAtualizado));
         } catch (IllegalArgumentException e) {
