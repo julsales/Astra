@@ -92,6 +92,18 @@ export const useMeusIngressos = (usuario) => {
     }
   }, [storageKey]);
 
+  // Sincronizar com backend automaticamente quando houver usuário autenticado
+  // Isso garante que após resetar o banco, o localStorage será limpo
+  useEffect(() => {
+    if (usuario && (usuario.clienteId || usuario.id)) {
+      // Aguarda um momento para garantir que o localStorage foi carregado
+      const timer = setTimeout(() => {
+        sincronizarComBackendInterno();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [usuario?.clienteId, usuario?.id]);
+
   const persistir = useCallback(
     (atualizador) => {
       setIngressos((estadoAnterior) => {
@@ -121,8 +133,8 @@ export const useMeusIngressos = (usuario) => {
     [persistir]
   );
 
-    // Sincronizar com backend (quando houver um usuário autenticado)
-    const sincronizarComBackend = useCallback(async () => {
+    // Função interna para sincronizar com backend
+    const sincronizarComBackendInterno = async () => {
       if (!usuario || !usuario.clienteId) return;
       try {
         console.log('Sincronizando ingressos com backend...');
@@ -190,43 +202,17 @@ export const useMeusIngressos = (usuario) => {
 
         console.log('Compras processadas do backend:', compras);
 
-        persistir((listaAtual) => {
-          // Remove todos os ingressos que vieram do backend (evita duplicação)
-          // Mantém apenas compras locais que ainda não foram sincronizadas
-          const idsBackend = new Set(compras.map(c => c.id));
-          const codigosBackend = new Set(compras.map(c => c.codigo).filter(Boolean));
-
-          // Cria um Set de chaves únicas para identificar ingressos duplicados
-          // Formato: "sessaoId-assento1,assento2-tipoIngresso"
-          const chavesDuplicacao = new Set();
-          compras.forEach(c => {
-            if (c.sessao && c.assentos && Array.isArray(c.assentos)) {
-              const assentosOrdenados = [...c.assentos].sort().join(',');
-              const chave = `${c.sessao.id}-${assentosOrdenados}`;
-              chavesDuplicacao.add(chave);
-            }
-          });
-
-          const apenasLocais = listaAtual.filter((c) => {
-            // Mantém se não está no backend (por ID ou código)
-            const naoEstaNoBackendPorId = !idsBackend.has(c.id) && !codigosBackend.has(c.codigo);
-
-            // Também verifica se não é duplicata por sessão+assentos
-            let naoDuplicadoPorAssento = true;
-            if (c.sessao && c.assentos && Array.isArray(c.assentos)) {
-              const assentosOrdenados = [...c.assentos].sort().join(',');
-              const chave = `${c.sessao.id}-${assentosOrdenados}`;
-              naoDuplicadoPorAssento = !chavesDuplicacao.has(chave);
-            }
-
-            return naoEstaNoBackendPorId && naoDuplicadoPorAssento;
-          });
-
-          return [...compras, ...apenasLocais];
-        });
+        // Substituir TUDO pelo que veio do backend (source of truth)
+        // Isso garante que se o banco foi resetado, o localStorage também será limpo
+        persistir(() => compras);
       } catch (err) {
         console.error('Falha ao sincronizar ingressos com backend:', err);
       }
+    };
+
+    // Sincronizar com backend (quando houver um usuário autenticado)
+    const sincronizarComBackend = useCallback(async () => {
+      await sincronizarComBackendInterno();
     }, [usuario, persistir]);
 
   const removerCompra = useCallback(
