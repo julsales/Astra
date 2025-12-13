@@ -242,5 +242,54 @@ public class VendaRepositorioJpa implements VendaRepositorio {
         
         return receita;
     }
+
+    @Override
+    public Map<String, Double> calcularVendasPorDia() {
+        List<VendaJpa> vendas = vendaJpaRepository.findAll();
+        Map<String, Double> somaPorDia = new java.util.TreeMap<>();
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (VendaJpa v : vendas) {
+            if (v.getCriadoEm() == null) continue;
+            String day = v.getCriadoEm().format(fmt);
+            ProdutoJpa p = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
+            double preco = p != null && p.getPreco() != null ? p.getPreco() : 0.0;
+            double valor = preco * (v.getQuantidade() != null ? v.getQuantidade() : 1);
+            somaPorDia.put(day, somaPorDia.getOrDefault(day, 0.0) + valor);
+        }
+
+        return somaPorDia;
+    }
+
+    @Override
+    public List<Map<String, Object>> calcularTopProdutos() {
+        List<VendaJpa> vendas = vendaJpaRepository.findAll();
+        Map<Integer, Double> receitaPorProduto = new java.util.HashMap<>();
+        Map<Integer, String> nomesProdutos = new java.util.HashMap<>();
+
+        for (VendaJpa v : vendas) {
+            ProdutoJpa p = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
+            if (p != null) {
+                double preco = p.getPreco() != null ? p.getPreco() : 0.0;
+                double valor = preco * (v.getQuantidade() != null ? v.getQuantidade() : 1);
+                receitaPorProduto.put(v.getProdutoId(), receitaPorProduto.getOrDefault(v.getProdutoId(), 0.0) + valor);
+                nomesProdutos.put(v.getProdutoId(), p.getNome());
+            }
+        }
+
+        return receitaPorProduto.entrySet().stream()
+            .map(e -> {
+                Map<String, Object> m = new java.util.HashMap<>();
+                m.put("produtoId", e.getKey());
+                m.put("nome", nomesProdutos.get(e.getKey()));
+                m.put("receita", e.getValue());
+                return m;
+            })
+            .sorted((a, b) -> Double.compare(
+                ((Number)b.get("receita")).doubleValue(), 
+                ((Number)a.get("receita")).doubleValue()
+            ))
+            .collect(java.util.stream.Collectors.toList());
+    }
 }
 

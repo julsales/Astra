@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
-import com.astra.cinema.dominio.compra.StatusCompra;
 import com.astra.cinema.dominio.compra.StatusIngresso;
 import com.astra.cinema.dominio.comum.ClienteId;
 import com.astra.cinema.dominio.comum.CompraId;
@@ -52,8 +51,11 @@ public class CompraRepositorioJpa implements CompraRepositorio {
 
         CompraJpa compraSalva;
         
-        // Verifica se a compra já existe (UPDATE) ou é nova (INSERT)
-        if (compra.getCompraId() != null && compra.getCompraId().getId() > 0) {
+        // Verifica se a compra já existe no banco (UPDATE) ou é nova (INSERT)
+        boolean compraExiste = compra.getCompraId() != null && 
+                              compraJpaRepository.existsById(compra.getCompraId().getId());
+        
+        if (compraExiste) {
             // UPDATE: Atualiza compra existente
             compraSalva = compraJpaRepository.findById(compra.getCompraId().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Compra não encontrada para atualizar: " + compra.getCompraId().getId()));

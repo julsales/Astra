@@ -1,8 +1,5 @@
 package com.astra.cinema.apresentacao.rest;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
+import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
@@ -33,10 +31,6 @@ import com.astra.cinema.dominio.comum.FuncionarioId;
 import com.astra.cinema.dominio.comum.IngressoId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.sessao.Sessao;
-import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpa;
-import com.astra.cinema.infraestrutura.persistencia.jpa.ProdutoJpaRepository;
-import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpa;
-import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
 
 /**
  * Controller REST para operações de funcionários.
@@ -56,8 +50,7 @@ public class FuncionarioOperacoesController {
     private final RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase;
     private final CompraRepositorio compraRepositorio;
     private final com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio;
-    private final VendaJpaRepository vendaJpaRepository;
-    private final ProdutoJpaRepository produtoJpaRepository;
+    private final VendaRepositorio vendaRepositorio;
     private final com.astra.cinema.dominio.usuario.ClienteRepositorio clienteRepositorio;
 
     public FuncionarioOperacoesController(
@@ -66,16 +59,14 @@ public class FuncionarioOperacoesController {
             RemarcarIngressoFuncionarioUseCase remarcarIngressoUseCase,
             CompraRepositorio compraRepositorio,
             com.astra.cinema.dominio.filme.FilmeRepositorio filmeRepositorio,
-            VendaJpaRepository vendaJpaRepository,
-            ProdutoJpaRepository produtoJpaRepository,
+            VendaRepositorio vendaRepositorio,
             com.astra.cinema.dominio.usuario.ClienteRepositorio clienteRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.consultarHistoricoUseCase = consultarHistoricoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
         this.compraRepositorio = compraRepositorio;
         this.filmeRepositorio = filmeRepositorio;
-        this.vendaJpaRepository = vendaJpaRepository;
-        this.produtoJpaRepository = produtoJpaRepository;
+        this.vendaRepositorio = vendaRepositorio;
         this.clienteRepositorio = clienteRepositorio;
     }
 
@@ -614,32 +605,9 @@ public class FuncionarioOperacoesController {
                 .filter(i -> "ATIVO".equals(i.getStatus()) || "PENDENTE".equals(i.getStatus()))
                 .count();
 
-            // Calcular vendas (bomboniere + ingressos)
-            LocalDateTime inicioDia = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-            LocalDateTime fimDia = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-
-            // Vendas da bomboniere (hoje)
-            List<VendaJpa> todasVendasBomboniere = vendaJpaRepository.findAll();
-            List<VendaJpa> vendasBomboniereHoje = todasVendasBomboniere.stream()
-                .filter(v -> v.getCriadoEm() != null &&
-                        v.getCriadoEm().isAfter(inicioDia) &&
-                        v.getCriadoEm().isBefore(fimDia))
-                .toList();
-
-            double totalVendasBomboniereHoje = vendasBomboniereHoje.stream()
-                .mapToDouble(v -> {
-                    ProdutoJpa produto = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
-                    return produto != null ? produto.getPreco() * v.getQuantidade() : 0.0;
-                })
-                .sum();
-
-            // Total histórico de vendas da bomboniere (todas as datas)
-            double totalHistoricoBomboniere = todasVendasBomboniere.stream()
-                .mapToDouble(v -> {
-                    ProdutoJpa produto = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
-                    return produto != null ? produto.getPreco() * v.getQuantidade() : 0.0;
-                })
-                .sum();
+            // Calcular vendas usando repositório de domínio
+            double totalHistoricoBomboniere = vendaRepositorio.calcularReceitaTotal();
+            int vendasHoje = vendaRepositorio.listarVendasPorStatus(com.astra.cinema.dominio.bomboniere.StatusVenda.CONFIRMADA).size();
 
             // Vendas de ingressos (total de todas as compras confirmadas)
             List<Compra> todasCompras = compraRepositorio.listarTodas();
@@ -666,9 +634,9 @@ public class FuncionarioOperacoesController {
             response.put("ingressosAtivos", ingressosAtivos.size());
 
             // Dados de vendas
-            response.put("vendasHoje", vendasBomboniereHoje.size());
+            response.put("vendasHoje", vendasHoje);
             response.put("totalVendas", Math.round(totalVendas * 100) / 100.0);
-            response.put("totalVendasBomboniere", Math.round(totalVendasBomboniereHoje * 100) / 100.0);
+            response.put("totalVendasBomboniere", Math.round(totalHistoricoBomboniere * 100) / 100.0);
             response.put("totalVendasIngressos", Math.round(totalVendasIngressos * 100) / 100.0);
 
             // Taxa de sucesso

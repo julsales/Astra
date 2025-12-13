@@ -1,5 +1,8 @@
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             package com.astra.cinema.config;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import com.astra.cinema.aplicacao.bomboniere.AdicionarProdutoUseCase;
 import com.astra.cinema.aplicacao.bomboniere.ModificarProdutoUseCase;
 import com.astra.cinema.aplicacao.bomboniere.RemoverProdutoUseCase;
@@ -13,11 +16,21 @@ import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
 import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
+import com.astra.cinema.aplicacao.relatorio.CalcularAnalyticsUseCase;
+import com.astra.cinema.aplicacao.relatorio.CalcularFilmesPopularesUseCase;
+import com.astra.cinema.aplicacao.relatorio.CalcularOcupacaoSalasUseCase;
+import com.astra.cinema.aplicacao.relatorio.CalcularRelatorioVendasUseCase;
+import com.astra.cinema.aplicacao.servicos.BomboniereService;
+import com.astra.cinema.aplicacao.servicos.ClienteService;
+import com.astra.cinema.aplicacao.servicos.CompraAppService;
+import com.astra.cinema.aplicacao.servicos.FilmeService;
+import com.astra.cinema.aplicacao.servicos.IngressoService;
+import com.astra.cinema.aplicacao.servicos.SessaoService;
+import com.astra.cinema.aplicacao.servicos.VendaProdutoService;
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemoverSessaoUseCase;
-import com.astra.cinema.aplicacao.servicos.*;
 import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
 import com.astra.cinema.aplicacao.usuario.RegistrarClienteUseCase;
 import com.astra.cinema.aplicacao.usuario.funcionario.GerenciarFuncionariosUseCase;
@@ -28,15 +41,12 @@ import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
-import com.astra.cinema.dominio.pagamento.PagamentoRepositorio;
 import com.astra.cinema.dominio.sessao.SalaRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.ClienteRepositorio;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
 import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class UseCaseConfiguration {
@@ -283,5 +293,35 @@ public class UseCaseConfiguration {
                 produtoRepositorio,
                 vendaProdutoService
         );
+    }
+
+    // ========== RELATÓRIOS USE CASES ==========
+
+    @Bean
+    public CalcularRelatorioVendasUseCase calcularRelatorioVendasUseCase(
+            CompraRepositorio compraRepositorio,
+            VendaRepositorio vendaRepositorio) {
+        return new CalcularRelatorioVendasUseCase(compraRepositorio, vendaRepositorio);
+    }
+
+    @Bean
+    public CalcularFilmesPopularesUseCase calcularFilmesPopularesUseCase(
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio,
+            FilmeRepositorio filmeRepositorio) {
+        return new CalcularFilmesPopularesUseCase(compraRepositorio, sessaoRepositorio, filmeRepositorio);
+    }
+
+    @Bean
+    public CalcularAnalyticsUseCase calcularAnalyticsUseCase(
+            VendaRepositorio vendaRepositorio,
+            ProdutoRepositorio produtoRepositorio) {
+        return new CalcularAnalyticsUseCase(vendaRepositorio, produtoRepositorio);
+    }
+
+    @Bean
+    public CalcularOcupacaoSalasUseCase calcularOcupacaoSalasUseCase(
+            SessaoRepositorio sessaoRepositorio) {
+        return new CalcularOcupacaoSalasUseCase(sessaoRepositorio);
     }
 }

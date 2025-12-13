@@ -1,13 +1,14 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
-import com.astra.cinema.dominio.bomboniere.Produto;
-import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
-import com.astra.cinema.dominio.comum.ProdutoId;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.astra.cinema.dominio.bomboniere.Produto;
+import com.astra.cinema.dominio.bomboniere.ProdutoRepositorio;
+import com.astra.cinema.dominio.comum.ProdutoId;
 
 /**
  * Implementação JPA do ProdutoRepositorio
@@ -74,5 +75,16 @@ public class ProdutoRepositorioJpa implements ProdutoRepositorio {
                 .stream()
                 .map(mapeador::paraDominio)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public double calcularValorInventario() {
+        return produtoJpaRepository.findAll().stream()
+                .mapToDouble(p -> {
+                    double preco = p.getPreco() != null ? p.getPreco() : 0.0;
+                    int estoque = p.getEstoque() != null ? p.getEstoque() : 0;
+                    return preco * estoque;
+                })
+                .sum();
     }
 }
