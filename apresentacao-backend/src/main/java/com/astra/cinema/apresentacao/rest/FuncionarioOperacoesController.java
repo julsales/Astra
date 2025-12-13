@@ -29,6 +29,7 @@ import com.astra.cinema.dominio.compra.Ingresso;
 import com.astra.cinema.dominio.comum.AssentoId;
 import com.astra.cinema.dominio.comum.FuncionarioId;
 import com.astra.cinema.dominio.comum.IngressoId;
+import com.astra.cinema.dominio.comum.PrecoIngresso;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.sessao.Sessao;
 
@@ -607,7 +608,7 @@ public class FuncionarioOperacoesController {
 
             // Calcular vendas usando repositório de domínio
             double totalHistoricoBomboniere = vendaRepositorio.calcularReceitaTotal();
-            int vendasHoje = vendaRepositorio.listarVendasPorStatus(com.astra.cinema.dominio.bomboniere.StatusVenda.CONFIRMADA).size();
+            int vendasHoje = vendaRepositorio.contarVendasConfirmadas();
 
             // Vendas de ingressos (total de todas as compras confirmadas)
             List<Compra> todasCompras = compraRepositorio.listarTodas();
@@ -615,10 +616,12 @@ public class FuncionarioOperacoesController {
                 .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
                 .filter(c -> c.getPagamentoId() != null)
                 .mapToDouble(c -> {
-                    // Calcular preço real dos ingressos (inteira R$ 25, meia R$ 12.50)
+                    // Calcular preço real dos ingressos usando PrecoIngresso
                     if (c.getIngressos() == null) return 0.0;
                     return c.getIngressos().stream()
-                        .mapToDouble(i -> i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5)
+                        .mapToDouble(i -> i.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA
+                            ? PrecoIngresso.obterPrecoInteira()
+                            : PrecoIngresso.obterPrecoMeia())
                         .sum();
                 })
                 .sum();

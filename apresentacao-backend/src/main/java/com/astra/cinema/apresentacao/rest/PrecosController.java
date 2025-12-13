@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.astra.cinema.dominio.comum.PrecoIngresso;
+
 /**
  * Controller REST para preços de ingressos e produtos
  * Endpoint centralizado para configuração de preços da aplicação
@@ -27,9 +29,9 @@ public class PrecosController {
     public ResponseEntity<Map<String, Double>> obterPrecos() {
         Map<String, Double> precos = new HashMap<>();
 
-        // Preços configurados (futuramente podem vir de configuração ou banco)
-        precos.put("ingressoInteiro", 35.00);
-        precos.put("ingressoMeia", 17.50);
+        // Preços obtidos da classe centralizada PrecoIngresso
+        precos.put("ingressoInteiro", PrecoIngresso.obterPrecoInteira());
+        precos.put("ingressoMeia", PrecoIngresso.obterPrecoMeia());
 
         return ResponseEntity.ok(precos);
     }

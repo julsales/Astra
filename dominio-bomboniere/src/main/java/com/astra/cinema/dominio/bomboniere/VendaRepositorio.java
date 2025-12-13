@@ -13,4 +13,5 @@ public interface VendaRepositorio {
     double calcularReceitaTotal();
     Map<String, Double> calcularVendasPorDia();
     List<Map<String, Object>> calcularTopProdutos();
+    int contarVendasConfirmadas();
 }

@@ -34,6 +34,9 @@ public class VendaRepositorioJpa implements VendaRepositorio {
     private ProdutoJpaRepository produtoJpaRepository;
 
     @Autowired
+    private CompraJpaRepository compraJpaRepository;
+
+    @Autowired
     private CinemaMapeador mapeador;
 
     @Transactional
@@ -234,6 +237,14 @@ public class VendaRepositorioJpa implements VendaRepositorio {
         double receita = 0.0;
         
         for (VendaJpa venda : todasVendas) {
+            // Pula vendas de compras canceladas
+            if (venda.getCompraId() != null) {
+                CompraJpa compra = compraJpaRepository.findById(venda.getCompraId()).orElse(null);
+                if (compra != null && "CANCELADA".equals(compra.getStatus())) {
+                    continue;
+                }
+            }
+            
             ProdutoJpa produto = produtoJpaRepository.findById(venda.getProdutoId()).orElse(null);
             if (produto != null) {
                 receita += produto.getPreco() * venda.getQuantidade();
@@ -251,6 +262,15 @@ public class VendaRepositorioJpa implements VendaRepositorio {
 
         for (VendaJpa v : vendas) {
             if (v.getCriadoEm() == null) continue;
+            
+            // Pula vendas de compras canceladas
+            if (v.getCompraId() != null) {
+                CompraJpa compra = compraJpaRepository.findById(v.getCompraId()).orElse(null);
+                if (compra != null && "CANCELADA".equals(compra.getStatus())) {
+                    continue;
+                }
+            }
+            
             String day = v.getCriadoEm().format(fmt);
             ProdutoJpa p = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
             double preco = p != null && p.getPreco() != null ? p.getPreco() : 0.0;
@@ -268,6 +288,14 @@ public class VendaRepositorioJpa implements VendaRepositorio {
         Map<Integer, String> nomesProdutos = new java.util.HashMap<>();
 
         for (VendaJpa v : vendas) {
+            // Pula vendas de compras canceladas
+            if (v.getCompraId() != null) {
+                CompraJpa compra = compraJpaRepository.findById(v.getCompraId()).orElse(null);
+                if (compra != null && "CANCELADA".equals(compra.getStatus())) {
+                    continue;
+                }
+            }
+            
             ProdutoJpa p = produtoJpaRepository.findById(v.getProdutoId()).orElse(null);
             if (p != null) {
                 double preco = p.getPreco() != null ? p.getPreco() : 0.0;
@@ -290,6 +318,29 @@ public class VendaRepositorioJpa implements VendaRepositorio {
                 ((Number)a.get("receita")).doubleValue()
             ))
             .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public int contarVendasConfirmadas() {
+        List<VendaJpa> vendas = vendaJpaRepository.findAll();
+        int contador = 0;
+        
+        for (VendaJpa v : vendas) {
+            // Pula vendas de compras canceladas
+            if (v.getCompraId() != null) {
+                CompraJpa compra = compraJpaRepository.findById(v.getCompraId()).orElse(null);
+                if (compra != null && "CANCELADA".equals(compra.getStatus())) {
+                    continue;
+                }
+            }
+            
+            // Conta apenas vendas confirmadas
+            if ("CONFIRMADA".equals(v.getStatus())) {
+                contador++;
+            }
+        }
+        
+        return contador;
     }
 }
 

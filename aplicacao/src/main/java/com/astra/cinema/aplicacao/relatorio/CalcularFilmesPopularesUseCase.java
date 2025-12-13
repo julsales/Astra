@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.comum.PrecoIngresso;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
@@ -59,8 +60,10 @@ public class CalcularFilmesPopularesUseCase {
                     // Contabilizar ingresso
                     ingressosPorFilme.put(filmeId, ingressosPorFilme.getOrDefault(filmeId, 0) + 1);
                     
-                    // Calcular receita (inteira R$ 25, meia R$ 12.50)
-                    double preco = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5;
+                    // Calcular receita usando PrecoIngresso
+                    double preco = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA
+                        ? PrecoIngresso.obterPrecoInteira()
+                        : PrecoIngresso.obterPrecoMeia();
                     receitaPorFilme.put(filmeId, receitaPorFilme.getOrDefault(filmeId, 0.0) + preco);
                     
                     // Guardar nome do filme

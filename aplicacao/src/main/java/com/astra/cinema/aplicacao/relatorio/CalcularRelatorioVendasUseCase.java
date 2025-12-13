@@ -8,6 +8,7 @@ import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.comum.PrecoIngresso;
 import static com.astra.cinema.dominio.comum.ValidacaoDominio.exigirNaoNulo;
 
 /**
@@ -59,7 +60,9 @@ public class CalcularRelatorioVendasUseCase {
                     // Só conta ingressos ativos para receita
                     if (ingresso.getStatus() != com.astra.cinema.dominio.compra.StatusIngresso.CANCELADO) {
                         totalIngressosAtivos++;
-                        double precoIngresso = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5;
+                        double precoIngresso = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA 
+                            ? PrecoIngresso.obterPrecoInteira() 
+                            : PrecoIngresso.obterPrecoMeia();
                         receitaIngressos += precoIngresso;
                     }
                 }
