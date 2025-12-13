@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
 import { AddIcon, EditIcon, DeleteIcon, SearchIcon, SaveIcon, CancelIcon } from '../Icons';
+import ModalPortal from './ModalPortal';
 
 const statusOptions = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -394,7 +395,7 @@ const Sessoes = ({ usuario }) => {
       </div>
 
       {/* Modal de Criar/Modificar Sessão */}
-      {showModal && (
+      <ModalPortal isOpen={showModal}>
         <div className="modal-overlay" onClick={fecharModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -458,7 +459,7 @@ const Sessoes = ({ usuario }) => {
             </form>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };

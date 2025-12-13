@@ -3,6 +3,7 @@ import './PageStyles.css';
 import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
 import { StatusBadge } from '../../shared/StatusBadge';
 import { formatarDuracao, truncarTexto } from '../../../utils/formatters';
+import ModalPortal from './ModalPortal';
 
 const statusOpcoes = [
   { label: 'Todos os status', value: 'TODOS' },
@@ -372,7 +373,7 @@ const Filmes = ({ usuario }) => {
       </div>
 
       {/* Modal de Adicionar/Editar */}
-      {showModal && (
+      <ModalPortal isOpen={showModal}>
         <div className="modal-overlay" onClick={fecharModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -466,7 +467,7 @@ const Filmes = ({ usuario }) => {
             </form>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };

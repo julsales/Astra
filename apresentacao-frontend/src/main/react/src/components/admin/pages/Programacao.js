@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
 import { AddIcon, DeleteIcon, SearchIcon, ViewIcon, SaveIcon, CancelIcon } from '../Icons';
+import ModalPortal from './ModalPortal';
 
 const Programacao = ({ usuario }) => {
   const [programacoes, setProgramacoes] = useState([]);
@@ -400,7 +401,7 @@ const Programacao = ({ usuario }) => {
       </div>
 
       {/* Modal de Nova Programação */}
-      {showModal && (
+      <ModalPortal isOpen={showModal}>
         <div className="modal-overlay" onClick={fecharModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
             <div className="modal-header">
@@ -528,7 +529,7 @@ const Programacao = ({ usuario }) => {
             </form>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };

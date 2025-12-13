@@ -6,14 +6,13 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
 }
 
 
 /* ===== HEADER ===== */
 .admin-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   background: rgba(30, 20, 60, 0.85);
   backdrop-filter: blur(20px);
@@ -108,7 +107,7 @@
 /* ===== PROGRESS BAR ===== */
 .progress-bar-container {
   position: relative;
-  z-index: 9;
+  z-index: 99;
   height: 3px;
   background: rgba(139, 92, 246, 0.2);
   overflow: hidden;
@@ -198,8 +197,6 @@
 .admin-main-content {
   flex: 1;
   padding: 30px 40px;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .admin-main-content::-webkit-scrollbar {
@@ -222,7 +219,7 @@
 /* ===== FOOTER ===== */
 .admin-footer {
   position: relative;
-  z-index: 10;
+  z-index: 98;
   background: rgba(30, 20, 60, 0.7);
   backdrop-filter: blur(15px);
   border-top: 1px solid rgba(139, 92, 246, 0.2);

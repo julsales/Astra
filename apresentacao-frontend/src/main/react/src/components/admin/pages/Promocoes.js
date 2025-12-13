@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PageStyles.css';
-import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';
-
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '../Icons';import ModalPortal from './ModalPortal';
 const Promocoes = ({ usuario }) => {
   const [produtos, setProdutos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +279,7 @@ const Promocoes = ({ usuario }) => {
       </div>
 
       {/* Modal de Adicionar/Editar Produto */}
-      {showModal && (
+      <ModalPortal isOpen={showModal}>
         <div className="modal-overlay" onClick={fecharModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -338,7 +337,7 @@ const Promocoes = ({ usuario }) => {
             </form>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };

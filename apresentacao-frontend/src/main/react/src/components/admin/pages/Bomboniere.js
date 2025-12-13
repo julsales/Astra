@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import React, { useEffect, useState } from 'react';
 import './Bomboniere.css';
+import ModalPortal from './ModalPortal';
 
 const Bomboniere = () => {
   const [produtos, setProdutos] = useState([]);
@@ -125,7 +126,7 @@ const Bomboniere = () => {
         </table>
       </div>
 
-      {modalOpen && (
+      <ModalPortal isOpen={modalOpen}>
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{modalMode === 'edit' ? 'Editar Produto' : modalMode === 'entrada' ? 'Registrar Entrada' : 'Ajustar Estoque'}</h3>
@@ -140,7 +141,7 @@ const Bomboniere = () => {
             )}
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };

@@ -481,16 +481,16 @@
 }
 
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   background: rgba(5, 5, 15, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 999999 !important;
 }
 
 .modal-card {
@@ -683,17 +683,17 @@
 
 /* ===== MODAL STYLES ===== */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 999999 !important;
   animation: fadeIn 0.3s ease;
 }
 

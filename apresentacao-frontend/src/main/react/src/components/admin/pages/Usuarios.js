@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './PageStyles.css';
-import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ViewIcon } from '../Icons';
-
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ViewIcon } from '../Icons';import ModalPortal from './ModalPortal';
 const Usuarios = ({ usuario }) => {
   const [clientes, setClientes] = useState([]);
   const [funcionarios, setFuncionarios] = useState([]);
@@ -297,7 +296,7 @@ const Usuarios = ({ usuario }) => {
         </div>
       </div>
 
-      {modalAberto && (
+      <ModalPortal isOpen={modalAberto}>
         <div className="modal-overlay">
           <div className="modal-card">
             <h3>{alvoEdicao ? 'Editar funcionário' : 'Novo funcionário'}</h3>
@@ -352,7 +351,7 @@ const Usuarios = ({ usuario }) => {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 };
