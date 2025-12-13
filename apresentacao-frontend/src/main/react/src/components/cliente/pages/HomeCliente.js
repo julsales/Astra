@@ -8,8 +8,8 @@ const getPoster = (url) => {
   return trimmed.length ? trimmed : posterFallback;
 };
 
-const HomeCliente = ({ usuario, onIniciarCompra }) => {
-  const [abaAtiva, setAbaAtiva] = useState('filmes'); // 'filmes' ou 'ingressos'
+const HomeCliente = ({ usuario, onIniciarCompra, abaInicial = 'filmes' }) => {
+  const [abaAtiva, setAbaAtiva] = useState(abaInicial); // 'filmes' ou 'ingressos'
   const [filmes, setFilmes] = useState([]);
   const [sessoesPorFilme, setSessoesPorFilme] = useState({});
   const [carregando, setCarregando] = useState(true);

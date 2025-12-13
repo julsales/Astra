@@ -8,6 +8,7 @@ import logo from '../unnamed-removebg-preview.png';
 
 const ClientePainel = ({ usuario, onLogout }) => {
   const [tela, setTela] = useState('home'); // 'home', 'compraIngresso', 'sucesso'
+  const [abaHome, setAbaHome] = useState('filmes'); // 'filmes' ou 'ingressos'
   const [sessaoSelecionada, setSessaoSelecionada] = useState(null);
   const [filmeSelecionado, setFilmeSelecionado] = useState(null);
   const [compraConcluida, setCompraConcluida] = useState(null);
@@ -20,6 +21,7 @@ const ClientePainel = ({ usuario, onLogout }) => {
 
   const handleVoltarHome = () => {
     setTela('home');
+    setAbaHome('filmes');
     setSessaoSelecionada(null);
     setFilmeSelecionado(null);
     setCompraConcluida(null);
@@ -28,6 +30,14 @@ const ClientePainel = ({ usuario, onLogout }) => {
   const handleCompraConcluida = (compra) => {
     setCompraConcluida(compra);
     setTela('sucesso');
+  };
+
+  const handleAbrirIngressos = () => {
+    setTela('home');
+    setAbaHome('ingressos');
+    setSessaoSelecionada(null);
+    setFilmeSelecionado(null);
+    setCompraConcluida(null);
   };
 
   return (
@@ -59,7 +69,11 @@ const ClientePainel = ({ usuario, onLogout }) => {
       {/* Conteúdo principal */}
       <main className="main-content-novo">
         {tela === 'home' && (
-          <HomeCliente usuario={usuario} onIniciarCompra={handleIniciarCompra} />
+          <HomeCliente 
+            usuario={usuario} 
+            onIniciarCompra={handleIniciarCompra}
+            abaInicial={abaHome}
+          />
         )}
         
         {tela === 'compraIngresso' && (
@@ -76,7 +90,7 @@ const ClientePainel = ({ usuario, onLogout }) => {
           <Sucesso 
             compra={compraConcluida}
             onVoltarInicio={handleVoltarHome}
-            onAbrirIngressos={handleVoltarHome}
+            onAbrirIngressos={handleAbrirIngressos}
           />
         )}
       </main>
