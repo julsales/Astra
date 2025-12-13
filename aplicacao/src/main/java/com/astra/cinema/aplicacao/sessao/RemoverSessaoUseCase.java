@@ -2,6 +2,9 @@ package com.astra.cinema.aplicacao.sessao;
 
 import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.comum.SessaoId;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.compra.StatusIngresso;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.filme.StatusFilme;
@@ -21,16 +24,21 @@ import java.util.List;
 public class RemoverSessaoUseCase {
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
+    private final CompraRepositorio compraRepositorio;
 
-    public RemoverSessaoUseCase(SessaoRepositorio sessaoRepositorio, FilmeRepositorio filmeRepositorio) {
+    public RemoverSessaoUseCase(SessaoRepositorio sessaoRepositorio, FilmeRepositorio filmeRepositorio, CompraRepositorio compraRepositorio) {
         if (sessaoRepositorio == null) {
             throw new IllegalArgumentException("O repositório de sessões não pode ser nulo");
         }
         if (filmeRepositorio == null) {
             throw new IllegalArgumentException("O repositório de filmes não pode ser nulo");
         }
+        if (compraRepositorio == null) {
+            throw new IllegalArgumentException("O repositório de compras não pode ser nulo");
+        }
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
+        this.compraRepositorio = compraRepositorio;
     }
 
     /**
@@ -61,6 +69,9 @@ public class RemoverSessaoUseCase {
             throw new IllegalStateException("Não é possível cancelar uma sessão que já passou");
         }
 
+        // Verifica se há ingressos ativos para a sessão
+        validarIngressosAtivos(sessaoId);
+
         // Cancela a sessão (cria nova instância)
         Sessao sessaoCancelada = new Sessao(
             sessao.getSessaoId(),
@@ -76,6 +87,31 @@ public class RemoverSessaoUseCase {
 
         // Verifica se todas as sessões do filme foram canceladas
         verificarEAtualizarStatusFilme(sessao.getFilmeId());
+    }
+
+    /**
+     * Valida se há ingressos ativos (comprados ou validados) para a sessão
+     * 
+     * @param sessaoId ID da sessão
+     * @throws IllegalStateException se há ingressos ativos
+     */
+    private void validarIngressosAtivos(SessaoId sessaoId) {
+        // Buscar todos os ingressos ativos no sistema
+        List<Ingresso> ingressosAtivos = compraRepositorio.buscarIngressosAtivos();
+        
+        // Filtrar ingressos da sessão que estão ativos ou validados (não cancelados)
+        long quantidadeIngressos = ingressosAtivos.stream()
+                .filter(ingresso -> ingresso.getSessaoId().equals(sessaoId))
+                .filter(ingresso -> ingresso.getStatus() == StatusIngresso.ATIVO || 
+                                    ingresso.getStatus() == StatusIngresso.VALIDADO)
+                .count();
+        
+        if (quantidadeIngressos > 0) {
+            throw new IllegalStateException(
+                String.format("Não é possível cancelar a sessão. Há %d ingresso(s) ativo(s) vendido(s). " +
+                             "Cancele ou reembolse os ingressos antes de cancelar a sessão.", quantidadeIngressos)
+            );
+        }
     }
 
     /**
