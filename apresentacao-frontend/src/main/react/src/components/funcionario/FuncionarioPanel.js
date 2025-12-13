@@ -50,7 +50,9 @@ const FuncionarioPanel = ({ usuario, onLogout }) => {
     taxaSucesso: 0,
     ingressosPendentes: 0,
     vendas: 0,
-    totalVendas: 0
+    totalVendas: 0,
+    totalVendasBomboniere: 0,
+    totalVendasIngressos: 0
   });
 
   // Estados para Validação
@@ -100,9 +102,18 @@ const FuncionarioPanel = ({ usuario, onLogout }) => {
     }
   }, []);
 
-  // Carregar relatórios quando a aba é acessada (apenas gerentes)
+  // Recarregar dados quando mudar de tela (comportamento igual ao admin)
   useEffect(() => {
-    if (telaAtiva === 'relatorios' && isGerente) {
+    // Recarregar dados específicos de cada tela
+    if (telaAtiva === 'home') {
+      carregarDashboard();
+    } else if (telaAtiva === 'historico' && isGerente) {
+      carregarHistorico();
+    } else if (telaAtiva === 'remarcar' && isGerente) {
+      carregarIngressos();
+    } else if (telaAtiva === 'bomboniere') {
+      carregarProdutos();
+    } else if (telaAtiva === 'relatorios' && isGerente) {
       carregarRelatorios();
     }
   }, [telaAtiva]);
@@ -147,7 +158,9 @@ const FuncionarioPanel = ({ usuario, onLogout }) => {
           taxaSucesso: stats.taxaSucesso || 0,
           ingressosPendentes: stats.ingressosPendentes || 0,
           vendas: stats.vendasHoje || 0,
-          totalVendas: stats.totalVendas || 0
+          totalVendas: stats.totalVendas || 0,
+          totalVendasBomboniere: stats.totalVendasBomboniere || 0,
+          totalVendasIngressos: stats.totalVendasIngressos || 0
         });
       }
     } catch (error) {
