@@ -8,6 +8,8 @@ const Programacao = ({ usuario }) => {
   const [sessoes, setSessoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDetalhesModal, setShowDetalhesModal] = useState(false);
+  const [programacaoSelecionada, setProgramacaoSelecionada] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('TODAS');
   const [buscaTexto, setBuscaTexto] = useState('');
@@ -192,6 +194,16 @@ const Programacao = ({ usuario }) => {
     return { texto: 'Em Exibição', classe: 'ativa' };
   };
 
+  const abrirDetalhes = (prog) => {
+    setProgramacaoSelecionada(prog);
+    setShowDetalhesModal(true);
+  };
+
+  const fecharDetalhes = () => {
+    setShowDetalhesModal(false);
+    setProgramacaoSelecionada(null);
+  };
+
   const removerProgramacao = async (id) => {
     if (!window.confirm('Tem certeza que deseja remover esta programação? Esta ação não pode ser desfeita.')) {
       return;
@@ -372,7 +384,11 @@ const Programacao = ({ usuario }) => {
                       </td>
                       <td>
                         <div className="table-actions">
-                          <button className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <button 
+                            className="btn-secondary" 
+                            onClick={() => abrirDetalhes(prog)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
                             <ViewIcon size={14} /> Detalhes
                           </button>
                           <button
@@ -527,6 +543,104 @@ const Programacao = ({ usuario }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      </ModalPortal>
+
+      {/* Modal de Detalhes da Programação */}
+      <ModalPortal isOpen={showDetalhesModal}>
+        <div className="modal-overlay" onClick={fecharDetalhes}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className="modal-header">
+              <h2>Detalhes da Programação #{programacaoSelecionada?.id}</h2>
+              <button className="modal-close" onClick={fecharDetalhes}>×</button>
+            </div>
+
+            {programacaoSelecionada && (
+              <div style={{ padding: '20px' }}>
+                {/* Informações do Período */}
+                <div style={{
+                  background: 'rgba(139,92,246,0.1)',
+                  border: '1px solid rgba(139,92,246,0.3)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '20px'
+                }}>
+                  <h3 style={{ color: 'white', marginBottom: '12px', fontSize: '16px' }}>Período</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Data Início</div>
+                      <div style={{ color: 'white', fontWeight: '500' }}>{formatarData(programacaoSelecionada.periodoInicio)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Data Fim</div>
+                      <div style={{ color: 'white', fontWeight: '500' }}>{formatarData(programacaoSelecionada.periodoFim)}</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '12px' }}>
+                    <span className={`badge ${obterStatusProgramacao(programacaoSelecionada).classe}`}>
+                      {obterStatusProgramacao(programacaoSelecionada).texto}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lista de Sessões */}
+                <div>
+                  <h3 style={{ color: 'white', marginBottom: '12px', fontSize: '16px' }}>
+                    Sessões ({programacaoSelecionada.sessoes?.length || 0})
+                  </h3>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {programacaoSelecionada.sessoes && programacaoSelecionada.sessoes.length > 0 ? (
+                      programacaoSelecionada.sessoes.map((sessao) => (
+                        <div
+                          key={sessao.id}
+                          style={{
+                            background: 'rgba(30,20,60,0.4)',
+                            border: '1px solid rgba(139,92,246,0.3)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            marginBottom: '12px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ color: 'white', fontWeight: '500', marginBottom: '4px' }}>
+                                {sessao.filmeTitulo || `Filme #${sessao.filmeId}`}
+                              </div>
+                              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                                Sessão #{sessao.id} • {sessao.sala}
+                              </div>
+                            </div>
+                            <span className={`badge ${sessao.status === 'DISPONIVEL' ? 'ativa' : sessao.status === 'ESGOTADA' ? 'inativa' : 'cancelada'}`}>
+                              {sessao.status}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
+                            📅 {new Date(sessao.horario).toLocaleString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '20px' }}>
+                        Nenhuma sessão associada
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={fecharDetalhes}>
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       </ModalPortal>
