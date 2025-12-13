@@ -122,8 +122,10 @@ public class UseCaseConfiguration {
     }
 
     @Bean
-    public AlterarFilmeUseCase alterarFilmeUseCase(FilmeRepositorio filmeRepositorio) {
-        return new AlterarFilmeUseCase(filmeRepositorio);
+    public AlterarFilmeUseCase alterarFilmeUseCase(
+            FilmeRepositorio filmeRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new AlterarFilmeUseCase(filmeRepositorio, sessaoRepositorio);
     }
 
     @Bean

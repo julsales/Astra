@@ -3,8 +3,12 @@ package com.astra.cinema.aplicacao.filme;
 import com.astra.cinema.dominio.comum.FilmeId;
 import com.astra.cinema.dominio.filme.Filme;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
+import com.astra.cinema.dominio.sessao.SessaoRepositorio;
+import com.astra.cinema.dominio.sessao.Sessao;
 
 import java.net.URI;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Caso de uso: Alterar dados de um filme existente
@@ -14,12 +18,17 @@ import java.net.URI;
  */
 public class AlterarFilmeUseCase {
     private final FilmeRepositorio filmeRepositorio;
+    private final SessaoRepositorio sessaoRepositorio;
 
-    public AlterarFilmeUseCase(FilmeRepositorio filmeRepositorio) {
+    public AlterarFilmeUseCase(FilmeRepositorio filmeRepositorio, SessaoRepositorio sessaoRepositorio) {
         if (filmeRepositorio == null) {
             throw new IllegalArgumentException("O repositório de filmes não pode ser nulo");
         }
+        if (sessaoRepositorio == null) {
+            throw new IllegalArgumentException("O repositório de sessões não pode ser nulo");
+        }
         this.filmeRepositorio = filmeRepositorio;
+        this.sessaoRepositorio = sessaoRepositorio;
     }
 
     /**
@@ -47,6 +56,11 @@ public class AlterarFilmeUseCase {
             throw new IllegalArgumentException("Filme não encontrado");
         }
 
+        // Valida alteração de status
+        if (novoStatus != null && novoStatus != filme.getStatus()) {
+            validarAlteracaoStatus(filmeId, filme.getStatus(), novoStatus);
+        }
+
         // Valida novos dados
         if (novoTitulo != null && !novoTitulo.isBlank()) {
             validarTitulo(novoTitulo);
@@ -68,6 +82,24 @@ public class AlterarFilmeUseCase {
 
         // Persiste e retorna o filme atualizado
         return filmeRepositorio.salvar(filmeAtualizado);
+    }
+
+    private void validarAlteracaoStatus(FilmeId filmeId, 
+                                       com.astra.cinema.dominio.filme.StatusFilme statusAtual,
+                                       com.astra.cinema.dominio.filme.StatusFilme novoStatus) {
+        // Verifica se há sessões futuras para o filme
+        Date agora = new Date();
+        List<Sessao> sessoesFuturas = sessaoRepositorio.buscarPorFilme(filmeId).stream()
+                .filter(sessao -> sessao.getHorario().after(agora))
+                .toList();
+        
+        if (!sessoesFuturas.isEmpty()) {
+            throw new IllegalStateException(
+                "Não é possível alterar o status do filme. " +
+                "Há " + sessoesFuturas.size() + " sessão(ões) futura(s) agendada(s). " +
+                "Cancele ou remova as sessões antes de alterar o status."
+            );
+        }
     }
 
     private void validarTitulo(String titulo) {

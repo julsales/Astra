@@ -142,6 +142,9 @@ public class FilmeController {
                     request.getStatus()
             );
             return ResponseEntity.ok(mapearFilmeParaMap(filmeAtualizado));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("erro", e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("erro", e.getMessage()));

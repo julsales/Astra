@@ -147,7 +147,7 @@ const Filmes = ({ usuario }) => {
         carregarFilmes({});
       } else {
         const error = await response.json();
-        alert(error.mensagem || 'Erro ao salvar filme');
+        alert(error.erro || error.mensagem || 'Erro ao salvar filme');
       }
     } catch (error) {
       console.error('Erro:', error);
