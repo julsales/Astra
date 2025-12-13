@@ -1,17 +1,25 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
-import com.astra.cinema.dominio.compra.*;
-import com.astra.cinema.dominio.comum.*;
-import com.astra.cinema.infraestrutura.util.QrCodeGenerator;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.astra.cinema.dominio.compra.Compra;
+import com.astra.cinema.dominio.compra.CompraRepositorio;
+import com.astra.cinema.dominio.compra.Ingresso;
+import com.astra.cinema.dominio.compra.StatusCompra;
+import com.astra.cinema.dominio.compra.StatusIngresso;
+import com.astra.cinema.dominio.comum.ClienteId;
+import com.astra.cinema.dominio.comum.CompraId;
+import com.astra.cinema.dominio.comum.IngressoId;
+import com.astra.cinema.infraestrutura.util.QrCodeGenerator;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 /**
  * Implementação JPA do CompraRepositorio
@@ -42,8 +50,34 @@ public class CompraRepositorioJpa implements CompraRepositorio {
             throw new IllegalArgumentException("A compra não pode ser nula");
         }
 
-        // Cria novo CompraJpa sem ID (para forçar INSERT em vez de MERGE)
-        CompraJpa compraJpa = new CompraJpa();
+        CompraJpa compraJpa;
+
+        // Verifica se a compra já existe (UPDATE) ou se é nova (INSERT)
+        if (compra.getCompraId() != null && compra.getCompraId().getId() > 0) {
+            // Tenta buscar compra existente
+            compraJpa = compraJpaRepository.findById(compra.getCompraId().getId()).orElse(null);
+            if (compraJpa != null) {
+                // Compra existe - faz UPDATE
+                compraJpa.setStatus(compra.getStatus().name());
+                compraJpa.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
+                compraJpaRepository.save(compraJpa);
+                
+                // Atualiza o status dos ingressos para CANCELADO
+                if (compra.getStatus() == StatusCompra.CANCELADA) {
+                    List<IngressoJpa> ingressos = ingressoJpaRepository.findByCompraId(compraJpa.getId());
+                    for (IngressoJpa ingresso : ingressos) {
+                        ingresso.setStatus(StatusIngresso.CANCELADO.name());
+                        ingressoJpaRepository.save(ingresso);
+                    }
+                }
+                
+                entityManager.flush();
+                return; // Atualização concluída
+            }
+        }
+
+        // Compra nova - faz INSERT
+        compraJpa = new CompraJpa();
         // NÃO seta o ID - deixa null para o JPA gerar com @GeneratedValue
         compraJpa.setClienteId(compra.getClienteId().getId());
         compraJpa.setStatus(compra.getStatus().name());

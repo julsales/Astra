@@ -1142,7 +1142,7 @@ const FuncionarioPanel = ({ onLogout }) => {
                       <p>{filme.totalIngressos || 0} ingressos vendidos</p>
                     </div>
                     <div className="func-filme-receita">
-                      {formatarMoeda(filme.receitaTotal || 0)}
+                      {formatarMoeda(filme.receita || 0)}
                     </div>
                   </div>
                 ))}

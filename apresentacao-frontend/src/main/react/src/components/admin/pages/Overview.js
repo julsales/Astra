@@ -100,14 +100,24 @@ const Overview = ({ usuario }) => {
       const totalFuncionarios = Array.isArray(funcionarios) ? funcionarios.length : 0;
       const totalUsuarios = totalClientes + totalFuncionarios;
 
-      // Buscar estatísticas de vendas do backend
-      let totalVendas = 0;
+      // Buscar receita total (ingressos + produtos)
+      let receitaTotal = 0;
+      try {
+        const resVendas = await fetch('/api/funcionario/relatorios/vendas');
+        if (resVendas.ok) {
+          const vendas = await resVendas.json();
+          receitaTotal = vendas[0]?.receitaTotal || 0;
+        }
+      } catch (e) {
+        console.warn('Endpoint /api/funcionario/relatorios/vendas não disponível');
+      }
+
+      // Buscar vendas de bomboniere hoje (contador de itens)
       let vendasHoje = 0;
       try {
         const resEstatisticas = await fetch('/api/funcionario/estatisticas');
         if (resEstatisticas.ok) {
           const stats = await resEstatisticas.json();
-          totalVendas = stats.totalVendas || 0;
           vendasHoje = stats.vendasHoje || 0;
         }
       } catch (e) {
@@ -130,7 +140,7 @@ const Overview = ({ usuario }) => {
           descricao: 'itens vendidos - bomboniere hoje'
         },
         totalVendas: {
-          valor: totalVendas,
+          valor: receitaTotal,
           variacao: '-',
           tipo: 'neutro',
           descricao: 'receita total'

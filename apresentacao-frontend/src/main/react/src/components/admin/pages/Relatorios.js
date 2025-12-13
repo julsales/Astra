@@ -8,7 +8,8 @@ const Relatorios = ({ usuario }) => {
     sessoes: [],
     produtos: [],
     clientes: [],
-    funcionarios: []
+    funcionarios: [],
+    vendas: null
   });
   const [loading, setLoading] = useState(true);
 
@@ -21,17 +22,19 @@ const Relatorios = ({ usuario }) => {
       setLoading(true);
 
       // Carregar todos os dados
-      const [resFilmes, resProdutos, resClientes, resFuncionarios] = await Promise.all([
+      const [resFilmes, resProdutos, resClientes, resFuncionarios, resVendas] = await Promise.all([
         fetch('/api/filmes/em-cartaz'),
         fetch('/api/produtos'),
         fetch('/api/clientes'),
-        fetch('/api/funcionarios')
+        fetch('/api/funcionarios'),
+        fetch('/api/funcionario/relatorios/vendas')
       ]);
 
       const filmes = await resFilmes.json();
       const produtos = await resProdutos.json();
       const clientes = await resClientes.json();
       const funcionarios = await resFuncionarios.json();
+      const vendas = await resVendas.json();
 
       // Carregar sessões de todos os filmes
       let todasSessoes = [];
@@ -46,7 +49,8 @@ const Relatorios = ({ usuario }) => {
         sessoes: todasSessoes,
         produtos,
         clientes,
-        funcionarios
+        funcionarios,
+        vendas: vendas && vendas.length > 0 ? vendas[0] : null
       });
     } catch (error) {
       console.error('Erro ao carregar dados do relatório:', error);
@@ -143,8 +147,22 @@ const Relatorios = ({ usuario }) => {
 
         <div className="stat-card">
           <div className="stat-header">
-            <span className="stat-label">Usuários Totais</span>
+            <span className="stat-label">Receita Total</span>
             <div className="stat-icon-circle green"></div>
+          </div>
+          <div className="stat-value">R$ {dados.vendas ? dados.vendas.receitaTotal.toFixed(2) : '0,00'}</div>
+          <div className="stat-footer positivo">
+            <span>
+              Ingressos: R$ {dados.vendas ? dados.vendas.receitaIngressos.toFixed(2) : '0,00'} • 
+              Produtos: R$ {dados.vendas ? dados.vendas.receitaProdutos.toFixed(2) : '0,00'}
+            </span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+            <span className="stat-label">Usuários Totais</span>
+            <div className="stat-icon-circle blue"></div>
           </div>
           <div className="stat-value">{stats.totalUsuarios}</div>
           <div className="stat-footer neutro">
@@ -152,6 +170,57 @@ const Relatorios = ({ usuario }) => {
           </div>
         </div>
       </div>
+
+      {/* Estatísticas de Vendas */}
+      {dados.vendas && (
+        <div className="section-container" style={{ marginTop: '30px' }}>
+          <h2 className="section-title">Estatísticas de Vendas</h2>
+          <div className="stats-grid-main" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+            <div className="stat-card">
+              <div className="stat-header">
+                <span className="stat-label">Total de Compras</span>
+              </div>
+              <div className="stat-value">{dados.vendas.totalCompras}</div>
+              <div className="stat-footer neutro">
+                <span>
+                  {dados.vendas.comprasConfirmadas} confirmadas • 
+                  {dados.vendas.comprasCanceladas} canceladas
+                </span>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-header">
+                <span className="stat-label">Ingressos Vendidos</span>
+              </div>
+              <div className="stat-value">{dados.vendas.totalIngressosAtivos}</div>
+              <div className="stat-footer neutro">
+                <span>{dados.vendas.totalIngressos - dados.vendas.totalIngressosAtivos} cancelados</span>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-header">
+                <span className="stat-label">Receita Ingressos</span>
+              </div>
+              <div className="stat-value">R$ {dados.vendas.receitaIngressos.toFixed(2)}</div>
+              <div className="stat-footer positivo">
+                <span>bilheteria</span>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-header">
+                <span className="stat-label">Receita Produtos</span>
+              </div>
+              <div className="stat-value">R$ {dados.vendas.receitaProdutos.toFixed(2)}</div>
+              <div className="stat-footer positivo">
+                <span>bomboniere</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Detalhamento por Categoria */}
       <div className="section-container">

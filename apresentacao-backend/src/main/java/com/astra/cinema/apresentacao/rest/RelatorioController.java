@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.compra.Compra;
 import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.compra.Ingresso;
@@ -31,16 +32,19 @@ public class RelatorioController {
     private final CompraRepositorio compraRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
+    private final VendaRepositorio vendaRepositorio;
 
     public RelatorioController(
             RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio,
             CompraRepositorio compraRepositorio,
             SessaoRepositorio sessaoRepositorio,
-            FilmeRepositorio filmeRepositorio) {
+            FilmeRepositorio filmeRepositorio,
+            VendaRepositorio vendaRepositorio) {
         this.remarcacaoSessaoRepositorio = remarcacaoSessaoRepositorio;
         this.compraRepositorio = compraRepositorio;
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
+        this.vendaRepositorio = vendaRepositorio;
     }
 
     /**
@@ -86,24 +90,53 @@ public class RelatorioController {
             List<Map<String, Object>> vendas = new ArrayList<>();
             Map<String, Object> estatisticas = new HashMap<>();
             
+            // Contadores
+            int totalIngressos = 0;
+            int totalIngressosAtivos = 0;
+            double receitaIngressos = 0.0;
+            double receitaProdutos = 0.0;
+            long comprasConfirmadas = 0;
+            long comprasPendentes = 0;
+            long comprasCanceladas = 0;
+            
+            for (Compra compra : todasCompras) {
+                // Contar por status
+                if (compra.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA) {
+                    comprasConfirmadas++;
+                } else if (compra.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.PENDENTE) {
+                    comprasPendentes++;
+                } else if (compra.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CANCELADA) {
+                    comprasCanceladas++;
+                }
+                
+                // Calcular receita apenas de compras não canceladas
+                if (compra.getStatus() != com.astra.cinema.dominio.compra.StatusCompra.CANCELADA) {
+                    // Receita de ingressos
+                    for (Ingresso ingresso : compra.getIngressos()) {
+                        totalIngressos++;
+                        
+                        // Só conta ingressos ativos para receita
+                        if (ingresso.getStatus() != com.astra.cinema.dominio.compra.StatusIngresso.CANCELADO) {
+                            totalIngressosAtivos++;
+                            double precoIngresso = ingresso.getTipo() == com.astra.cinema.dominio.compra.TipoIngresso.INTEIRA ? 25.0 : 12.5;
+                            receitaIngressos += precoIngresso;
+                        }
+                    }
+                }
+            }
+            
+            // Calcular receita de produtos (vendas da bomboniere) usando repositório de domínio
+            receitaProdutos = vendaRepositorio.calcularReceitaTotal();
+            
             estatisticas.put("totalCompras", todasCompras.size());
-            
-            // Contar ingressos totais
-            int totalIngressos = todasCompras.stream()
-                .mapToInt(c -> c.getIngressos().size())
-                .sum();
             estatisticas.put("totalIngressos", totalIngressos);
-            
-            // Contar por status
-            long comprasConfirmadas = todasCompras.stream()
-                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CONFIRMADA)
-                .count();
+            estatisticas.put("totalIngressosAtivos", totalIngressosAtivos);
             estatisticas.put("comprasConfirmadas", comprasConfirmadas);
-            
-            long comprasPendentes = todasCompras.stream()
-                .filter(c -> c.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.PENDENTE)
-                .count();
             estatisticas.put("comprasPendentes", comprasPendentes);
+            estatisticas.put("comprasCanceladas", comprasCanceladas);
+            estatisticas.put("receitaIngressos", Math.round(receitaIngressos * 100) / 100.0);
+            estatisticas.put("receitaProdutos", Math.round(receitaProdutos * 100) / 100.0);
+            estatisticas.put("receitaTotal", Math.round((receitaIngressos + receitaProdutos) * 100) / 100.0);
             
             vendas.add(estatisticas);
             
@@ -128,7 +161,17 @@ public class RelatorioController {
             Map<Integer, String> nomesFilmes = new HashMap<>();
             
             for (Compra compra : todasCompras) {
+                // Pula compras canceladas
+                if (compra.getStatus() == com.astra.cinema.dominio.compra.StatusCompra.CANCELADA) {
+                    continue;
+                }
+                
                 for (Ingresso ingresso : compra.getIngressos()) {
+                    // Pula ingressos cancelados
+                    if (ingresso.getStatus() == com.astra.cinema.dominio.compra.StatusIngresso.CANCELADO) {
+                        continue;
+                    }
+                    
                     try {
                         Sessao sessao = sessaoRepositorio.obterPorId(ingresso.getSessaoId());
                         if (sessao != null) {

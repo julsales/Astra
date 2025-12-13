@@ -1,19 +1,20 @@
 package com.astra.cinema.infraestrutura.persistencia.jpa;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.astra.cinema.dominio.bomboniere.Produto;
 import com.astra.cinema.dominio.bomboniere.StatusVenda;
 import com.astra.cinema.dominio.bomboniere.Venda;
 import com.astra.cinema.dominio.bomboniere.VendaRepositorio;
 import com.astra.cinema.dominio.comum.PagamentoId;
 import com.astra.cinema.dominio.comum.VendaId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Implementação JPA do VendaRepositorio
@@ -225,6 +226,21 @@ public class VendaRepositorioJpa implements VendaRepositorio {
         }
 
         return vendas;
+    }
+
+    @Override
+    public double calcularReceitaTotal() {
+        List<VendaJpa> todasVendas = vendaJpaRepository.findAll();
+        double receita = 0.0;
+        
+        for (VendaJpa venda : todasVendas) {
+            ProdutoJpa produto = produtoJpaRepository.findById(venda.getProdutoId()).orElse(null);
+            if (produto != null) {
+                receita += produto.getPreco() * venda.getQuantidade();
+            }
+        }
+        
+        return receita;
     }
 }
 
