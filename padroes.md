@@ -285,16 +285,16 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
 
 ## 6. Strategy
 
-**Descrição**: Padrão comportamental que define uma família de algoritmos, encapsula cada um e os torna intercambiáveis, permitindo que o algoritmo varie independentemente dos clientes que o utilizam.
+**Descrição**: Padrão comportamental que define uma família de algoritmos, encapsula cada um e os torna intercambiáveis, permitindo que o algoritmo varia independentemente dos clientes que o utilizam.
 
 **Funcionalidades Relacionadas**:
 - Criar programação semanal - validação de conflitos de horário
-- Remover filme do catálogo - diferentes estratégias de remoção
-- Gerenciar Cinema (controle de acesso) - diferentes estratégias de autorização
+- Remover filme do catálogo - validação de sessões futuras
+- Gerenciar Cinema (controle de acesso) - controle de permissões por cargo
 
 ### Classes Implementadas
 
-#### Estratégia de Validação de Programação
+#### Estratégia 1: Validação de Programação Semanal
 
 ##### `ProgramacaoService`
 - **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/programacao/ProgramacaoService.java`
@@ -310,11 +310,58 @@ Este documento descreve os padrões de projeto adotados no sistema Astra Cinema,
     - Ordena por horário
     - Verifica sobreposição entre sessões consecutivas
 
+#### Estratégia 2: Remover Filme do Catálogo
+
+##### `RemoverFilmeUseCase`
+- **Localização**: `aplicacao/src/main/java/com/astra/cinema/aplicacao/filme/RemoverFilmeUseCase.java`
+- **Papel**: Use Case que implementa estratégia de remoção segura
+- **Responsabilidades**:
+  - Valida se filme existe no catálogo
+  - Verifica se há sessões futuras agendadas para o filme
+  - Impede remoção se houver sessões futuras (regra de negócio)
+  - Altera status do filme para RETIRADO (não deleta fisicamente)
+  - Método `podeRemover()` verifica pré-condições
+
+##### `Filme`
+- **Localização**: `dominio-sessoes/src/main/java/com/astra/cinema/dominio/filme/Filme.java`
+- **Papel**: Entidade do domínio
+- **Responsabilidades**:
+  - Método `retirarDeCartaz()` altera status para RETIRADO
+  - Mantém histórico do filme no sistema
+
+#### Estratégia 3: Gerenciar Cinema (Controle de Acesso)
+
+##### `GerenciarCinemaUseCase`
+- **Localização**: `aplicacao/src/main/java/com/astra/cinema/aplicacao/usuario/GerenciarCinemaUseCase.java`
+- **Papel**: Use Case que implementa estratégia de controle de acesso (também usa padrão Proxy)
+- **Responsabilidades**:
+  - Valida permissões baseadas em cargo do funcionário
+  - Apenas gerentes podem:
+    - Criar/remover filmes
+    - Criar/cancelar sessões
+    - Gerenciar produtos da bomboniere
+    - Criar programações semanais
+  - Métodos de validação:
+    - `validarPermissaoGerencial()` - validação genérica
+    - `validarPermissaoCriarSessao()` - específica para sessões
+    - `validarPermissaoRemoverFilme()` - específica para filmes
+  - Interface funcional `OperacaoGerencial` para executar operações protegidas
+  - Método `executarOperacaoGerencial()` aplica proxy de segurança
+
+##### `Funcionario`
+- **Localização**: `dominio-usuarios/src/main/java/com/astra/cinema/dominio/usuario/Funcionario.java`
+- **Papel**: Entidade do domínio
+- **Responsabilidades**:
+  - Método `isGerente()` verifica se cargo é GERENTE
+  - Atributo `cargo` determina nível de acesso
+
 ### Benefícios
 - ✅ Validações encapsuladas e reutilizáveis
 - ✅ Fácil substituição de algoritmos de validação
 - ✅ Testabilidade isolada de cada estratégia
 - ✅ Separação de responsabilidades
+- ✅ Segurança centralizada no controle de acesso
+- ✅ Flexibilidade para diferentes níveis de permissão
 
 ---
 
@@ -425,8 +472,8 @@ O projeto implementa **7 padrões de projeto**:
 5. ✅ **State** - Gerenciamento de estados de sessão e compra
    - Usado em: Marcar sessão como esgotada, Criar sessão, Cancelar compra
 
-6. ✅ **Strategy** - Validação de programações e controle de acesso
-   - Usado em: Criar programação semanal, Remover filme, Gerenciar Cinema
+6. ✅ **Strategy** - Validações e controle de acesso
+   - Usado em: Criar programação semanal (validação de conflitos), Remover filme do catálogo (validação de sessões), Gerenciar Cinema (controle de permissões)
 
 ### Padrões Arquiteturais:
 
