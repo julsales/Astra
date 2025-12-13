@@ -362,7 +362,7 @@
   box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
 }
 
-/* ===== ATALHOS RÁPIDOS ===== */
+/* ===== ATALHOS RÁPIDOS (DEPRECATED - mantido por compatibilidade) ===== */
 .func-atalhos-section {
   margin-top: 1rem;
 }
@@ -440,6 +440,63 @@
   font-weight: 600;
   font-size: 1rem;
   text-align: center;
+}
+
+/* ===== INFORMAÇÕES CONTEXTUAIS (NOVO) ===== */
+.func-info-section {
+  margin-top: 2rem;
+}
+
+.func-info-section h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.func-info-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.func-info-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: rgba(42, 31, 71, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.func-info-card:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+.func-info-card svg {
+  color: var(--purple-primary);
+  flex-shrink: 0;
+}
+
+.func-info-card div {
+  flex: 1;
+}
+
+.func-info-card h4 {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.func-info-card p {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 /* ===== SECTION HEADER ===== */

@@ -33,7 +33,11 @@ import { formatarDataHora, formatarMoeda } from '../../utils/formatters';
 import './FuncionarioNovo.css';
 import RemarcarNovo from './RemarcarNovo';
 
-const FuncionarioPanel = ({ onLogout }) => {
+const FuncionarioPanel = ({ usuario, onLogout }) => {
+  // Controle de permissões baseado no cargo
+  const cargo = usuario?.cargo || 'ATENDENTE'; // Fallback para ATENDENTE se não tiver cargo
+  const isGerente = cargo === 'GERENTE';
+  
   // Estados principais
   const [telaAtiva, setTelaAtiva] = useState('home');
   const [carregando, setCarregando] = useState(false);
@@ -86,18 +90,31 @@ const FuncionarioPanel = ({ onLogout }) => {
   // Carregar dados iniciais
   useEffect(() => {
     carregarDashboard();
-    carregarHistorico();
-    carregarIngressos();
     carregarProdutos();
-    carregarRelatorios();
+    
+    // Apenas gerentes acessam estes dados
+    if (isGerente) {
+      carregarHistorico();
+      carregarIngressos();
+      carregarRelatorios();
+    }
   }, []);
 
-  // Carregar relatórios quando a aba é acessada
+  // Carregar relatórios quando a aba é acessada (apenas gerentes)
   useEffect(() => {
-    if (telaAtiva === 'relatorios') {
+    if (telaAtiva === 'relatorios' && isGerente) {
       carregarRelatorios();
     }
   }, [telaAtiva]);
+  
+  // Bloquear acesso direto a páginas restritas
+  useEffect(() => {
+    const telasGerente = ['historico', 'remarcar', 'relatorios'];
+    if (!isGerente && telasGerente.includes(telaAtiva)) {
+      setTelaAtiva('home');
+      alert('⚠️ Acesso restrito a gerentes');
+    }
+  }, [telaAtiva, isGerente]);
 
   // ==========================================
   // DASHBOARD - Próxima Sessão e Estatísticas
@@ -595,35 +612,49 @@ const FuncionarioPanel = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Atalhos Rápidos */}
-      <div className="func-atalhos-section">
-        <h3>Atalhos Rápidos</h3>
-        <div className="func-atalhos-grid">
-          <button className="func-atalho-card" onClick={() => setTelaAtiva('validar')}>
-            <div className="func-atalho-icon purple">
-              <QrIcon size={32} />
+      {/* Informações Contextuais baseadas no cargo */}
+      <div className="func-info-section">
+        {isGerente ? (
+          <>
+            <h3>Visão Gerencial</h3>
+            <div className="func-info-cards">
+              <div className="func-info-card">
+                <Clock size={24} />
+                <div>
+                  <h4>Total de Validações</h4>
+                  <p>{estatisticasHoje.totalValidacoes} ingressos validados</p>
+                </div>
+              </div>
+              <div className="func-info-card">
+                <Activity size={24} />
+                <div>
+                  <h4>Taxa de Sucesso</h4>
+                  <p>{estatisticasHoje.taxaSucesso}% de validações bem-sucedidas</p>
+                </div>
+              </div>
             </div>
-            <span>Validar Ingresso</span>
-          </button>
-          <button className="func-atalho-card" onClick={() => setTelaAtiva('bomboniere')}>
-            <div className="func-atalho-icon blue">
-              <ShoppingCart size={32} />
+          </>
+        ) : (
+          <>
+            <h3>Operações do Dia</h3>
+            <div className="func-info-cards">
+              <div className="func-info-card">
+                <CheckCircle size={24} />
+                <div>
+                  <h4>Suas Validações</h4>
+                  <p>{estatisticasHoje.validacoes} ingressos validados hoje</p>
+                </div>
+              </div>
+              <div className="func-info-card">
+                <ShoppingCart size={24} />
+                <div>
+                  <h4>Suas Vendas</h4>
+                  <p>{estatisticasHoje.vendas} itens vendidos hoje</p>
+                </div>
+              </div>
             </div>
-            <span>Abrir PDV</span>
-          </button>
-          <button className="func-atalho-card" onClick={() => setTelaAtiva('historico')}>
-            <div className="func-atalho-icon amber">
-              <History size={32} />
-            </div>
-            <span>Ver Histórico</span>
-          </button>
-          <button className="func-atalho-card" onClick={() => setTelaAtiva('remarcar')}>
-            <div className="func-atalho-icon green">
-              <RefreshCw size={32} />
-            </div>
-            <span>Remarcar Ingresso</span>
-          </button>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1203,12 +1234,12 @@ const FuncionarioPanel = ({ onLogout }) => {
       <header className="func-header">
         <div className="func-header-left">
           <img src="/logo.png" alt="Astra Cinemas" className="func-logo" />
-          <div className="func-badge">Funcionário</div>
+          <div className="func-badge">{isGerente ? 'Gerente' : 'Atendente'}</div>
         </div>
 
         <div className="func-header-right">
           <div className="func-user-info">
-            <span>Conta Demo</span>
+            <span>{usuario?.nome || 'Funcionário'}</span>
           </div>
           <button className="func-logout-btn" onClick={() => onLogout && onLogout()}>
             <LogOut size={20} />
@@ -1240,27 +1271,33 @@ const FuncionarioPanel = ({ onLogout }) => {
           <ShoppingCart size={20} />
           <span>Bomboniere</span>
         </button>
-        <button
-          className={`func-nav-tab ${telaAtiva === 'historico' ? 'active' : ''}`}
-          onClick={() => setTelaAtiva('historico')}
-        >
-          <History size={20} />
-          <span>Histórico</span>
-        </button>
-        <button
-          className={`func-nav-tab ${telaAtiva === 'remarcar' ? 'active' : ''}`}
-          onClick={() => setTelaAtiva('remarcar')}
-        >
-          <RefreshCw size={20} />
-          <span>Remarcar</span>
-        </button>
-        <button
-          className={`func-nav-tab ${telaAtiva === 'relatorios' ? 'active' : ''}`}
-          onClick={() => setTelaAtiva('relatorios')}
-        >
-          <BarChart3 size={20} />
-          <span>Relatórios</span>
-        </button>
+        
+        {/* Apenas GERENTE vê estas opções */}
+        {isGerente && (
+          <>
+            <button
+              className={`func-nav-tab ${telaAtiva === 'historico' ? 'active' : ''}`}
+              onClick={() => setTelaAtiva('historico')}
+            >
+              <History size={20} />
+              <span>Histórico</span>
+            </button>
+            <button
+              className={`func-nav-tab ${telaAtiva === 'remarcar' ? 'active' : ''}`}
+              onClick={() => setTelaAtiva('remarcar')}
+            >
+              <RefreshCw size={20} />
+              <span>Remarcar</span>
+            </button>
+            <button
+              className={`func-nav-tab ${telaAtiva === 'relatorios' ? 'active' : ''}`}
+              onClick={() => setTelaAtiva('relatorios')}
+            >
+              <BarChart3 size={20} />
+              <span>Relatórios</span>
+            </button>
+          </>
+        )}
       </nav>
 
       {/* Content */}
