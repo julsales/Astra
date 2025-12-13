@@ -65,21 +65,29 @@ public class Ingresso implements Cloneable {
 
     public void validar() {
         exigirEstado(status != StatusIngresso.VALIDADO, "O ingresso já foi validado");
+        exigirEstado(status != StatusIngresso.EXPIRADO, "Não é possível validar um ingresso expirado");
         this.status = StatusIngresso.VALIDADO;
     }
 
     public void cancelar() {
         exigirEstado(!utilizado, "Não é possível cancelar um ingresso já utilizado");
+        exigirEstado(status != StatusIngresso.EXPIRADO, "Não é possível cancelar um ingresso expirado");
         this.status = StatusIngresso.CANCELADO;
     }
 
     public void remarcarSessao(SessaoId novaSessaoId, AssentoId novoAssentoId) {
         exigirNaoNulo(novaSessaoId, "A nova sessão não pode ser nula");
         exigirNaoNulo(novoAssentoId, "O novo assento não pode ser nulo");
-        // Permite remarcar ingressos em qualquer status (ATIVO ou VALIDADO)
+        exigirEstado(status != StatusIngresso.EXPIRADO, "Não é possível remarcar um ingresso expirado");
+        // Permite remarcar ingressos ATIVO ou VALIDADO
 
         this.sessaoId = novaSessaoId;
         this.assentoId = novoAssentoId;
+    }
+
+    public void expirar() {
+        exigirEstado(status == StatusIngresso.ATIVO, "Apenas ingressos ativos podem expirar");
+        this.status = StatusIngresso.EXPIRADO;
     }
 
     @Override

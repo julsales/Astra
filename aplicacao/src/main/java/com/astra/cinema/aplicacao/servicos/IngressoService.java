@@ -1,5 +1,6 @@
 package com.astra.cinema.aplicacao.servicos;
 
+import com.astra.cinema.aplicacao.ingresso.ExpirarIngressosUseCase;
 import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
 import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
 import com.astra.cinema.dominio.bomboniere.Produto;
@@ -31,6 +32,7 @@ public class IngressoService {
 
     private final ValidarIngressoUseCase validarIngressoUseCase;
     private final RemarcarIngressoUseCase remarcarIngressoUseCase;
+    private final ExpirarIngressosUseCase expirarIngressosUseCase;
     private final CompraRepositorio compraRepositorio;
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
@@ -40,6 +42,7 @@ public class IngressoService {
     public IngressoService(
             ValidarIngressoUseCase validarIngressoUseCase,
             RemarcarIngressoUseCase remarcarIngressoUseCase,
+            ExpirarIngressosUseCase expirarIngressosUseCase,
             CompraRepositorio compraRepositorio,
             SessaoRepositorio sessaoRepositorio,
             FilmeRepositorio filmeRepositorio,
@@ -47,6 +50,7 @@ public class IngressoService {
             RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio) {
         this.validarIngressoUseCase = validarIngressoUseCase;
         this.remarcarIngressoUseCase = remarcarIngressoUseCase;
+        this.expirarIngressosUseCase = expirarIngressosUseCase;
         this.compraRepositorio = compraRepositorio;
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
@@ -89,6 +93,20 @@ public class IngressoService {
      */
     public void remarcarIngresso(String qrCode, SessaoId novaSessaoId, AssentoId novoAssentoId) {
         remarcarIngressoUseCase.executar(qrCode, novaSessaoId, novoAssentoId);
+    }
+
+    /**
+     * Expira ingressos ativos de uma sessão que já passou
+     */
+    public int expirarIngressosDaSessao(SessaoId sessaoId) {
+        return expirarIngressosUseCase.executarParaSessao(sessaoId);
+    }
+
+    /**
+     * Expira ingressos ativos de todas as sessões que já passaram
+     */
+    public int expirarTodosIngressosExpirados() {
+        return expirarIngressosUseCase.executarParaTodasSessoes();
     }
 
     /**

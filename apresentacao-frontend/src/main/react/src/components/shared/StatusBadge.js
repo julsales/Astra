@@ -32,7 +32,8 @@ export const StatusBadge = ({ status, type, customLabel }) => {
       ATIVO: 'badge-warning',
       VALIDADO: 'badge-success',
       CONFIRMADO: 'badge-success',
-      CANCELADO: 'badge-danger'
+      CANCELADO: 'badge-danger',
+      EXPIRADO: 'badge-neutral'
     },
     compra: {
       PENDENTE: 'badge-warning',
@@ -66,7 +67,8 @@ export const StatusBadge = ({ status, type, customLabel }) => {
       ATIVO: 'Ativo',
       VALIDADO: 'Usado',
       CONFIRMADO: 'Confirmado',
-      CANCELADO: 'Cancelado'
+      CANCELADO: 'Cancelado',
+      EXPIRADO: 'Expirado'
     },
     compra: {
       PENDENTE: 'Pendente',

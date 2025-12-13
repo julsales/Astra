@@ -2,6 +2,7 @@ package com.astra.cinema;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
 
@@ -16,6 +17,7 @@ import java.util.TimeZone;
  * - H2 Database
  */
 @SpringBootApplication
+@EnableScheduling
 public class AstraApplication {
 
     @PostConstruct

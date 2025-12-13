@@ -14,6 +14,7 @@ import com.astra.cinema.aplicacao.filme.RemoverFilmeUseCase;
 import com.astra.cinema.aplicacao.funcionario.ConsultarHistoricoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.RemarcarIngressoFuncionarioUseCase;
 import com.astra.cinema.aplicacao.funcionario.ValidarIngressoFuncionarioUseCase;
+import com.astra.cinema.aplicacao.ingresso.ExpirarIngressosUseCase;
 import com.astra.cinema.aplicacao.ingresso.RemarcarIngressoUseCase;
 import com.astra.cinema.aplicacao.ingresso.ValidarIngressoUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularAnalyticsUseCase;
@@ -173,6 +174,13 @@ public class UseCaseConfiguration {
         return new RemarcarIngressoUseCase(compraRepositorio, sessaoRepositorio);
     }
 
+    @Bean
+    public ExpirarIngressosUseCase expirarIngressosUseCase(
+            CompraRepositorio compraRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new ExpirarIngressosUseCase(compraRepositorio, sessaoRepositorio);
+    }
+
     // Produto Use Cases
     @Bean
     public AdicionarProdutoUseCase adicionarProdutoUseCase(ProdutoRepositorio produtoRepositorio) {
@@ -208,6 +216,7 @@ public class UseCaseConfiguration {
     public IngressoService ingressoService(
             ValidarIngressoUseCase validarIngressoUseCase,
             RemarcarIngressoUseCase remarcarIngressoUseCase,
+            ExpirarIngressosUseCase expirarIngressosUseCase,
             CompraRepositorio compraRepositorio,
             SessaoRepositorio sessaoRepositorio,
             FilmeRepositorio filmeRepositorio,
@@ -216,6 +225,7 @@ public class UseCaseConfiguration {
         return new IngressoService(
                 validarIngressoUseCase,
                 remarcarIngressoUseCase,
+                expirarIngressosUseCase,
                 compraRepositorio,
                 sessaoRepositorio,
                 filmeRepositorio,
@@ -255,7 +265,8 @@ public class UseCaseConfiguration {
             CriarSessaoUseCase criarSessaoUseCase,
             ModificarSessaoUseCase modificarSessaoUseCase,
             RemoverSessaoUseCase removerSessaoUseCase,
-            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase) {
+            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase,
+            ExpirarIngressosUseCase expirarIngressosUseCase) {
         return new SessaoService(
                 sessaoRepositorio,
                 filmeRepositorio,
@@ -263,7 +274,8 @@ public class UseCaseConfiguration {
                 criarSessaoUseCase,
                 modificarSessaoUseCase,
                 removerSessaoUseCase,
-                remarcarIngressosSessaoUseCase
+                remarcarIngressosSessaoUseCase,
+                expirarIngressosUseCase
         );
     }
 

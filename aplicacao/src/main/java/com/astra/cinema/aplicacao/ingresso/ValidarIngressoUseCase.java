@@ -41,6 +41,11 @@ public class ValidarIngressoUseCase {
             return new ResultadoValidacao(false, "Ingresso cancelado. Este ingresso não pode ser validado.", ingresso, sessao);
         }
 
+        // Regra de negócio: Ingressos EXPIRADOS NÃO podem ser validados
+        if (ingresso.getStatus() == StatusIngresso.EXPIRADO) {
+            return new ResultadoValidacao(false, "Ingresso expirado. A sessão passou sem validação e este ingresso não pode mais ser utilizado.", ingresso, sessao);
+        }
+
         // Validação liberada para qualquer horário (modo cinema flexível)
 
         // Buscar a compra completa para validar TODOS os ingressos juntos

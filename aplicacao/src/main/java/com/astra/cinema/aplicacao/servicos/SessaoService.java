@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.astra.cinema.aplicacao.ingresso.ExpirarIngressosUseCase;
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.ModificarSessaoUseCase;
 import com.astra.cinema.aplicacao.sessao.RemarcarIngressosSessaoUseCase;
@@ -36,6 +37,7 @@ public class SessaoService {
     private final ModificarSessaoUseCase modificarSessaoUseCase;
     private final RemoverSessaoUseCase removerSessaoUseCase;
     private final RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase;
+    private final ExpirarIngressosUseCase expirarIngressosUseCase;
 
     public SessaoService(
             SessaoRepositorio sessaoRepositorio,
@@ -44,7 +46,8 @@ public class SessaoService {
             CriarSessaoUseCase criarSessaoUseCase,
             ModificarSessaoUseCase modificarSessaoUseCase,
             RemoverSessaoUseCase removerSessaoUseCase,
-            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase) {
+            RemarcarIngressosSessaoUseCase remarcarIngressosSessaoUseCase,
+            ExpirarIngressosUseCase expirarIngressosUseCase) {
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
         this.salaRepositorio = salaRepositorio;
@@ -52,10 +55,12 @@ public class SessaoService {
         this.modificarSessaoUseCase = modificarSessaoUseCase;
         this.removerSessaoUseCase = removerSessaoUseCase;
         this.remarcarIngressosSessaoUseCase = remarcarIngressosSessaoUseCase;
+        this.expirarIngressosUseCase = expirarIngressosUseCase;
     }
 
     /**
      * Atualiza automaticamente o status da sessão para CONCLUIDA se já passou
+     * E expira os ingressos ativos da sessão
      */
     private Sessao atualizarStatusSeNecessario(Sessao sessao) {
         if (sessao.getStatus() == StatusSessao.DISPONIVEL || sessao.getStatus() == StatusSessao.ESGOTADA) {
@@ -71,6 +76,15 @@ public class SessaoService {
                     sessao.getSalaId()
                 );
                 sessaoRepositorio.salvar(sessaoAtualizada);
+                
+                // Expira ingressos ativos da sessão concluída
+                try {
+                    expirarIngressosUseCase.executarParaSessao(sessao.getSessaoId());
+                } catch (Exception e) {
+                    // Log erro mas não interrompe o fluxo
+                    System.err.println("Erro ao expirar ingressos da sessão " + sessao.getSessaoId().getId() + ": " + e.getMessage());
+                }
+                
                 return sessaoAtualizada;
             }
         }

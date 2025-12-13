@@ -30,6 +30,12 @@ public class RemarcarIngressoUseCase {
         Ingresso ingresso = compraRepositorio.buscarIngressoPorQrCode(qrCode);
         exigirNaoNulo(ingresso, "Ingresso não encontrado");
 
+        // Validar status do ingresso
+        exigirEstado(ingresso.getStatus() != com.astra.cinema.dominio.compra.StatusIngresso.EXPIRADO,
+            "Não é possível remarcar um ingresso expirado. A sessão passou sem validação.");
+        exigirEstado(ingresso.getStatus() != com.astra.cinema.dominio.compra.StatusIngresso.CANCELADO,
+            "Não é possível remarcar um ingresso cancelado.");
+
         System.out.println("Ingresso encontrado: ID=" + ingresso.getIngressoId().getId() + 
             ", Sessão Atual=" + ingresso.getSessaoId().getId() + 
             ", Assento Atual=" + ingresso.getAssentoId().getValor());

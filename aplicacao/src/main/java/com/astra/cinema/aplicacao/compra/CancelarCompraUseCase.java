@@ -41,6 +41,14 @@ public class CancelarCompraUseCase {
             throw new IllegalArgumentException("Compra não encontrada com ID: " + compraId.getId());
         }
 
+        // Verificar se há ingressos expirados (não podem ser cancelados)
+        boolean temIngressosExpirados = compra.getIngressos().stream()
+            .anyMatch(ing -> ing.getStatus() == StatusIngresso.EXPIRADO);
+        
+        if (temIngressosExpirados) {
+            throw new IllegalStateException("Não é possível cancelar a compra. Há ingressos expirados (sessão passou sem validação).");
+        }
+
         // Agrupa ingressos por sessão para liberar assentos
         Map<SessaoId, Sessao> sessoesAfetadas = new HashMap<>();
         for (Ingresso ingresso : compra.getIngressos()) {
