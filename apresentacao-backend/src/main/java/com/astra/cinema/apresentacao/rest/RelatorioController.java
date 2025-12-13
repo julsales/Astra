@@ -15,24 +15,23 @@ import com.astra.cinema.aplicacao.relatorio.CalcularFilmesPopularesUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularOcupacaoSalasUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularRelatorioVendasUseCase;
 import com.astra.cinema.dominio.operacao.RemarcacaoSessao;
-import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 
 @RestController
 @RequestMapping("/api/funcionario/relatorios")
 @CrossOrigin(origins = "*")
 public class RelatorioController {
 
-    private final RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio;
+    private final com.astra.cinema.aplicacao.relatorio.ListarRemarcacoesUseCase listarRemarcacoesUseCase;
     private final CalcularRelatorioVendasUseCase calcularRelatorioVendasUseCase;
     private final CalcularFilmesPopularesUseCase calcularFilmesPopularesUseCase;
     private final CalcularOcupacaoSalasUseCase calcularOcupacaoSalasUseCase;
 
     public RelatorioController(
-            RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio,
+            com.astra.cinema.aplicacao.relatorio.ListarRemarcacoesUseCase listarRemarcacoesUseCase,
             CalcularRelatorioVendasUseCase calcularRelatorioVendasUseCase,
             CalcularFilmesPopularesUseCase calcularFilmesPopularesUseCase,
             CalcularOcupacaoSalasUseCase calcularOcupacaoSalasUseCase) {
-        this.remarcacaoSessaoRepositorio = remarcacaoSessaoRepositorio;
+        this.listarRemarcacoesUseCase = listarRemarcacoesUseCase;
         this.calcularRelatorioVendasUseCase = calcularRelatorioVendasUseCase;
         this.calcularFilmesPopularesUseCase = calcularFilmesPopularesUseCase;
         this.calcularOcupacaoSalasUseCase = calcularOcupacaoSalasUseCase;
@@ -45,7 +44,7 @@ public class RelatorioController {
     @GetMapping("/remarcacoes")
     public ResponseEntity<List<Map<String, Object>>> getRemarcacoes() {
         try {
-            List<RemarcacaoSessao> remarcacoes = remarcacaoSessaoRepositorio.listarTodas();
+            List<RemarcacaoSessao> remarcacoes = listarRemarcacoesUseCase.executar();
             
             List<Map<String, Object>> resultado = new ArrayList<>();
             for (RemarcacaoSessao remarcacao : remarcacoes) {

@@ -5,7 +5,6 @@ import com.astra.cinema.dominio.comum.ProgramacaoId;
 import com.astra.cinema.dominio.comum.SessaoId;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.programacao.Programacao;
-import com.astra.cinema.dominio.programacao.ProgramacaoRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.Cargo;
 import com.astra.cinema.dominio.usuario.Funcionario;
@@ -21,25 +20,23 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class ProgramacaoController {
 
-    private final ProgramacaoRepositorio programacaoRepositorio;
     private final ProgramacaoService programacaoService;
     private final SessaoRepositorio sessaoRepositorio;
     private final FilmeRepositorio filmeRepositorio;
 
     public ProgramacaoController(
-            ProgramacaoRepositorio programacaoRepositorio,
+            ProgramacaoService programacaoService,
             SessaoRepositorio sessaoRepositorio,
             FilmeRepositorio filmeRepositorio) {
-        this.programacaoRepositorio = programacaoRepositorio;
+        this.programacaoService = programacaoService;
         this.sessaoRepositorio = sessaoRepositorio;
         this.filmeRepositorio = filmeRepositorio;
-        this.programacaoService = new ProgramacaoService(programacaoRepositorio, sessaoRepositorio);
     }
 
     @GetMapping
     public ResponseEntity<?> listar() {
         try {
-            List<Programacao> programacoes = programacaoRepositorio.listarProgramacoes();
+            List<Programacao> programacoes = programacaoService.listarProgramacoes();
 
             List<Map<String, Object>> response = programacoes.stream()
                     .map(this::mapearProgramacaoComDetalhes)
@@ -55,7 +52,7 @@ public class ProgramacaoController {
     @GetMapping("/{id}")
     public ResponseEntity<?> detalhar(@PathVariable Integer id) {
         try {
-            Programacao programacao = programacaoRepositorio.obterPorId(new ProgramacaoId(id));
+            Programacao programacao = programacaoService.obter(new ProgramacaoId(id));
             if (programacao == null) {
                 return ResponseEntity.notFound().build();
             }

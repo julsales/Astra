@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.astra.cinema.aplicacao.bomboniere.AdicionarProdutoUseCase;
+import com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase;
+import com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase;
 import com.astra.cinema.aplicacao.bomboniere.ModificarProdutoUseCase;
 import com.astra.cinema.aplicacao.bomboniere.RemoverProdutoUseCase;
 import com.astra.cinema.aplicacao.compra.CancelarCompraUseCase;
@@ -21,11 +23,13 @@ import com.astra.cinema.aplicacao.relatorio.CalcularAnalyticsUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularFilmesPopularesUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularOcupacaoSalasUseCase;
 import com.astra.cinema.aplicacao.relatorio.CalcularRelatorioVendasUseCase;
+import com.astra.cinema.aplicacao.relatorio.ListarRemarcacoesUseCase;
 import com.astra.cinema.aplicacao.servicos.BomboniereService;
 import com.astra.cinema.aplicacao.servicos.ClienteService;
 import com.astra.cinema.aplicacao.servicos.CompraAppService;
 import com.astra.cinema.aplicacao.servicos.FilmeService;
 import com.astra.cinema.aplicacao.servicos.IngressoService;
+import com.astra.cinema.aplicacao.servicos.SalaService;
 import com.astra.cinema.aplicacao.servicos.SessaoService;
 import com.astra.cinema.aplicacao.servicos.VendaProdutoService;
 import com.astra.cinema.aplicacao.sessao.CriarSessaoUseCase;
@@ -42,6 +46,8 @@ import com.astra.cinema.dominio.compra.CompraRepositorio;
 import com.astra.cinema.dominio.filme.FilmeRepositorio;
 import com.astra.cinema.dominio.operacao.RemarcacaoSessaoRepositorio;
 import com.astra.cinema.dominio.operacao.ValidacaoIngressoRepositorio;
+import com.astra.cinema.dominio.programacao.ProgramacaoRepositorio;
+import com.astra.cinema.dominio.programacao.ProgramacaoService;
 import com.astra.cinema.dominio.sessao.SalaRepositorio;
 import com.astra.cinema.dominio.sessao.SessaoRepositorio;
 import com.astra.cinema.dominio.usuario.ClienteRepositorio;
@@ -53,8 +59,11 @@ import com.astra.cinema.infraestrutura.persistencia.jpa.VendaJpaRepository;
 public class UseCaseConfiguration {
 
     @Bean
-    public AutenticarUsuarioUseCase autenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio, FuncionarioRepositorio funcionarioRepositorio) {
-        return new AutenticarUsuarioUseCase(usuarioRepositorio, funcionarioRepositorio);
+    public AutenticarUsuarioUseCase autenticarUsuarioUseCase(
+            UsuarioRepositorio usuarioRepositorio, 
+            FuncionarioRepositorio funcionarioRepositorio,
+            ClienteRepositorio clienteRepositorio) {
+        return new AutenticarUsuarioUseCase(usuarioRepositorio, funcionarioRepositorio, clienteRepositorio);
     }
 
     @Bean
@@ -197,6 +206,16 @@ public class UseCaseConfiguration {
         return new RemoverProdutoUseCase(produtoRepositorio);
     }
 
+    @Bean
+    public EntradaEstoqueUseCase entradaEstoqueUseCase(ProdutoRepositorio produtoRepositorio) {
+        return new EntradaEstoqueUseCase(produtoRepositorio);
+    }
+
+    @Bean
+    public AjusteEstoqueUseCase ajusteEstoqueUseCase(ProdutoRepositorio produtoRepositorio) {
+        return new AjusteEstoqueUseCase(produtoRepositorio);
+    }
+
     // Funcionário Use Cases
     @Bean
     public GerenciarFuncionariosUseCase gerenciarFuncionariosUseCase(
@@ -337,5 +356,25 @@ public class UseCaseConfiguration {
     public CalcularOcupacaoSalasUseCase calcularOcupacaoSalasUseCase(
             SessaoRepositorio sessaoRepositorio) {
         return new CalcularOcupacaoSalasUseCase(sessaoRepositorio);
+    }
+
+    @Bean
+    public ListarRemarcacoesUseCase listarRemarcacoesUseCase(
+            RemarcacaoSessaoRepositorio remarcacaoSessaoRepositorio) {
+        return new ListarRemarcacoesUseCase(remarcacaoSessaoRepositorio);
+    }
+
+    // ========== SERVICES ==========
+
+    @Bean
+    public SalaService salaService(SalaRepositorio salaRepositorio) {
+        return new SalaService(salaRepositorio);
+    }
+
+    @Bean
+    public ProgramacaoService programacaoService(
+            ProgramacaoRepositorio programacaoRepositorio,
+            SessaoRepositorio sessaoRepositorio) {
+        return new ProgramacaoService(programacaoRepositorio, sessaoRepositorio);
     }
 }

@@ -22,15 +22,21 @@ public class ProdutoController {
     private final AdicionarProdutoUseCase adicionarProdutoUseCase;
     private final ModificarProdutoUseCase modificarProdutoUseCase;
     private final RemoverProdutoUseCase removerProdutoUseCase;
+    private final com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase entradaEstoqueUseCase;
+    private final com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase ajusteEstoqueUseCase;
 
     public ProdutoController(ProdutoRepositorio produtoRepositorio,
                             AdicionarProdutoUseCase adicionarProdutoUseCase,
                             ModificarProdutoUseCase modificarProdutoUseCase,
-                            RemoverProdutoUseCase removerProdutoUseCase) {
+                            RemoverProdutoUseCase removerProdutoUseCase,
+                            com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase entradaEstoqueUseCase,
+                            com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase ajusteEstoqueUseCase) {
         this.produtoRepositorio = produtoRepositorio;
         this.adicionarProdutoUseCase = adicionarProdutoUseCase;
         this.modificarProdutoUseCase = modificarProdutoUseCase;
         this.removerProdutoUseCase = removerProdutoUseCase;
+        this.entradaEstoqueUseCase = entradaEstoqueUseCase;
+        this.ajusteEstoqueUseCase = ajusteEstoqueUseCase;
     }
 
     /**
@@ -43,8 +49,7 @@ public class ProdutoController {
                 return ResponseEntity.badRequest().body(Map.of("erro", "Quantidade inválida"));
             }
 
-            var entradaUseCase = new com.astra.cinema.aplicacao.bomboniere.EntradaEstoqueUseCase(produtoRepositorio);
-            var produto = entradaUseCase.executar(new com.astra.cinema.dominio.comum.ProdutoId(id), request.getQuantidade());
+            var produto = entradaEstoqueUseCase.executar(new com.astra.cinema.dominio.comum.ProdutoId(id), request.getQuantidade());
 
             return ResponseEntity.ok(mapearProdutoParaDTO(produto));
         } catch (IllegalArgumentException e) {
@@ -65,8 +70,7 @@ public class ProdutoController {
                 return ResponseEntity.badRequest().body(Map.of("erro", "Novo estoque inválido"));
             }
 
-            var ajusteUseCase = new com.astra.cinema.aplicacao.bomboniere.AjusteEstoqueUseCase(produtoRepositorio);
-            var produto = ajusteUseCase.definirEstoque(new com.astra.cinema.dominio.comum.ProdutoId(id), request.getNovoEstoque());
+            var produto = ajusteEstoqueUseCase.definirEstoque(new com.astra.cinema.dominio.comum.ProdutoId(id), request.getNovoEstoque());
 
             return ResponseEntity.ok(mapearProdutoParaDTO(produto));
         } catch (IllegalArgumentException e) {

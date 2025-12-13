@@ -20,16 +20,25 @@ import org.springframework.context.annotation.Configuration;
 public class InfraestruturaConfiguration {
 
     /**
-     * Registra observadores de eventos no PublicadorEventos (Singleton)
+     * Cria o PublicadorEventos como bean gerenciado pelo Spring.
+     * CORREÇÃO: Não é mais singleton, gerenciado por DI.
+     */
+    @Bean
+    public PublicadorEventos publicadorEventos() {
+        return new PublicadorEventos();
+    }
+
+    /**
+     * Registra observadores de eventos no PublicadorEventos
      * ao iniciar a aplicação.
      */
     @Bean
     public CommandLineRunner registrarObservadores(
+            PublicadorEventos publicador,
             NotificadorEmailCompraImpl notificadorEmail,
             AtualizadorEstatisticasCompraImpl atualizadorEstatisticas) {
         
         return args -> {
-            PublicadorEventos publicador = PublicadorEventos.getInstancia();
             
             // Registrar observadores para CompraConfirmadaEvento
             publicador.registrar(notificadorEmail);

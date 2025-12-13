@@ -1,7 +1,6 @@
 package com.astra.cinema.apresentacao.rest;
 
 import com.astra.cinema.dominio.sessao.Sala;
-import com.astra.cinema.dominio.sessao.SalaRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,11 +18,11 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class SalaController {
 
-    private final SalaRepositorio salaRepositorio;
+    private final com.astra.cinema.aplicacao.servicos.SalaService salaService;
 
     @Autowired
-    public SalaController(SalaRepositorio salaRepositorio) {
-        this.salaRepositorio = salaRepositorio;
+    public SalaController(com.astra.cinema.aplicacao.servicos.SalaService salaService) {
+        this.salaService = salaService;
     }
 
     /**
@@ -32,7 +31,7 @@ public class SalaController {
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> listarSalas() {
         try {
-            List<Sala> salas = salaRepositorio.listarTodas();
+            List<Sala> salas = salaService.listarTodasSalas();
             
             List<Map<String, Object>> salasDTO = salas.stream()
                 .map(this::mapearSalaParaDTO)
@@ -50,7 +49,7 @@ public class SalaController {
     @GetMapping("/{id}")
     public ResponseEntity<?> obterSala(@PathVariable Integer id) {
         try {
-            Sala sala = salaRepositorio.obterPorId(new com.astra.cinema.dominio.comum.SalaId(id));
+            Sala sala = salaService.obterSalaPorId(new com.astra.cinema.dominio.comum.SalaId(id));
             
             if (sala == null) {
                 return ResponseEntity.notFound().build();

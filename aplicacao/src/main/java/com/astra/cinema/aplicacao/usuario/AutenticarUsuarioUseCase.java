@@ -2,6 +2,8 @@ package com.astra.cinema.aplicacao.usuario;
 
 import com.astra.cinema.dominio.usuario.Usuario;
 import com.astra.cinema.dominio.usuario.UsuarioRepositorio;
+import com.astra.cinema.dominio.usuario.ClienteRepositorio;
+import com.astra.cinema.dominio.usuario.Cliente;
 import com.astra.cinema.dominio.usuario.FuncionarioRepositorio;
 import com.astra.cinema.dominio.usuario.Funcionario;
 
@@ -11,14 +13,22 @@ public class AutenticarUsuarioUseCase {
 
     private final UsuarioRepositorio usuarioRepositorio;
     private final FuncionarioRepositorio funcionarioRepositorio;
+    private final ClienteRepositorio clienteRepositorio;
 
     public AutenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio) {
-        this(usuarioRepositorio, null);
+        this(usuarioRepositorio, null, null);
     }
 
     public AutenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio, FuncionarioRepositorio funcionarioRepositorio) {
+        this(usuarioRepositorio, funcionarioRepositorio, null);
+    }
+
+    public AutenticarUsuarioUseCase(UsuarioRepositorio usuarioRepositorio, 
+                                   FuncionarioRepositorio funcionarioRepositorio,
+                                   ClienteRepositorio clienteRepositorio) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.funcionarioRepositorio = funcionarioRepositorio;
+        this.clienteRepositorio = clienteRepositorio;
     }
 
     public ResultadoAutenticacao executar(String email, String senha) {
@@ -47,16 +57,31 @@ public class AutenticarUsuarioUseCase {
             }
         }
 
-        return new ResultadoAutenticacao(usuario, cargo);
+        // Busca clienteId se for cliente
+        Integer clienteId = null;
+        if (usuario.getTipo() == com.astra.cinema.dominio.usuario.TipoUsuario.CLIENTE && clienteRepositorio != null) {
+            try {
+                Cliente cliente = clienteRepositorio.obterPorEmail(usuario.getEmail());
+                if (cliente != null && cliente.getClienteId() != null) {
+                    clienteId = cliente.getClienteId().getId();
+                }
+            } catch (Exception e) {
+                // Não falhar autenticação por erro na busca de cliente
+            }
+        }
+
+        return new ResultadoAutenticacao(usuario, cargo, clienteId);
     }
     
     public static class ResultadoAutenticacao {
         private final Usuario usuario;
         private final String cargo;
+        private final Integer clienteId;
         
-        public ResultadoAutenticacao(Usuario usuario, String cargo) {
+        public ResultadoAutenticacao(Usuario usuario, String cargo, Integer clienteId) {
             this.usuario = usuario;
             this.cargo = cargo;
+            this.clienteId = clienteId;
         }
         
         public Usuario getUsuario() {
@@ -65,6 +90,10 @@ public class AutenticarUsuarioUseCase {
         
         public String getCargo() {
             return cargo;
+        }
+        
+        public Integer getClienteId() {
+            return clienteId;
         }
     }
 }

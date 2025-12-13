@@ -4,8 +4,6 @@ import com.astra.cinema.aplicacao.usuario.AutenticarUsuarioUseCase;
 import com.astra.cinema.aplicacao.usuario.RegistrarClienteUseCase;
 import com.astra.cinema.apresentacao.dto.response.UsuarioAutenticadoDTO;
 import com.astra.cinema.dominio.usuario.Usuario;
-import com.astra.cinema.dominio.usuario.ClienteRepositorio;
-import com.astra.cinema.dominio.usuario.Cliente;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,15 +15,12 @@ public class AuthController {
 
     private final AutenticarUsuarioUseCase autenticarUsuarioUseCase;
     private final RegistrarClienteUseCase registrarClienteUseCase;
-    private final ClienteRepositorio clienteRepositorio;
 
     public AuthController(
             AutenticarUsuarioUseCase autenticarUsuarioUseCase,
-            RegistrarClienteUseCase registrarClienteUseCase,
-            ClienteRepositorio clienteRepositorio) {
+            RegistrarClienteUseCase registrarClienteUseCase) {
         this.autenticarUsuarioUseCase = autenticarUsuarioUseCase;
         this.registrarClienteUseCase = registrarClienteUseCase;
-        this.clienteRepositorio = clienteRepositorio;
     }
 
     @PostMapping("/login")
@@ -41,27 +36,13 @@ public class AuthController {
 
         Usuario usuario = resultado.getUsuario();
         
-        // Se for um cliente, busca o clienteId
-        Integer clienteId = null;
-        if ("CLIENTE".equals(usuario.getTipo().name())) {
-            try {
-                Cliente cliente = clienteRepositorio.obterPorEmail(usuario.getEmail());
-                if (cliente != null && cliente.getClienteId() != null) {
-                    clienteId = cliente.getClienteId().getId();
-                }
-            } catch (Exception e) {
-                // Se não encontrar o cliente, continua sem clienteId
-                System.err.println("Erro ao buscar cliente por email: " + e.getMessage());
-            }
-        }
-        
         UsuarioAutenticadoDTO dto = UsuarioAutenticadoDTO.builder()
                 .id(usuario.getId().getValor())
                 .email(usuario.getEmail())
                 .nome(usuario.getNome())
                 .tipo(usuario.getTipo().name())
                 .cargo(resultado.getCargo())
-                .clienteId(clienteId)
+                .clienteId(resultado.getClienteId())
                 .build();
 
         return ResponseEntity.ok(dto);
@@ -79,7 +60,7 @@ public class AuthController {
             RegistrarClienteUseCase.ResultadoRegistro resultado = registrarClienteUseCase.executar(dados);
 
             Usuario usuario = resultado.getUsuario();
-            Cliente cliente = resultado.getCliente();
+            var cliente = resultado.getCliente();
             
             UsuarioAutenticadoDTO dto = UsuarioAutenticadoDTO.builder()
                     .id(usuario.getId().getValor())

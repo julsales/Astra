@@ -143,6 +143,10 @@ public class ProgramacaoService {
         return programacaoRepositorio.obterPorId(programacaoId);
     }
 
+    public List<Programacao> listarProgramacoes() {
+        return programacaoRepositorio.listarProgramacoes();
+    }
+
     /**
      * Remove uma programação existente.
      *

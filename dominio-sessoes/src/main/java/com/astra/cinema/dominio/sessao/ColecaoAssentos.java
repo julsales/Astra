@@ -2,12 +2,15 @@ package com.astra.cinema.dominio.sessao;
 
 import com.astra.cinema.dominio.comum.AssentoId;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 /**
  * PADRÃO ITERATOR - Coleção Agregada
  * Coleção de assentos que implementa Iterable para permitir iteração customizada.
+ * 
+ * CORREÇÃO: Usa cópia defensiva no construtor para evitar exposição da estrutura interna.
  */
 public class ColecaoAssentos implements Iterable<Map.Entry<AssentoId, Boolean>> {
 
@@ -19,7 +22,8 @@ public class ColecaoAssentos implements Iterable<Map.Entry<AssentoId, Boolean>> 
     }
 
     public ColecaoAssentos(Map<AssentoId, Boolean> assentos, AssentoIterator.FiltroAssento filtro) {
-        this.assentos = assentos;
+        // Cópia defensiva para evitar modificações externas
+        this.assentos = assentos != null ? new HashMap<>(assentos) : new HashMap<>();
         this.filtroDefault = filtro;
     }
 
