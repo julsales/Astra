@@ -50,6 +50,11 @@ public class UsuarioRepositorioJpa implements UsuarioRepositorio {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void remover(UsuarioId id) {
+        repository.deleteById(id.getValor());
+    }
+
     private UsuarioJpa mapearParaJpa(Usuario usuario) {
         Integer id = usuario.getId() != null ? usuario.getId().getValor() : null;
         return new UsuarioJpa(

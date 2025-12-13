@@ -85,8 +85,20 @@ public class GerenciarFuncionariosUseCase {
 
     public void remover(FuncionarioId funcionarioId) {
         FuncionarioId id = exigirNaoNulo(funcionarioId, "O identificador do funcionário é obrigatório");
-        funcionarioRepositorio.buscarPorId(id)
+        Funcionario funcionario = funcionarioRepositorio.buscarPorId(id)
                 .orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado"));
+        
+        // Remover o usuário correspondente ao funcionário
+        String nomeFuncionario = funcionario.getNome();
+        Optional<Usuario> usuarioOpt = usuarioRepositorio.listarTodos().stream()
+                .filter(u -> u.getNome().equals(nomeFuncionario) && u.getTipo() == TipoUsuario.FUNCIONARIO)
+                .findFirst();
+        
+        if (usuarioOpt.isPresent()) {
+            usuarioRepositorio.remover(usuarioOpt.get().getId());
+        }
+        
+        // Remover o funcionário
         funcionarioRepositorio.remover(id);
     }
 

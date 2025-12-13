@@ -11,4 +11,5 @@ public interface UsuarioRepositorio {
     Optional<Usuario> buscarPorId(UsuarioId id);
     List<Usuario> listarTodos();
     List<Usuario> listarPorTipo(TipoUsuario tipo);
+    void remover(UsuarioId id);
 }
