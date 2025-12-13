@@ -50,84 +50,72 @@ public class CompraRepositorioJpa implements CompraRepositorio {
             throw new IllegalArgumentException("A compra não pode ser nula");
         }
 
-        CompraJpa compraJpa;
-
-        // Verifica se a compra já existe (UPDATE) ou se é nova (INSERT)
+        CompraJpa compraSalva;
+        
+        // Verifica se a compra já existe (UPDATE) ou é nova (INSERT)
         if (compra.getCompraId() != null && compra.getCompraId().getId() > 0) {
-            // Tenta buscar compra existente
-            compraJpa = compraJpaRepository.findById(compra.getCompraId().getId()).orElse(null);
-            if (compraJpa != null) {
-                // Compra existe - faz UPDATE
-                compraJpa.setStatus(compra.getStatus().name());
-                compraJpa.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
-                compraJpaRepository.save(compraJpa);
-                
-                // Atualiza o status dos ingressos para CANCELADO
-                if (compra.getStatus() == StatusCompra.CANCELADA) {
-                    List<IngressoJpa> ingressos = ingressoJpaRepository.findByCompraId(compraJpa.getId());
-                    for (IngressoJpa ingresso : ingressos) {
-                        ingresso.setStatus(StatusIngresso.CANCELADO.name());
-                        ingressoJpaRepository.save(ingresso);
-                    }
-                }
-                
-                entityManager.flush();
-                return; // Atualização concluída
-            }
-        }
-
-        // Compra nova - faz INSERT
-        compraJpa = new CompraJpa();
-        // NÃO seta o ID - deixa null para o JPA gerar com @GeneratedValue
-        compraJpa.setClienteId(compra.getClienteId().getId());
-        compraJpa.setStatus(compra.getStatus().name());
-        compraJpa.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
-        compraJpa.setCriadoEm(java.time.LocalDateTime.now());
-        
-        // Usa persist() para forçar INSERT (não faz merge)
-        entityManager.persist(compraJpa);
-        entityManager.flush(); // Força o INSERT imediatamente para obter o ID gerado
-        
-        CompraJpa compraSalva = compraJpa; // Agora tem o ID gerado pelo banco
-
-        // Salva os ingressos associados (cada um com seu próprio QR Code)
-        List<Ingresso> ingressos = compra.getIngressos();
-        for (Ingresso ingresso : ingressos) {
-            // Verifica se já existe um ingresso com mesma sessão e assento nesta compra
+            // UPDATE: Atualiza compra existente
+            compraSalva = compraJpaRepository.findById(compra.getCompraId().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Compra não encontrada para atualizar: " + compra.getCompraId().getId()));
+            
+            compraSalva.setStatus(compra.getStatus().name());
+            compraSalva.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
+            compraJpaRepository.save(compraSalva);
+            
+            // Atualiza os ingressos existentes
             List<IngressoJpa> ingressosExistentes = ingressoJpaRepository.findByCompraId(compraSalva.getId());
-            boolean ingressoJaExiste = ingressosExistentes.stream()
-                .anyMatch(i -> i.getSessaoId().equals(ingresso.getSessaoId().getId()) &&
-                              i.getAssento().equals(ingresso.getAssentoId().getValor()));
-
-            if (ingressoJaExiste) {
-                // Ingresso já foi salvo anteriormente, pula para o próximo
-                continue;
+            List<Ingresso> ingressosDominio = compra.getIngressos();
+            
+            for (Ingresso ingresso : ingressosDominio) {
+                // Procura o ingresso existente pela sessão e assento
+                IngressoJpa ingressoJpa = ingressosExistentes.stream()
+                    .filter(i -> i.getSessaoId().equals(ingresso.getSessaoId().getId()) &&
+                                i.getAssento().equals(ingresso.getAssentoId().getValor()))
+                    .findFirst()
+                    .orElse(null);
+                
+                if (ingressoJpa != null) {
+                    // Atualiza o status do ingresso existente
+                    ingressoJpa.setStatus(ingresso.getStatus().name());
+                    ingressoJpaRepository.save(ingressoJpa);
+                }
             }
+        } else {
+            // INSERT: Cria nova compra
+            CompraJpa compraJpa = new CompraJpa();
+            compraJpa.setClienteId(compra.getClienteId().getId());
+            compraJpa.setStatus(compra.getStatus().name());
+            compraJpa.setPagamentoId(compra.getPagamentoId() != null ? compra.getPagamentoId().getId() : null);
+            compraJpa.setCriadoEm(java.time.LocalDateTime.now());
+            
+            entityManager.persist(compraJpa);
+            entityManager.flush();
+            
+            compraSalva = compraJpa;
 
-            // Gera um QR Code único para este ingresso
-            String qrCode = qrCodeGenerator.gerarQrCode();
+            // Salva os novos ingressos
+            List<Ingresso> ingressos = compra.getIngressos();
+            for (Ingresso ingresso : ingressos) {
+                // Gera um QR Code único para este ingresso
+                String qrCode = qrCodeGenerator.gerarQrCode();
 
-            // Garante que o QR Code seja único (tenta novamente se já existir)
-            int tentativas = 0;
-            while (ingressoJpaRepository.findByQrCode(qrCode).isPresent() && tentativas < 5) {
-                qrCode = qrCodeGenerator.gerarQrCode();
-                tentativas++;
+                // Garante que o QR Code seja único
+                int tentativas = 0;
+                while (ingressoJpaRepository.findByQrCode(qrCode).isPresent() && tentativas < 5) {
+                    qrCode = qrCodeGenerator.gerarQrCode();
+                    tentativas++;
+                }
+
+                IngressoJpa ingressoJpa = new IngressoJpa();
+                ingressoJpa.setCompraId(compraSalva.getId());
+                ingressoJpa.setSessaoId(ingresso.getSessaoId().getId());
+                ingressoJpa.setAssento(ingresso.getAssentoId().getValor());
+                ingressoJpa.setTipo(ingresso.getTipo().name());
+                ingressoJpa.setStatus(ingresso.getStatus().name());
+                ingressoJpa.setQrCode(qrCode);
+
+                ingressoJpaRepository.save(ingressoJpa);
             }
-
-            // Cria IngressoJpa diretamente (o ID será gerado pelo banco)
-            IngressoJpa ingressoJpa = new IngressoJpa();
-            ingressoJpa.setCompraId(compraSalva.getId());
-            ingressoJpa.setSessaoId(ingresso.getSessaoId().getId());
-            ingressoJpa.setAssento(ingresso.getAssentoId().getValor());
-            ingressoJpa.setTipo(ingresso.getTipo().name());
-            ingressoJpa.setStatus(ingresso.getStatus().name());
-            ingressoJpa.setQrCode(qrCode); // QR Code único para cada ingresso
-
-            // Salva o ingresso
-            ingressoJpaRepository.save(ingressoJpa);
-
-            // Atualiza o ingresso do domínio com o ID gerado (se necessário)
-            // Isso garante que o ingresso tenha o ID correto após ser salvo
         }
     }
 

@@ -262,16 +262,14 @@ export const useMeusIngressos = (usuario) => {
           throw new Error(erro.erro || 'Erro ao cancelar compra');
         }
 
-        // Atualiza status para CANCELADO no localStorage (mantém visível)
-        persistir((listaAtual) =>
-          listaAtual.map((compra) =>
-            compra.id === compraId || String(compra.id) === String(compraId)
-              ? { ...compra, status: 'CANCELADO' }
-              : compra
-          )
-        );
+        // Limpa COMPLETAMENTE o localStorage antes de sincronizar
+        // Isso garante que não haverá duplicatas
+        persistir([]);
 
-        // Sincronizar com backend para atualizar a lista
+        // Aguarda um momento para garantir que o localStorage foi limpo
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Sincronizar com backend para recarregar tudo do zero (incluindo o cancelado)
         await sincronizarComBackend();
 
         return { sucesso: true };
