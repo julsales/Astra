@@ -87,14 +87,10 @@ Responsável pela gestão completa do cinema.
 - CPF
 - Senha segura
 
-![Tela de Registro](screenshots/cliente-registro.png)
-
 **Login**
 - Autenticação via email e senha
 - Token JWT para sessão
 - Redirecionamento para dashboard do cliente
-
-![Tela de Login](screenshots/cliente-login.png)
 
 ---
 
@@ -110,15 +106,19 @@ Responsável pela gestão completa do cinema.
   - Sinopse
   - Imagem do pôster
 
-![Programação de Filmes](screenshots/cliente-programacao.png)
-
 **Visualização de Sessões**
 - Horários disponíveis por filme
 - Informação de sala
 - Preço do ingresso
 - Assentos disponíveis
 
-![Sessões Disponíveis](screenshots/cliente-sessoes.png)
+**Programação Semanal**
+- Visualização de programações organizadas por semana
+- Seletor de semanas com indicação da semana atual
+- Grade de sessões agrupadas por dia da semana
+- Cards de sessão com informações do filme, horário, sala e disponibilidade
+- Indicador visual de ocupação de assentos
+- Filtro automático de semanas ativas
 
 ---
 
@@ -131,38 +131,35 @@ Responsável pela gestão completa do cinema.
    - Escolha do horário
    - Visualização de disponibilidade
 
-![Seleção de Sessão](screenshots/cliente-selecao-sessao.png)
-
 2. **Escolha de Assentos**
    - Mapa visual da sala
    - Assentos disponíveis e ocupados
    - Seleção de múltiplos assentos
    - Cálculo automático do valor total
 
-![Seleção de Assentos](screenshots/cliente-selecao-assentos.png)
+3. **Bomboniere (Opcional)**
+   - Seleção de produtos (pipoca, refrigerantes, doces)
+   - Controle de quantidade
+   - Adição ao carrinho
+   - Visualização do valor total com produtos
 
-3. **Resumo da Compra**
+4. **Resumo da Compra**
    - Filme e horário selecionado
    - Assentos escolhidos
+   - Produtos da bomboniere (se selecionados)
    - Valor total
    - Confirmação de dados
 
-![Resumo da Compra](screenshots/cliente-resumo-compra.png)
-
-4. **Pagamento**
+5. **Pagamento**
    - Escolha do método:
      - **PIX**: Geração de QR Code
      - **Cartão de Crédito ou Débito**: Dados do cartão
    - Confirmação de pagamento
 
-![Tela de Pagamento](screenshots/cliente-pagamento.png)
-
-5. **Confirmação**
+6. **Confirmação**
    - Ingresso gerado com QR Code único
    - Email de confirmação (simulado)
    - Opção de download/impressão
-
-![Confirmação de Compra](screenshots/cliente-confirmacao.png)
 
 ---
 
@@ -178,16 +175,13 @@ Responsável pela gestão completa do cinema.
 - QR Code para validação
 - Informações da sessão
 
-![Meus Ingressos](screenshots/cliente-meus-ingressos.png)
-
 **Detalhes do Ingresso**
 - QR Code em tamanho grande
 - Filme, sala, horário
 - Assento
 - Status de validação
+- Histórico de remarcação (se aplicável)
 - Opção de remarcação (se disponível)
-
-![Detalhes do Ingresso](screenshots/cliente-detalhe-ingresso.png)
 
 ---
 
@@ -200,8 +194,6 @@ Responsável pela gestão completa do cinema.
 - Atalhos rápidos para funções principais
 - Lista de sessões ativas
 
-![Dashboard Funcionário](screenshots/funcionario-dashboard.png)
-
 ---
 
 #### 2. Validação de Ingressos
@@ -213,8 +205,6 @@ Responsável pela gestão completa do cinema.
    - Leitura do código do ingresso
    - Validação automática
 
-![Validação de Ingresso](screenshots/funcionario-validacao.png)
-
 2. **Resultado da Validação**
    - ✅ **Sucesso**: Ingresso válido e autorizado
    - ❌ **Falha**: Mensagens de erro específicas:
@@ -223,16 +213,11 @@ Responsável pela gestão completa do cinema.
      - Assento indisponível
      - Ingresso expirado
 
-![Resultado Validação Sucesso](screenshots/funcionario-validacao-sucesso.png)
-![Resultado Validação Erro](screenshots/funcionario-validacao-erro.png)
-
 3. **Histórico de Validações**
    - Lista de todas as validações realizadas
    - Filtros por data, sessão, filme
    - Informações do cliente
    - Horário da validação
-
-![Histórico de Validações](screenshots/funcionario-historico-validacoes.png)
 
 ---
 
@@ -245,21 +230,17 @@ Responsável pela gestão completa do cinema.
    - Por CPF do cliente
    - Por sessão
 
-![Busca Ingresso Remarcação](screenshots/funcionario-busca-remarcacao.png)
-
 2. **Seleção de Nova Sessão**
    - Lista de sessões disponíveis do mesmo filme
    - Verificação de assentos disponíveis
+   - Preservação do assento original (se disponível)
    - Confirmação de alteração
-
-![Seleção Nova Sessão](screenshots/funcionario-nova-sessao.png)
 
 3. **Confirmação**
    - Ingresso atualizado
    - Novo QR Code gerado
-   - Registro no histórico
-
-![Confirmação Remarcação](screenshots/funcionario-confirmacao-remarcacao.png)
+   - Registro completo no histórico com sessão anterior e nova
+   - Badge visual indicando remarcação no ingresso
 
 ---
 
@@ -273,8 +254,6 @@ Responsável pela gestão completa do cinema.
 - Acesso rápido a todas as funcionalidades
 - Alertas e notificações
 
-![Dashboard Admin](screenshots/admin-dashboard.png)
-
 ---
 
 #### 2. Gerenciamento de Filmes
@@ -283,8 +262,6 @@ Responsável pela gestão completa do cinema.
 - Todos os filmes cadastrados
 - Busca e filtros
 - Status (Em cartaz, Em breve, Removido)
-
-![Lista de Filmes](screenshots/admin-lista-filmes.png)
 
 **Adicionar Novo Filme**
 - Título
@@ -295,21 +272,15 @@ Responsável pela gestão completa do cinema.
 - URL da imagem
 - Data de lançamento
 
-![Adicionar Filme](screenshots/admin-adicionar-filme.png)
-
 **Editar Filme**
 - Atualização de informações
 - Verificação de sessões vinculadas
 - Controle de status
 
-![Editar Filme](screenshots/admin-editar-filme.png)
-
 **Remover Filme**
 - Validação de sessões ativas
 - Confirmação de exclusão
 - Impacto em programações
-
-![Remover Filme](screenshots/admin-remover-filme.png)
 
 ---
 
@@ -320,8 +291,7 @@ Responsável pela gestão completa do cinema.
 - Filtros por filme, sala, data
 - Indicadores de ocupação
 - Status da sessão
-
-![Lista de Sessões](screenshots/admin-lista-sessoes.png)
+- Marcação automática de sessão como esgotada quando todos os assentos são reservados
 
 **Criar Nova Sessão**
 - Seleção de filme
@@ -330,22 +300,16 @@ Responsável pela gestão completa do cinema.
 - Preço do ingresso
 - Validação de conflitos de sala
 
-![Criar Sessão](screenshots/admin-criar-sessao.png)
-
 **Editar Sessão**
 - Alteração de horário (se não houver ingressos vendidos)
 - Alteração de preço
 - Alteração de status
 - Remarcação automática de ingressos (se necessário)
 
-![Editar Sessão](screenshots/admin-editar-sessao.png)
-
 **Cancelar Sessão**
 - Notificação de clientes afetados
 - Reembolso automático
 - Registro no histórico
-
-![Cancelar Sessão](screenshots/admin-cancelar-sessao.png)
 
 ---
 
@@ -357,15 +321,11 @@ Responsável pela gestão completa do cinema.
 - Status (Ativa, Manutenção)
 - Sessões agendadas
 
-![Lista de Salas](screenshots/admin-lista-salas.png)
-
 **Adicionar/Editar Sala**
 - Nome/Número da sala
 - Capacidade de assentos
 - Configuração de layout
 - Recursos especiais (3D, IMAX, etc.)
-
-![Gerenciar Sala](screenshots/admin-gerenciar-sala.png)
 
 ---
 
@@ -373,18 +333,22 @@ Responsável pela gestão completa do cinema.
 
 **Criar Programação Semanal**
 - Seleção de período (início e fim)
+- Período travado em exatamente 7 dias
+- Indicação visual de que é uma programação semanal
+- Cálculo automático da data de fim
 - Seleção de sessões a incluir
 - Validação de permissões (apenas gerentes)
 - Validação de sessões disponíveis
-
-![Criar Programação](screenshots/admin-criar-programacao.png)
 
 **Visualizar Programações**
 - Programações ativas e passadas
 - Sessões incluídas
 - Período de vigência
 
-![Visualizar Programações](screenshots/admin-visualizar-programacoes.png)
+**Editar Programação**
+- Alteração de sessões incluídas
+- Validação de permissões (apenas gerentes)
+- Manutenção do período de 7 dias
 
 ---
 
@@ -396,8 +360,6 @@ Responsável pela gestão completa do cinema.
 - Estoque atual
 - Status (Disponível, Esgotado)
 
-![Lista de Produtos](screenshots/admin-lista-produtos.png)
-
 **Adicionar Produto**
 - Nome
 - Descrição
@@ -405,21 +367,15 @@ Responsável pela gestão completa do cinema.
 - Estoque inicial
 - Categoria
 
-![Adicionar Produto](screenshots/admin-adicionar-produto.png)
-
 **Controle de Estoque**
 - Entrada de estoque
 - Ajuste de estoque
 - Histórico de movimentações
 
-![Controle de Estoque](screenshots/admin-controle-estoque.png)
-
 **Editar/Remover Produto**
 - Atualização de informações
 - Alteração de preço
 - Desativação/Exclusão
-
-![Editar Produto](screenshots/admin-editar-produto.png)
 
 ---
 
@@ -431,22 +387,16 @@ Responsável pela gestão completa do cinema.
 - Status (Ativo, Inativo)
 - Data de cadastro
 
-![Lista de Funcionários](screenshots/admin-lista-funcionarios.png)
-
 **Adicionar Funcionário**
 - Nome completo
 - Email
 - Senha inicial
 - Cargo (definir permissões)
 
-![Adicionar Funcionário](screenshots/admin-adicionar-funcionario.png)
-
 **Editar Funcionário**
 - Alteração de cargo
 - Atualização de dados
 - Alteração de status
-
-![Editar Funcionário](screenshots/admin-editar-funcionario.png)
 
 ---
 
@@ -460,15 +410,11 @@ Responsável pela gestão completa do cinema.
 - Receita por sessão
 - Gráficos de evolução
 
-![Relatório de Vendas](screenshots/admin-relatorio-vendas.png)
-
 **Relatório de Filmes Populares**
 - Ranking de filmes
 - Quantidade de ingressos vendidos
 - Receita gerada
 - Taxa de ocupação média
-
-![Filmes Populares](screenshots/admin-filmes-populares.png)
 
 **Relatório de Ocupação de Salas**
 - Taxa de ocupação por sala
@@ -476,23 +422,17 @@ Responsável pela gestão completa do cinema.
 - Horários de pico
 - Análise de capacidade
 
-![Ocupação de Salas](screenshots/admin-ocupacao-salas.png)
-
 **Relatório de Remarcações**
 - Total de remarcações no período
 - Sessões mais remarcadas
 - Motivos de remarcação
 - Impacto na ocupação
 
-![Relatório Remarcações](screenshots/admin-relatorio-remarcacoes.png)
-
 **Analytics da Bomboniere**
 - Produtos mais vendidos
 - Receita de produtos
 - Estoque crítico
 - Análise de margem
-
-![Analytics Bomboniere](screenshots/admin-analytics-bomboniere.png)
 
 ---
 
@@ -513,10 +453,6 @@ Responsável pela gestão completa do cinema.
 10. Ingresso aparece em "Meus Ingressos"
 ```
 
-**Diagrama do Fluxo:**
-
-![Fluxo Compra Ingresso](screenshots/fluxo-compra-ingresso.png)
-
 ---
 
 ### Fluxo 2: Validação de Ingresso (Funcionário)
@@ -535,10 +471,6 @@ Responsável pela gestão completa do cinema.
 7. Funcionário autoriza entrada
 8. Validação registrada no histórico
 ```
-
-**Diagrama do Fluxo:**
-
-![Fluxo Validação Ingresso](screenshots/fluxo-validacao-ingresso.png)
 
 ---
 
@@ -560,10 +492,6 @@ Responsável pela gestão completa do cinema.
 10. Sessão aparece na programação
 ```
 
-**Diagrama do Fluxo:**
-
-![Fluxo Criação Sessão](screenshots/fluxo-criacao-sessao.png)
-
 ---
 
 ### Fluxo 4: Remarcação de Ingresso (Funcionário)
@@ -583,10 +511,6 @@ Responsável pela gestão completa do cinema.
 9. Cliente recebe ingresso atualizado
 10. Remarcação registrada no histórico
 ```
-
-**Diagrama do Fluxo:**
-
-![Fluxo Remarcação](screenshots/fluxo-remarcacao.png)
 
 ---
 
@@ -616,10 +540,6 @@ Responsável pela gestão completa do cinema.
 └─────────────────────────────────────────┘
 ```
 
-**Diagrama da Arquitetura:**
-
-![Arquitetura em Camadas](screenshots/arquitetura-camadas.png)
-
 ---
 
 ### Módulos do Sistema
@@ -643,20 +563,42 @@ O sistema está organizado em módulos Maven seguindo DDD:
 - **apresentacao-backend**: Controllers REST Spring Boot
 - **apresentacao-frontend**: Interface React.js
 
-**Diagrama de Módulos:**
-
-![Módulos DDD](screenshots/modulos-ddd.png)
-
 ---
 
 ### Padrões de Projeto Implementados
 
-O sistema implementa 4 padrões GoF (Gang of Four):
+O sistema implementa diversos padrões de projeto:
+
+#### Padrões GoF (Gang of Four):
 
 1. **Iterator**: Iteração sobre assentos de uma sessão
 2. **Decorator**: Cadeia de validadores de ingressos
-3. **Observer**: Sistema de notificação de eventos de compra
-4. **Template Method**: Processamento polimórfico de pagamentos
+3. **Observer**: Sistema de notificação de eventos de compra e auto-monitoramento de sessões
+4. **Template Method**: Processamento polimórfico de pagamentos e validações sequenciais
+
+#### Outros Padrões Identificados:
+
+5. **Proxy**: Controle de acesso e autorização em operações gerenciais
+6. **Strategy**: Diferentes estratégias para operações de compra, cancelamento e gerenciamento
+7. **Factory Method**: Criação de objetos de domínio
+8. **Command**: Encapsulamento de operações como objetos (cancelamento, confirmação)
+9. **Service Layer**: Orquestração de casos de uso e lógica de negócio
+
+#### Funcionalidades com Padrões Destacados:
+
+- **Marcar Sessão como Esgotada**: Utiliza padrão Observer com auto-monitoramento. A sessão verifica automaticamente se todos os assentos foram reservados e se marca como esgotada.
+
+- **Criar Programação Semanal**: Implementa Template Method com validação em 7 etapas sequenciais, garantindo integridade e permissões antes da criação.
+
+- **Iniciar Compra**: Padrão Strategy para diferentes fluxos de inicialização de compra.
+
+- **Confirmar Compra**: Observer pattern com publicação de eventos (CompraConfirmadaEvento) para notificação de sistemas dependentes.
+
+- **Cancelar Compra**: Padrão Command que encapsula toda a lógica de cancelamento, liberação de assentos e atualização de status.
+
+- **Gerenciar Cinema**: Proxy pattern para validação de permissões + Strategy com OperacaoGerencial para diferentes tipos de operações.
+
+- **Remover Filme**: Strategy pattern com validações específicas antes da remoção.
 
 Documentação detalhada em: [`padroes.md`](../../padroes.md)
 
@@ -679,10 +621,6 @@ Principais tabelas:
 - `produtos`: Produtos da bomboniere
 - `validacoes_ingresso`: Histórico de validações
 - `remarcacoes_sessao`: Histórico de remarcações
-
-**Diagrama ER:**
-
-![Diagrama ER](screenshots/diagrama-er.png)
 
 ---
 
